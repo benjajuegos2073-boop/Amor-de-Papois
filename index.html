@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
-     TOKENS PARA GUAPOS
+     TOKENS
   ============================================================ */
   :root{
     --bg-void:#05060a;
@@ -675,13 +675,9 @@ async function dbGetAll(storeName){
     const rows = await remoteList(storeName);
     const normalized = [];
     for(const row of rows){
+      // Keep the remote public URL instead of downloading the entire audio
+      // file into a Blob. The browser can stream it directly from Storage.
       const item = {...row};
-      if(storeName === 'music' && row.public_url){
-        try{
-          const response = await fetch(row.public_url);
-          item.blob = await response.blob();
-        }catch(e){ console.warn('No se pudo precargar la música remota', e); }
-      }
       normalized.push(item);
       await localDbAdd(storeName, item).catch(()=>{});
     }
@@ -1312,9 +1308,17 @@ async function loadStoredMusicIntoAudio(){
   const records = await dbGetAll('music');
   const record = records[0] || null;
   if(currentMusicObjectUrl){ URL.revokeObjectURL(currentMusicObjectUrl); currentMusicObjectUrl = null; }
-  if(record && record.blob){
+
+  // Prefer the public Supabase URL directly. This avoids an extra fetch/blob
+  // step and is much more reliable for background playback on GitHub Pages.
+  if(record && record.dataUrl){
+    if(bgAudio.src !== record.dataUrl) bgAudio.src = record.dataUrl;
+    bgAudio.load();
+  } else if(record && record.blob){
+    // Fallback for legacy/local music still stored in IndexedDB.
     currentMusicObjectUrl = URL.createObjectURL(record.blob);
     bgAudio.src = currentMusicObjectUrl;
+    bgAudio.load();
   } else {
     bgAudio.removeAttribute('src');
     bgAudio.load();
@@ -1510,14 +1514,35 @@ petChatForm.addEventListener('submit', (e)=>{
 /* ================================================================
    ENTRADA / ARRANQUE
 ================================================================ */
-document.getElementById('entry-btn').addEventListener('click', async function onEntry(){
+let musicReadyPromise = null;
+function prepareBackgroundMusic(){
+  if(!musicReadyPromise){
+    musicReadyPromise = loadStoredMusicIntoAudio().catch(err=>{
+      console.warn('No se pudo preparar la música de fondo.', err);
+      return null;
+    });
+  }
+  return musicReadyPromise;
+}
+
+// Start loading before the user enters so the eventual click can start
+// playback without depending on a late network await.
+prepareBackgroundMusic();
+
+document.getElementById('entry-btn').addEventListener('click', function onEntry(){
   migrateLegacyLocalData().catch(()=>{});
   document.getElementById('entry-screen').classList.add('leaving');
   document.getElementById('experience').classList.add('active');
   setTimeout(()=> document.getElementById('central-heart').classList.add('visible'), 650);
   setTimeout(()=> document.getElementById('lock-heart').classList.add('visible'), 1700);
-  const record = await loadStoredMusicIntoAudio();
-  if(record) bgAudio.play().catch(()=>{});
+
+  // Try immediately while this click still counts as a user gesture.
+  bgAudio.play().catch(()=>{
+    // If the remote source was not ready yet, finish loading and retry.
+    prepareBackgroundMusic().then(record=>{
+      if(record) bgAudio.play().catch(()=>{});
+    });
+  });
 }, {once:true});
 
 window.addEventListener('resize', debounce(()=>{
