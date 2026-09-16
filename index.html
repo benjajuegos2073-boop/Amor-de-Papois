@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="google-site-verification" content="siSleS7T0VQnI7eAE3c62jJO0ZC-bnMjKR0UMVyf86A" />
 <title>Un pequeño universo — para ti</title>
 <meta name="description" content="Un pequeño espacio privado.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -390,7 +389,7 @@
     </section>
 
     <!-- Audio de fondo: sin controles visibles. La fuente se asigna dinámicamente
-         desde la canción guardada en Agregar → Música (IndexedDB), nunca desde un archivo fijo. -->
+         desde la canción guardada en Agregar → Música (Supabase), nunca desde un archivo fijo. -->
     <audio id="bg-audio" loop></audio>
   </div>
 
@@ -416,6 +415,7 @@
   <div class="modal modal--lg" id="admin-panel" role="dialog" aria-modal="true" aria-labelledby="admin-title">
     <button class="modal-close-x" type="button" data-modal-close="admin-panel" aria-label="Cerrar">×</button>
     <h2 id="admin-title">Agregar</h2>
+    <p class="empty-note" style="margin:-8px 0 14px;">El contenido agregado se guarda en la nube y aparece en tus otros dispositivos.</p>
     <div class="admin-tabs" role="tablist">
       <button class="admin-tab active" type="button" role="tab" aria-selected="true" data-tab="codigo">Código</button>
       <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="imagenes">Imágenes</button>
@@ -515,7 +515,18 @@
     </div>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ================================================================
+   SUPABASE — almacenamiento compartido para GitHub Pages
+================================================================ */
+const SUPABASE_URL = 'https://mvtjtlxtjgfojuogwotk.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_KY0ssYL3y7hjXXQC3edtwQ_JGDFW7WW';
+const SUPABASE_BUCKET = 'site-assets';
+const SUPABASE_TABLE = 'site_items';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let remoteStorageReady = true;
+
 /* ================================================================
    UTILIDADES
 ================================================================ */
@@ -532,7 +543,7 @@ function debounce(fn, wait){
 function isSmallScreen(){ return window.innerWidth < 760; }
 
 /* ================================================================
-   ALMACENAMIENTO: IndexedDB (código e imágenes)
+   ALMACENAMIENTO: Supabase (compartido) + IndexedDB (compatibilidad/caché)
 ================================================================ */
 const DB_NAME = 'espacio-privado-db';
 const DB_VERSION = 2;
@@ -553,7 +564,7 @@ function openDB(){
   });
   return dbPromise;
 }
-async function dbAdd(storeName, record){
+async function localDbAdd(storeName, record){
   const db = await openDB();
   return new Promise((resolve, reject)=>{
     const tx = db.transaction(storeName, 'readwrite');
@@ -562,7 +573,7 @@ async function dbAdd(storeName, record){
     tx.onerror = (e)=> reject(e.target.error);
   });
 }
-async function dbGetAll(storeName){
+async function localDbGetAll(storeName){
   const db = await openDB();
   return new Promise((resolve, reject)=>{
     const tx = db.transaction(storeName, 'readonly');
@@ -571,7 +582,7 @@ async function dbGetAll(storeName){
     req.onerror = (e)=> reject(e.target.error);
   });
 }
-async function dbDelete(storeName, id){
+async function localDbDelete(storeName, id){
   const db = await openDB();
   return new Promise((resolve, reject)=>{
     const tx = db.transaction(storeName, 'readwrite');
@@ -579,6 +590,168 @@ async function dbDelete(storeName, id){
     tx.oncomplete = ()=> resolve(true);
     tx.onerror = (e)=> reject(e.target.error);
   });
+}
+
+async function remoteList(collection){
+  const {data, error} = await supabaseClient
+    .from(SUPABASE_TABLE)
+    .select('*')
+    .eq('collection', collection)
+    .order('added_at', {ascending:false});
+  if(error) throw error;
+  const rows = data || [];
+  return rows.map(row=>({
+    id: row.id,
+    name: row.name,
+    content: row.content,
+    dataUrl: row.public_url,
+    mimeType: row.mime_type,
+    storagePath: row.storage_path,
+    addedAt: row.added_at
+  }));
+}
+
+async function uploadRemoteAsset(path, body, contentType){
+  const {error} = await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path, body, {
+    contentType: contentType || 'application/octet-stream',
+    upsert: true,
+    cacheControl: '3600'
+  });
+  if(error) throw error;
+  return supabaseClient.storage.from(SUPABASE_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+async function deleteRemoteAsset(path){
+  if(!path) return;
+  const {error} = await supabaseClient.storage.from(SUPABASE_BUCKET).remove([path]);
+  if(error) throw error;
+}
+
+async function dbAdd(storeName, record){
+  if(!remoteStorageReady) return localDbAdd(storeName, record);
+  try{
+    let row = {
+      id: record.id,
+      collection: storeName,
+      name: record.name || null,
+      content: record.content || null,
+      public_url: record.dataUrl || null,
+      mime_type: record.mimeType || null,
+      storage_path: record.storagePath || null,
+      added_at: record.addedAt || Date.now()
+    };
+
+    if(storeName === 'images' && record.dataUrl){
+      const blob = await fetch(record.dataUrl).then(r=>r.blob());
+      const ext = (record.name || 'imagen.jpg').split('.').pop().toLowerCase() || 'jpg';
+      const path = `images/${record.id}.${ext}`;
+      row.storage_path = path;
+      row.mime_type = blob.type || 'image/jpeg';
+      row.public_url = await uploadRemoteAsset(path, blob, row.mime_type);
+    }
+
+    if(storeName === 'music' && record.blob){
+      const ext = (record.name || 'musica.mp3').split('.').pop().toLowerCase() || 'mp3';
+      const path = `music/${record.id}.${ext}`;
+      row.storage_path = path;
+      row.mime_type = record.mimeType || record.blob.type || 'audio/mpeg';
+      row.public_url = await uploadRemoteAsset(path, record.blob, row.mime_type);
+    }
+
+    const {error} = await supabaseClient.from(SUPABASE_TABLE).upsert(row, {onConflict:'id'});
+    if(error) throw error;
+    const normalized = {...record, storagePath:row.storage_path, dataUrl:row.public_url};
+    await localDbAdd(storeName, normalized).catch(()=>{});
+    return normalized;
+  }catch(err){
+    console.warn('Supabase no disponible; se mantiene copia local temporal.', err);
+    return localDbAdd(storeName, record);
+  }
+}
+
+async function dbGetAll(storeName){
+  if(!remoteStorageReady) return localDbGetAll(storeName);
+  try{
+    const rows = await remoteList(storeName);
+    const normalized = [];
+    for(const row of rows){
+      const item = {...row};
+      if(storeName === 'music' && row.public_url){
+        try{
+          const response = await fetch(row.public_url);
+          item.blob = await response.blob();
+        }catch(e){ console.warn('No se pudo precargar la música remota', e); }
+      }
+      normalized.push(item);
+      await localDbAdd(storeName, item).catch(()=>{});
+    }
+    return normalized;
+  }catch(err){
+    console.warn('No se pudo leer Supabase; se usa la copia local.', err);
+    return localDbGetAll(storeName);
+  }
+}
+
+async function dbDelete(storeName, id){
+  if(!remoteStorageReady) return localDbDelete(storeName, id);
+  try{
+    const {data, error:readError} = await supabaseClient.from(SUPABASE_TABLE)
+      .select('storage_path').eq('id', id).eq('collection', storeName).maybeSingle();
+    if(readError) throw readError;
+    if(data && data.storage_path) await deleteRemoteAsset(data.storage_path);
+    const {error} = await supabaseClient.from(SUPABASE_TABLE).delete().eq('id', id).eq('collection', storeName);
+    if(error) throw error;
+    await localDbDelete(storeName, id).catch(()=>{});
+    return true;
+  }catch(err){
+    console.warn('No se pudo eliminar en Supabase; se elimina la copia local.', err);
+    return localDbDelete(storeName, id);
+  }
+}
+
+async function saveRulesRemote(text){
+  if(!remoteStorageReady) return localStorage.setItem('rules', text);
+  const record = {id:'rules', collection:'rules', name:'rules', content:text, addedAt:Date.now()};
+  try{
+    const {error} = await supabaseClient.from(SUPABASE_TABLE).upsert({
+      id:'rules', collection:'rules', name:'rules', content:text, added_at:record.addedAt
+    }, {onConflict:'id'});
+    if(error) throw error;
+    localStorage.setItem('rules', text);
+  }catch(err){
+    console.warn('No se pudo guardar las reglas en Supabase.', err);
+    localStorage.setItem('rules', text);
+  }
+}
+async function loadRulesRemote(){
+  if(!remoteStorageReady) return localStorage.getItem('rules') || '';
+  try{
+    const {data, error} = await supabaseClient.from(SUPABASE_TABLE)
+      .select('content').eq('id','rules').eq('collection','rules').maybeSingle();
+    if(error) throw error;
+    if(data && typeof data.content === 'string'){
+      localStorage.setItem('rules', data.content);
+      return data.content;
+    }
+  }catch(err){ console.warn('No se pudieron leer las reglas remotas.', err); }
+  return localStorage.getItem('rules') || '';
+}
+
+async function migrateLegacyLocalData(){
+  if(localStorage.getItem('supabase-legacy-migrated') === '1') return;
+  try{
+    const [images, codeFiles, music] = await Promise.all([
+      localDbGetAll('images'), localDbGetAll('codeFiles'), localDbGetAll('music')
+    ]);
+    for(const item of images) await dbAdd('images', item);
+    for(const item of codeFiles) await dbAdd('codeFiles', item);
+    for(const item of music) await dbAdd('music', item);
+    const rules = localStorage.getItem('rules');
+    if(rules && rules.trim()) await saveRulesRemote(rules);
+    localStorage.setItem('supabase-legacy-migrated','1');
+  }catch(err){
+    console.warn('Migración local → Supabase incompleta.', err);
+  }
 }
 
 /* ================================================================
@@ -1054,28 +1227,28 @@ async function renderImageAdminGrid(){
 /* ================================================================
    AGREGAR → REGLAS  (localStorage) + panel público
 ================================================================ */
-function loadRulesDisplay(){
-  const rules = localStorage.getItem('rules');
+async function loadRulesDisplay(){
+  const rules = await loadRulesRemote();
   document.getElementById('rules-display').textContent = (rules && rules.trim()) ? rules : 'No hay reglas escritas todavía.';
 }
-document.getElementById('rules-edit-btn').addEventListener('click', ()=>{
-  document.getElementById('rules-textarea').value = localStorage.getItem('rules') || '';
+document.getElementById('rules-edit-btn').addEventListener('click', async ()=>{
+  document.getElementById('rules-textarea').value = await loadRulesRemote();
   document.getElementById('rules-display').classList.add('hidden');
   document.getElementById('rules-textarea').classList.remove('hidden');
   document.getElementById('rules-edit-btn').classList.add('hidden');
   document.getElementById('rules-save-btn').classList.remove('hidden');
   document.getElementById('rules-textarea').focus();
 });
-document.getElementById('rules-save-btn').addEventListener('click', ()=>{
-  localStorage.setItem('rules', document.getElementById('rules-textarea').value);
-  loadRulesDisplay();
+document.getElementById('rules-save-btn').addEventListener('click', async ()=>{
+  await saveRulesRemote(document.getElementById('rules-textarea').value);
+  await loadRulesDisplay();
   document.getElementById('rules-textarea').classList.add('hidden');
   document.getElementById('rules-display').classList.remove('hidden');
   document.getElementById('rules-save-btn').classList.add('hidden');
   document.getElementById('rules-edit-btn').classList.remove('hidden');
 });
-document.getElementById('lock-heart').addEventListener('click', ()=>{
-  const rules = localStorage.getItem('rules');
+document.getElementById('lock-heart').addEventListener('click', async ()=>{
+  const rules = await loadRulesRemote();
   document.getElementById('rules-modal-content').textContent = (rules && rules.trim()) ? rules : 'No hay reglas escritas todavía.';
   openModal('rules-modal');
 });
@@ -1128,7 +1301,7 @@ galleryModalEl.addEventListener('touchend', (e)=>{
 document.getElementById('central-heart').addEventListener('click', ()=> openModal('letter-modal'));
 
 /* ================================================================
-   MÚSICA — archivo guardado en IndexedDB (Agregar → Música),
+   MÚSICA — archivo compartido en Supabase Storage (Agregar → Música),
    reproducido como fondo, sin ningún control visible
 ================================================================ */
 const bgAudio = document.getElementById('bg-audio');
@@ -1338,6 +1511,7 @@ petChatForm.addEventListener('submit', (e)=>{
    ENTRADA / ARRANQUE
 ================================================================ */
 document.getElementById('entry-btn').addEventListener('click', async function onEntry(){
+  migrateLegacyLocalData().catch(()=>{});
   document.getElementById('entry-screen').classList.add('leaving');
   document.getElementById('experience').classList.add('active');
   setTimeout(()=> document.getElementById('central-heart').classList.add('visible'), 650);
