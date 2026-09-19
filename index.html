@@ -286,6 +286,24 @@
   .letter-content p{margin:0 0 20px;}
   .letter-content p:last-child{margin-bottom:0; font-style:italic; color:var(--ember-bright);}
 
+  /* Cartitas */
+  .cartita-editor textarea{min-height:180px;}
+  .cartitas-menu-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-height:52vh;overflow:auto;}
+  .cartita-menu-card{
+    width:100%; text-align:left; padding:14px 16px; border:1px solid var(--glass-border);
+    border-radius:14px; background:rgba(255,255,255,.035); transition:all .25s var(--ease);
+  }
+  .cartita-menu-card:hover,.cartita-menu-card:focus-visible{
+    border-color:var(--thread-dim); background:rgba(203,180,137,.06); transform:translateY(-1px);
+  }
+  .cartita-menu-card-title{font-family:var(--serif);font-size:21px;color:var(--ink);margin-bottom:4px;}
+  .cartita-menu-card-meta{font-size:11px;color:var(--ink-faint);}
+  .cartita-reader{margin-top:4px;}
+  .cartita-reader-title{font-family:var(--serif);font-weight:500;font-size:28px;margin:18px 0 14px;color:var(--ink);}
+  .cartita-reader-content{max-height:52vh;overflow:auto;white-space:pre-wrap;}
+  .cartita-back-btn{padding:9px 16px;font-size:12px;}
+  .cartitas-menu-list + .cartita-reader{}
+
   /* Gallery */
   .gallery-slider{display:flex; flex-direction:column; align-items:center; gap:16px;}
   .gallery-image-wrap{width:100%; max-height:60vh; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-m); overflow:hidden; background:rgba(0,0,0,.3);}
@@ -420,6 +438,7 @@
       <button class="admin-tab active" type="button" role="tab" aria-selected="true" data-tab="codigo">Código</button>
       <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="imagenes">Imágenes</button>
       <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="reglas">Reglas</button>
+      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="cartitas">Cartitas</button>
       <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="musica">Música</button>
     </div>
 
@@ -442,6 +461,24 @@
       <div class="modal-actions">
         <button class="btn-secondary" type="button" id="rules-edit-btn">Editar</button>
         <button class="btn-primary hidden" type="button" id="rules-save-btn">Guardar</button>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel hidden" data-panel="cartitas">
+      <div class="cartita-editor">
+        <label class="field-label" for="cartita-title-input">Título de la cartita</label>
+        <input type="text" id="cartita-title-input" maxlength="80" placeholder="Ej: Para mi amorcito">
+        <label class="field-label" for="cartita-content-input" style="margin-top:14px;">Texto</label>
+        <textarea id="cartita-content-input" maxlength="6000" placeholder="Escribe aquí tu cartita..."></textarea>
+        <div class="modal-actions" style="margin-top:14px;">
+          <button class="btn-primary" type="button" id="cartita-save-btn">Guardar cartita</button>
+          <button class="btn-secondary hidden" type="button" id="cartita-cancel-btn">Cancelar</button>
+        </div>
+        <p class="empty-note hidden" id="cartita-status"></p>
+      </div>
+      <div style="margin-top:20px;">
+        <div class="field-label" style="margin-bottom:8px;">Cartitas guardadas</div>
+        <ul class="file-list" id="cartitas-admin-list"></ul>
       </div>
     </div>
 
@@ -471,6 +508,19 @@
       <p>ns k nos depare el futuro pero si c k hoy te amo con todo mi corazoncito y k valoro muxisimo cada momento que tenemos quiero seguir creando recuerdos contigo, seguir conociendote cada dia mas y estar presente para ti cuando me necesites</p>
       <p>Gracias por existir, por ser tú y por ocupar un lugar tan importante en mi corazoncito. Espero k nunca dudes de lo mucho que te amo, porque aunque quizas no siempre sepa cm demostrarlo, mis sentimientos por ti son completamente sinceros.</p>
       <p>Te amo muxisimo y solo queria que lo supieras</p>
+    </div>
+  </div>
+
+  <!-- Menú de cartitas -->
+  <div class="modal modal--md" id="cartitas-menu-modal" role="dialog" aria-modal="true" aria-labelledby="cartitas-menu-title">
+    <button class="modal-close-x" type="button" data-modal-close="cartitas-menu-modal" aria-label="Cerrar cartitas">×</button>
+    <h2 id="cartitas-menu-title">Cartitas</h2>
+    <p class="empty-note" id="cartitas-menu-empty">Todavía no hay cartitas guardadas.</p>
+    <div class="cartitas-menu-list" id="cartitas-menu-list"></div>
+    <div class="cartita-reader hidden" id="cartita-reader">
+      <button class="btn-secondary cartita-back-btn" type="button" id="cartita-back-btn">‹ Volver a cartitas</button>
+      <h2 class="cartita-reader-title" id="cartita-reader-title"></h2>
+      <div class="letter-content cartita-reader-content" id="cartita-reader-content"></div>
     </div>
   </div>
 
@@ -1062,6 +1112,7 @@ async function refreshAdminPanel(){
   await renderCodeAdminList();
   await renderImageAdminGrid();
   loadRulesDisplay();
+  await renderCartitasAdminList();
   await renderMusicAdminPanel();
 }
 
@@ -1294,7 +1345,172 @@ galleryModalEl.addEventListener('touchend', (e)=>{
 /* ================================================================
    CORAZÓN CENTRAL → carta
 ================================================================ */
-document.getElementById('central-heart').addEventListener('click', ()=> openModal('letter-modal'));
+/* ================================================================
+   CORAZÓN CENTRAL → carta / cartitas con doble toque
+================================================================ */
+const centralHeartEl = document.getElementById('central-heart');
+let centralHeartTapTimer = null;
+let centralHeartLastTap = 0;
+
+async function renderCartitasMenu(){
+  const list = document.getElementById('cartitas-menu-list');
+  const empty = document.getElementById('cartitas-menu-empty');
+  const reader = document.getElementById('cartita-reader');
+  const cartitas = (await dbGetAll('cartitas')).sort((a,b)=> a.addedAt-b.addedAt);
+  list.innerHTML = '';
+  list.classList.remove('hidden');
+  empty.classList.toggle('hidden', cartitas.length > 0);
+  reader.classList.add('hidden');
+  if(!cartitas.length) return;
+
+  cartitas.forEach((cartita,index)=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cartita-menu-card';
+    const title = document.createElement('div');
+    title.className = 'cartita-menu-card-title';
+    title.textContent = cartita.name || ('Cartita ' + (index+1));
+    const meta = document.createElement('div');
+    meta.className = 'cartita-menu-card-meta';
+    meta.textContent = 'Toca para abrirla';
+    btn.append(title, meta);
+    btn.addEventListener('click', ()=> openCartitaReader(cartita, false));
+    list.appendChild(btn);
+  });
+}
+
+function openCartitaReader(cartita, adminPreview=false){
+  document.getElementById('cartitas-menu-list').classList.add('hidden');
+  document.getElementById('cartitas-menu-empty').classList.add('hidden');
+  const reader = document.getElementById('cartita-reader');
+  document.getElementById('cartita-reader-title').textContent = cartita.name || 'Cartita';
+  const content = document.getElementById('cartita-reader-content');
+  content.textContent = cartita.content || '';
+  reader.classList.remove('hidden');
+  if(!adminPreview) openModal('cartitas-menu-modal');
+}
+
+function openCartitasMenu(){
+  renderCartitasMenu().then(()=>openModal('cartitas-menu-modal')).catch(err=>{
+    console.warn('No se pudieron cargar las cartitas.', err);
+    openModal('cartitas-menu-modal');
+  });
+}
+
+function handleCentralHeartTap(){
+  const now = Date.now();
+  if(now - centralHeartLastTap < 340){
+    clearTimeout(centralHeartTapTimer);
+    centralHeartTapTimer = null;
+    centralHeartLastTap = 0;
+    openCartitasMenu();
+    return;
+  }
+  centralHeartLastTap = now;
+  clearTimeout(centralHeartTapTimer);
+  centralHeartTapTimer = setTimeout(()=>{
+    centralHeartLastTap = 0;
+    openModal('letter-modal');
+  }, 340);
+}
+
+centralHeartEl.addEventListener('click', handleCentralHeartTap);
+centralHeartEl.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' || e.key === ' '){
+    e.preventDefault();
+    clearTimeout(centralHeartTapTimer);
+    centralHeartTapTimer = null;
+    centralHeartLastTap = 0;
+    openModal('letter-modal');
+  }
+});
+
+document.getElementById('cartita-back-btn').addEventListener('click', ()=>{
+  renderCartitasMenu();
+});
+
+
+
+/* ================================================================
+   AGREGAR → CARTITAS
+================================================================ */
+const cartitaTitleInput = document.getElementById('cartita-title-input');
+const cartitaContentInput = document.getElementById('cartita-content-input');
+const cartitaSaveBtn = document.getElementById('cartita-save-btn');
+const cartitaCancelBtn = document.getElementById('cartita-cancel-btn');
+const cartitaStatus = document.getElementById('cartita-status');
+let editingCartitaId = null;
+
+function resetCartitaEditor(){
+  editingCartitaId = null;
+  cartitaTitleInput.value = '';
+  cartitaContentInput.value = '';
+  cartitaSaveBtn.textContent = 'Guardar cartita';
+  cartitaCancelBtn.classList.add('hidden');
+}
+function showCartitaStatus(message, isError=false){
+  cartitaStatus.textContent = message;
+  cartitaStatus.style.color = isError ? 'var(--ember-bright)' : 'var(--ink-faint)';
+  cartitaStatus.classList.remove('hidden');
+  clearTimeout(showCartitaStatus._timer);
+  showCartitaStatus._timer = setTimeout(()=>cartitaStatus.classList.add('hidden'), 2200);
+}
+cartitaCancelBtn.addEventListener('click', resetCartitaEditor);
+cartitaSaveBtn.addEventListener('click', async ()=>{
+  const title = cartitaTitleInput.value.trim();
+  const content = cartitaContentInput.value.trim();
+  if(!title || !content){
+    showCartitaStatus('Escribe un título y una cartita antes de guardar.', true);
+    return;
+  }
+  try{
+    const id = editingCartitaId || uid();
+    await dbAdd('cartitas', {id, name:title, content, addedAt:Date.now()});
+    resetCartitaEditor();
+    await renderCartitasAdminList();
+    showCartitaStatus('Cartita guardada en la nube. ❤️');
+  }catch(err){
+    console.warn('No se pudo guardar la cartita.', err);
+    showCartitaStatus('No se pudo guardar la cartita.', true);
+  }
+});
+
+async function renderCartitasAdminList(){
+  const list = document.getElementById('cartitas-admin-list');
+  const cartitas = (await dbGetAll('cartitas')).sort((a,b)=> b.addedAt-a.addedAt);
+  list.innerHTML = '';
+  if(!cartitas.length){
+    list.innerHTML = '<li class="empty-note">Aún no has agregado ninguna cartita.</li>';
+    return;
+  }
+  for(const cartita of cartitas){
+    const li = document.createElement('li');
+    li.className = 'file-row';
+    const info = document.createElement('span');
+    info.className = 'name';
+    info.textContent = cartita.name || 'Sin título';
+    const actions = document.createElement('span');
+    actions.className = 'file-row-actions';
+    actions.append(
+      actionButton('Editar', ()=>{
+        editingCartitaId = cartita.id;
+        cartitaTitleInput.value = cartita.name || '';
+        cartitaContentInput.value = cartita.content || '';
+        cartitaSaveBtn.textContent = 'Guardar cambios';
+        cartitaCancelBtn.classList.remove('hidden');
+        cartitaTitleInput.focus();
+      }),
+      actionButton('Ver', ()=> openCartitaReader(cartita, false)),
+      actionButton('Eliminar', async ()=>{
+        await dbDelete('cartitas', cartita.id);
+        if(editingCartitaId === cartita.id) resetCartitaEditor();
+        await renderCartitasAdminList();
+      })
+    );
+    li.append(info, actions);
+    list.appendChild(li);
+  }
+}
 
 /* ================================================================
    MÚSICA — archivo compartido en Supabase Storage (Agregar → Música),
