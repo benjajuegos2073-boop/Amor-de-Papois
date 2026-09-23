@@ -596,7 +596,7 @@
       <button class="btn-secondary" type="button" id="game-player-back">Volver a juegos</button>
     </div>
     <div class="game-player-frame-wrap">
-      <iframe class="game-player-frame" id="game-player-frame" title="Juego" tabindex="0" sandbox="allow-scripts allow-forms allow-pointer-lock allow-presentation allow-same-origin" allow="autoplay; fullscreen; gamepad; pointer-lock" referrerpolicy="no-referrer"></iframe>
+      <iframe class="game-player-frame" id="game-player-frame" title="Juego" tabindex="0" allow="autoplay; fullscreen; gamepad; pointer-lock" referrerpolicy="no-referrer"></iframe>
     </div>
   </div>
 
@@ -1135,6 +1135,7 @@ function closeModal(id){
 }
 document.getElementById('modal-backdrop').addEventListener('click', ()=>{ if(currentModal) closeModal(currentModal); });
 document.addEventListener('keydown', (e)=>{
+  if(gamePlayerActive && e.key !== 'Escape') return;
   if(e.key === 'Escape' && currentModal) closeModal(currentModal);
   if(currentModal === 'gallery-modal'){
     if(e.key === 'ArrowLeft') document.getElementById('gallery-prev').click();
@@ -1722,17 +1723,8 @@ async function renderGamesMenu(){
   });
 }
 
-let gameObjectUrl = null;
-
 function clearGameFrame(){
-  try{
-    gamePlayerFrame.srcdoc = '';
-    gamePlayerFrame.removeAttribute('src');
-  }catch(_){ }
-  if(gameObjectUrl){
-    URL.revokeObjectURL(gameObjectUrl);
-    gameObjectUrl = null;
-  }
+  try{ gamePlayerFrame.srcdoc = ''; }catch(_){ }
 }
 
 function focusGameFrame(){
@@ -1741,16 +1733,27 @@ function focusGameFrame(){
   try{
     const win = gamePlayerFrame.contentWindow;
     if(win && typeof win.focus === 'function') win.focus();
-    const doc = gamePlayerFrame.contentDocument;
-    if(doc){
-      // El body recibe el foco aunque el juego no tenga ningún input.
-      if(doc.body){
-        doc.body.setAttribute('tabindex','0');
-        if(typeof doc.body.focus === 'function') doc.body.focus({preventScroll:true});
-      }
-      if(typeof win?.focus === 'function') win.focus();
-    }
   }catch(_){ }
+}
+
+function forwardGameKey(type, e){
+  if(!gamePlayerActive) return false;
+  // El documento del juego escucha window keydown/keyup. Reemitimos la tecla
+  // dentro del iframe para que el juego no dependa del foco del navegador.
+  try{
+    const win = gamePlayerFrame.contentWindow;
+    if(!win) return false;
+    const event = new KeyboardEvent(type, {
+      key:e.key, code:e.code, location:e.location,
+      ctrlKey:e.ctrlKey, shiftKey:e.shiftKey, altKey:e.altKey, metaKey:e.metaKey,
+      repeat:e.repeat, bubbles:true, cancelable:true
+    });
+    win.dispatchEvent(event);
+    return true;
+  }catch(err){
+    console.warn('No se pudo enviar la tecla al juego.',err);
+    return false;
+  }
 }
 
 function openGamePlayer(game){
@@ -1761,18 +1764,13 @@ function openGamePlayer(game){
   gamePlayerFrame.setAttribute('title', game.name || 'Juego');
   gamePlayerActive = true;
 
-  // Usamos un Blob URL en lugar de srcdoc. Esto hace que un HTML real se
-  // ejecute como documento completo y evita problemas con juegos que usan
-  // localStorage, canvas, módulos, eventos de teclado o APIs del navegador.
-  const blob = new Blob([game.content], {type:'text/html;charset=utf-8'});
-  gameObjectUrl = URL.createObjectURL(blob);
-
+  // Ejecutamos el HTML directamente como documento incrustado. Esto mantiene
+  // sus scripts, Canvas, botones y estructura intactos sin convertirlo en blob:.
   gamePlayerFrame.onload = ()=>{
-    setTimeout(focusGameFrame, 30);
+    setTimeout(focusGameFrame, 40);
     setTimeout(focusGameFrame, 180);
-    setTimeout(focusGameFrame, 500);
   };
-  gamePlayerFrame.src = gameObjectUrl;
+  gamePlayerFrame.srcdoc = game.content;
   openModal('game-player-modal');
   setTimeout(focusGameFrame, 50);
   setTimeout(focusGameFrame, 300);
@@ -1787,9 +1785,22 @@ gamePlayerFrame.addEventListener('click', ()=>{
 gamePlayerFrame.addEventListener('touchstart', ()=>{
   focusGameFrame();
 },{passive:true});
-gamePlayerFrame.addEventListener('focus', ()=>{
-  try{ gamePlayerFrame.contentWindow?.focus(); }catch(_){ }
-});
+
+document.addEventListener('keydown', (e)=>{
+  if(!gamePlayerActive) return;
+  // ESC se reserva para salir/cerrar el visor de la página.
+  if(e.key === 'Escape') return;
+  forwardGameKey('keydown', e);
+  // Evita que las flechas/espacio desplacen la página mientras se juega.
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+}, true);
+
+document.addEventListener('keyup', (e)=>{
+  if(!gamePlayerActive) return;
+  if(e.key === 'Escape') return;
+  forwardGameKey('keyup', e);
+}, true);
+
 
 function openGamesMenu(){
   renderGamesMenu().then(()=>{
