@@ -596,7 +596,7 @@
       <button class="btn-secondary" type="button" id="game-player-back">Volver a juegos</button>
     </div>
     <div class="game-player-frame-wrap">
-      <iframe class="game-player-frame" id="game-player-frame" title="Juego" sandbox="allow-scripts allow-forms allow-pointer-lock allow-presentation" allow="autoplay; fullscreen; gamepad; pointer-lock" referrerpolicy="no-referrer"></iframe>
+      <iframe class="game-player-frame" id="game-player-frame" title="Juego" tabindex="0" allow="autoplay; fullscreen; gamepad; pointer-lock" referrerpolicy="no-referrer"></iframe>
     </div>
   </div>
 
@@ -1135,6 +1135,7 @@ function closeModal(id){
 }
 document.getElementById('modal-backdrop').addEventListener('click', ()=>{ if(currentModal) closeModal(currentModal); });
 document.addEventListener('keydown', (e)=>{
+  if(gamePlayerActive && e.key !== 'Escape') return;
   if(e.key === 'Escape' && currentModal) closeModal(currentModal);
   if(currentModal === 'gallery-modal'){
     if(e.key === 'ArrowLeft') document.getElementById('gallery-prev').click();
@@ -1726,16 +1727,80 @@ function clearGameFrame(){
   try{ gamePlayerFrame.srcdoc = ''; }catch(_){ }
 }
 
+function focusGameFrame(){
+  if(!gamePlayerFrame || !gamePlayerActive) return;
+  try{ gamePlayerFrame.focus(); }catch(_){ }
+  try{
+    const win = gamePlayerFrame.contentWindow;
+    if(win && typeof win.focus === 'function') win.focus();
+  }catch(_){ }
+}
+
+function forwardGameKey(type, e){
+  if(!gamePlayerActive) return false;
+  // El documento del juego escucha window keydown/keyup. Reemitimos la tecla
+  // dentro del iframe para que el juego no dependa del foco del navegador.
+  try{
+    const win = gamePlayerFrame.contentWindow;
+    if(!win) return false;
+    const event = new KeyboardEvent(type, {
+      key:e.key, code:e.code, location:e.location,
+      ctrlKey:e.ctrlKey, shiftKey:e.shiftKey, altKey:e.altKey, metaKey:e.metaKey,
+      repeat:e.repeat, bubbles:true, cancelable:true
+    });
+    win.dispatchEvent(event);
+    return true;
+  }catch(err){
+    console.warn('No se pudo enviar la tecla al juego.',err);
+    return false;
+  }
+}
+
 function openGamePlayer(game){
-  if(!game || !game.content) return;
+  if(!game || typeof game.content !== 'string' || !game.content.trim()) return;
   if(gamesMenuModal.classList.contains('open')) closeModal('games-menu-modal');
+  clearGameFrame();
   gamePlayerTitle.textContent = game.name || 'Juego';
   gamePlayerFrame.setAttribute('title', game.name || 'Juego');
   gamePlayerActive = true;
-  // El iframe queda aislado: el juego puede ejecutar JS, pero no puede tocar la página principal.
+
+  // Ejecutamos el HTML directamente como documento incrustado. Esto mantiene
+  // sus scripts, Canvas, botones y estructura intactos sin convertirlo en blob:.
+  gamePlayerFrame.onload = ()=>{
+    setTimeout(focusGameFrame, 40);
+    setTimeout(focusGameFrame, 180);
+  };
   gamePlayerFrame.srcdoc = game.content;
   openModal('game-player-modal');
+  setTimeout(focusGameFrame, 50);
+  setTimeout(focusGameFrame, 300);
 }
+
+gamePlayerFrame.addEventListener('pointerdown', ()=>{
+  focusGameFrame();
+});
+gamePlayerFrame.addEventListener('click', ()=>{
+  focusGameFrame();
+});
+gamePlayerFrame.addEventListener('touchstart', ()=>{
+  focusGameFrame();
+},{passive:true});
+
+document.addEventListener('keydown', (e)=>{
+  if(!gamePlayerActive) return;
+  // ESC se reserva para salir/cerrar el visor de la página.
+  if(e.key === 'Escape') return;
+  forwardGameKey('keydown', e);
+  // Evita que las flechas/espacio desplacen la página mientras se juega.
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+}, true);
+
+document.addEventListener('keyup', (e)=>{
+  if(!gamePlayerActive) return;
+  if(e.key === 'Escape') return;
+  forwardGameKey('keyup', e);
+}, true);
+
 
 function openGamesMenu(){
   renderGamesMenu().then(()=>{
