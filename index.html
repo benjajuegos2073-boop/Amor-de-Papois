@@ -672,7 +672,7 @@ function isSmallScreen(){ return window.innerWidth < 760; }
    ALMACENAMIENTO: Supabase (compartido) + IndexedDB (compatibilidad/caché)
 ================================================================ */
 const DB_NAME = 'espacio-privado-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let dbPromise = null;
 
 function openDB(){
@@ -684,6 +684,8 @@ function openDB(){
       if(!db.objectStoreNames.contains('images')) db.createObjectStore('images', {keyPath:'id'});
       if(!db.objectStoreNames.contains('codeFiles')) db.createObjectStore('codeFiles', {keyPath:'id'});
       if(!db.objectStoreNames.contains('music')) db.createObjectStore('music', {keyPath:'id'});
+      if(!db.objectStoreNames.contains('cartitas')) db.createObjectStore('cartitas', {keyPath:'id'});
+      if(!db.objectStoreNames.contains('games')) db.createObjectStore('games', {keyPath:'id'});
     };
     req.onsuccess = (e)=> resolve(e.target.result);
     req.onerror = (e)=> reject(e.target.error);
@@ -790,8 +792,9 @@ async function dbAdd(storeName, record){
     await localDbAdd(storeName, normalized).catch(()=>{});
     return normalized;
   }catch(err){
-    console.warn('Supabase no disponible; se mantiene copia local temporal.', err);
-    return localDbAdd(storeName, record);
+    console.error('No se pudo guardar en Supabase.', err);
+    try{ await localDbAdd(storeName, record); }catch(_){ }
+    throw err;
   }
 }
 
@@ -809,7 +812,7 @@ async function dbGetAll(storeName){
     }
     return normalized;
   }catch(err){
-    console.warn('No se pudo leer Supabase; se usa la copia local.', err);
+    console.error('No se pudo leer Supabase; se consultara la copia local solo como respaldo.', err);
     return localDbGetAll(storeName);
   }
 }
