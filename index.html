@@ -1982,7 +1982,11 @@ let petLastAssistantMessage = '';
    Corazoncito pueda recordar y continuar temas entre mensajes.
 ================================================================ */
 const PET_LLM_MODEL = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
-const PET_LLM_TIMEOUT_MS = 120000; // Limite de emergencia; la IA normalmente responde antes.
+const PET_LLM_TIMEOUT_MS = 20000; // Solo para el cerebro local que queda como respaldo tecnico.
+
+/* Cerebro remoto: mucho mas rapido que ejecutar el modelo dentro del navegador. */
+const PET_REMOTE_AI_URL = `${SUPABASE_URL}/functions/v1/corazoncito-chat`;
+const PET_REMOTE_AI_TIMEOUT_MS = 60000; // Emergencia; la respuesta normal llega por streaming mucho antes.
 let petLLMEngine = null;
 let petLLMLoadPromise = null;
 let petLLMReady = false;
@@ -2056,9 +2060,8 @@ async function ensurePetLLM(timeoutMs=PET_LLM_TIMEOUT_MS){
 }
 
 function warmupPetLLM(){
-  /* Inicia la carga cuanto antes para que la primera respuesta no tenga que esperar la descarga. */
-  if(petLLMReady || petLLMFailed || petLLMLoadPromise) return;
-  ensurePetLLM(PET_LLM_TIMEOUT_MS).catch(()=>{});
+  /* El cerebro principal ahora es remoto. No descargamos el modelo local al abrir la pagina. */
+  return;
 }
 
 /* Precarga el modelo en segundo plano antes de que se abra el chat.
@@ -2198,122 +2201,84 @@ function petAwaitUntil(promise, deadline){
   ]);
 }
 
-async function generateNeuralPetReply(text, externalDeadline=null, onPartial=null){
-  if(petLLMGenerationBusy) return null;
-  petLLMGenerationBusy = true;
-  const deadline = Number.isFinite(externalDeadline) ? externalDeadline : Date.now() + PET_LLM_TIMEOUT_MS;
-  let requestStarted = false;
-
-  const trackRequest=(promise)=>{
-    const tracked=promise;
-    petLLMActiveRequest=tracked;
-    tracked.finally(()=>{
-      if(petLLMActiveRequest===tracked){
-        petLLMActiveRequest=null;
-        petLLMGenerationBusy=false;
-      }
-    }).catch(()=>{});
-    return tracked;
-  };
-
-  const interrupt=()=>{
-    try{ if(petLLMEngine && typeof petLLMEngine.interruptGenerate==='function') petLLMEngine.interruptGenerate(); }catch(_){ }
-    petLLMActiveRequest=null;
-    petLLMGenerationBusy=false;
-  };
+async function generateRemotePetReply(text, externalDeadline=null, onPartial=null){
+  const deadline = Number.isFinite(externalDeadline) ? externalDeadline : Date.now() + PET_REMOTE_AI_TIMEOUT_MS;
+  const remaining = Math.max(1, deadline - Date.now());
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), remaining);
 
   try{
-    const engine = await ensurePetLLM(Math.max(1,deadline-Date.now()));
-    if(!engine || Date.now() >= deadline) return null;
-
     const prompt = petPrompt(text);
-    const requestPromise = trackRequest((async()=>{
-      const stream = await engine.chat.completions.create({
-        messages:prompt.messages,
-        temperature:0.88,
-        top_p:0.92,
-        repetition_penalty:1.13,
-        frequency_penalty:0.10,
-        presence_penalty:0.06,
-        max_tokens:190,
-        stream:true
-      });
+    const response = await fetch(PET_REMOTE_AI_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:prompt.messages}),
+      signal:controller.signal
+    });
 
-      let accumulated='';
-      for await (const chunk of stream){
-        const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+    if(!response.ok){
+      let detail='';
+      try{ detail=await response.text(); }catch(_){ }
+      throw new Error(`IA remota ${response.status}: ${detail.slice(0,240)}`);
+    }
+
+    if(!response.body) throw new Error('La IA remota no devolvio un stream.');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer='';
+    let accumulated='';
+
+    const emitSSE = (payload)=>{
+      if(!payload || payload==='[DONE]') return;
+      try{
+        const data=JSON.parse(payload);
+        const delta=data?.choices?.[0]?.delta?.content ?? '';
         if(delta){
           accumulated += delta;
-          const cleaned = cleanGeneratedPetReply(accumulated) || accumulated.trim();
-          if(typeof onPartial==='function' && cleaned) onPartial(cleaned);
+          const clean=cleanGeneratedPetReply(accumulated) || accumulated.trim();
+          if(clean && typeof onPartial==='function') onPartial(clean);
         }
-        if(Date.now() >= deadline){
-          interrupt();
-          return null;
-        }
-      }
-      return accumulated;
-    })());
-    requestStarted=true;
+      }catch(_){ }
+    };
 
-    const timeoutPromise = new Promise(resolve=>setTimeout(()=>resolve(null),Math.max(1,deadline-Date.now())));
-    let result = await Promise.race([requestPromise, timeoutPromise]);
-    if(!result){
-      interrupt();
-      return null;
-    }
-
-    let reply = cleanGeneratedPetReply(result);
-    if(!reply) return null;
-
-    /* Una segunda generacion solo se usa si realmente se repitio una respuesta. */
-    if(generatedPetReplyTooSimilar(reply) && Date.now() < deadline-1500){
-      const retryMessages = prompt.messages.slice(0,-1);
-      retryMessages.push({
-        role:'user',
-        content:`Reformula de manera espontanea tu respuesta anterior. Responde al significado y detalle concreto del mensaje de ella, cambia completamente la redaccion y evita repetir cualquier respuesta reciente. Mantente como Corazoncito: tierna, curiosa y natural. Mensaje actual: ${clampText(text,900)}`
-      });
-
-      const retryPromise = trackRequest((async()=>{
-        const stream = await engine.chat.completions.create({
-          messages:retryMessages,
-          temperature:0.94,
-          top_p:0.95,
-          repetition_penalty:1.17,
-          frequency_penalty:0.12,
-          presence_penalty:0.08,
-          max_tokens:190,
-          stream:true
-        });
-        let accumulated='';
-        for await (const chunk of stream){
-          const delta = chunk?.choices?.[0]?.delta?.content ?? '';
-          if(delta){
-            accumulated += delta;
-            const cleaned = cleanGeneratedPetReply(accumulated) || accumulated.trim();
-            if(typeof onPartial==='function' && cleaned) onPartial(cleaned);
-          }
-          if(Date.now() >= deadline){
-            interrupt();
-            return null;
-          }
-        }
-        return accumulated;
-      })());
-      const retryResult = await Promise.race([
-        retryPromise,
-        new Promise(resolve=>setTimeout(()=>resolve(null),Math.max(1,deadline-Date.now())))
-      ]);
-      if(retryResult){
-        const retry = cleanGeneratedPetReply(retryResult);
-        if(retry) reply=retry;
-      }else{
-        interrupt();
+    while(true){
+      if(Date.now() >= deadline) throw new Error('Tiempo de emergencia agotado.');
+      const {value,done}=await reader.read();
+      if(done) break;
+      buffer += decoder.decode(value,{stream:true}).replace(/\r/g,'');
+      const lines=buffer.split('\n');
+      buffer=lines.pop() || '';
+      for(const line of lines){
+        if(line.startsWith('data: ')) emitSSE(line.slice(6).trim());
       }
     }
+
+    buffer += decoder.decode();
+    for(const line of buffer.split('\n')){
+      if(line.startsWith('data: ')) emitSSE(line.slice(6).trim());
+    }
+
+    const reply=cleanGeneratedPetReply(accumulated);
+    if(!reply) throw new Error('La IA remota termino sin contenido.');
+    if(generatedPetReplyTooSimilar(reply)) throw new Error('La IA remota genero una respuesta demasiado parecida a una anterior.');
     return reply;
   }finally{
-    if(!requestStarted && !petLLMActiveRequest) petLLMGenerationBusy=false;
+    clearTimeout(timer);
+  }
+}
+
+async function generateNeuralPetReply(text, externalDeadline=null, onPartial=null){
+  const deadline = Number.isFinite(externalDeadline)
+    ? externalDeadline
+    : Date.now() + PET_REMOTE_AI_TIMEOUT_MS;
+
+  /* La IA remota es el cerebro principal. Es la ruta rapida y generativa. */
+  try{
+    return await generateRemotePetReply(text, deadline, onPartial);
+  }catch(err){
+    console.warn('IA remota no disponible:', err);
+    return null;
   }
 }
 
@@ -2647,7 +2612,7 @@ function remoteKnowledgeAnswer(text){let best=null,score=0;for(const item of pet
 
 /* ---------------- Motor principal ---------------- */
 async function generatePetReply(text, onPartial=null){
-  const aiDeadline = Date.now() + PET_LLM_TIMEOUT_MS; // 120 s de emergencia, no 30 s
+  const aiDeadline = Date.now() + PET_REMOTE_AI_TIMEOUT_MS; // Emergencia de 60 s para la IA remota.
   const raw=String(text||'').trim(), c=normalizePetText(raw);
   petState.turn++;
   if(!raw) return 'Dime algo, mi amorcito, que estoy aqui contigo.';
