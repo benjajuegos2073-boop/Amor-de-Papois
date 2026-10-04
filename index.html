@@ -1982,7 +1982,7 @@ let petLastAssistantMessage = '';
    Corazoncito pueda recordar y continuar temas entre mensajes.
 ================================================================ */
 const PET_LLM_MODEL = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
-const PET_LLM_TIMEOUT_MS = 30000;
+const PET_LLM_TIMEOUT_MS = 120000; // Limite de emergencia; la IA normalmente responde antes.
 let petLLMEngine = null;
 let petLLMLoadPromise = null;
 let petLLMReady = false;
@@ -2000,7 +2000,7 @@ async function ensurePetLLM(timeoutMs=PET_LLM_TIMEOUT_MS){
 
   /* WebGPU puede existir en el navegador pero no tener un adaptador usable. */
   try{
-    const adapter = await navigator.gpu.requestAdapter();
+    const adapter = await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
     if(!adapter){
       petLLMFailed = true;
       console.warn('No hay un adaptador WebGPU usable; Corazoncito usara el motor de respaldo.');
@@ -2028,6 +2028,10 @@ async function ensurePetLLM(timeoutMs=PET_LLM_TIMEOUT_MS){
       if(!modelExists) throw new Error('El modelo seleccionado no esta disponible en esta version de WebLLM.');
 
       petLLMEngine = await webllm.CreateMLCEngine(PET_LLM_MODEL, {
+        appConfig:{
+          ...webllm.prebuiltAppConfig,
+          cacheBackend:'indexeddb'
+        },
         initProgressCallback(progress){
           const p = typeof progress === 'number' ? progress : Number(progress?.progress ?? 0);
           petLLMProgress = Math.max(0, Math.min(100, p <= 1 ? p*100 : p));
@@ -2051,12 +2055,25 @@ async function ensurePetLLM(timeoutMs=PET_LLM_TIMEOUT_MS){
   ]);
 }
 
-function petConversationForModel(limit=10, excludeCurrentUser=true){
+function warmupPetLLM(){
+  /* Inicia la carga cuanto antes para que la primera respuesta no tenga que esperar la descarga. */
+  if(petLLMReady || petLLMFailed || petLLMLoadPromise) return;
+  ensurePetLLM(PET_LLM_TIMEOUT_MS).catch(()=>{});
+}
+
+/* Precarga el modelo en segundo plano antes de que se abra el chat.
+   No muestra ningun aviso ni bloquea la interfaz. */
+const schedulePetLLMWarmup = window.requestIdleCallback
+  ? (cb)=>window.requestIdleCallback(cb,{timeout:2500})
+  : (cb)=>setTimeout(cb,1200);
+schedulePetLLMWarmup(()=>warmupPetLLM());
+
+function petConversationForModel(limit=6, excludeCurrentUser=true){
   let source = petConversation.slice();
   if(excludeCurrentUser && source[source.length-1]?.who==='user') source = source.slice(0,-1);
   return source.slice(-limit).map(m=>({
     role:m.who==='user'?'user':'assistant',
-    content:clampText(m.text,500)
+    content:clampText(m.text,420)
   }));
 }
 
@@ -2072,8 +2089,8 @@ function petTopicSummary(){
 }
 
 function petPrompt(text){
-  const memories = petMemoryForModel(text,6);
-  const history = petConversationForModel(10,true);
+  const memories = petMemoryForModel(text,4);
+  const history = petConversationForModel(6,true);
   const knowledgeHints = [
     'La usuaria puede hablar de amor, estudios, programacion, robotica, ESP32, PID, Supabase, juegos, astronomia, matematicas y su vida cotidiana.',
     'Cuando el tema sea tecnico, entiende primero el problema concreto y ayuda con claridad; no metas romance a la fuerza.',
@@ -2081,7 +2098,7 @@ function petPrompt(text){
     'Cuando exista una pregunta pendiente, trata la respuesta de ella como continuacion de esa pregunta, no como un mensaje aislado.',
     'Puedes hacer comentarios espontaneos, pequeñas bromas suaves o observaciones tiernas cuando encajen, sin convertir cada respuesta en una broma.'
   ].join('\n');
-  const recentAssistantReplies = petConversation.filter(m=>m.who==='pet').slice(-5).map(m=>`- ${clampText(m.text,360)}`).join('\n');
+  const recentAssistantReplies = petConversation.filter(m=>m.who==='pet').slice(-3).map(m=>`- ${clampText(m.text,360)}`).join('\n');
 
   return {
     messages:[
@@ -2181,14 +2198,13 @@ function petAwaitUntil(promise, deadline){
   ]);
 }
 
-async function generateNeuralPetReply(text, externalDeadline=null){
+async function generateNeuralPetReply(text, externalDeadline=null, onPartial=null){
   if(petLLMGenerationBusy) return null;
   petLLMGenerationBusy = true;
   const deadline = Number.isFinite(externalDeadline) ? externalDeadline : Date.now() + PET_LLM_TIMEOUT_MS;
   let requestStarted = false;
 
   const trackRequest=(promise)=>{
-    petLLMGenerationBusy=true;
     const tracked=promise;
     petLLMActiveRequest=tracked;
     tracked.finally(()=>{
@@ -2200,68 +2216,104 @@ async function generateNeuralPetReply(text, externalDeadline=null){
     return tracked;
   };
 
+  const interrupt=()=>{
+    try{ if(petLLMEngine && typeof petLLMEngine.interruptGenerate==='function') petLLMEngine.interruptGenerate(); }catch(_){ }
+    petLLMActiveRequest=null;
+    petLLMGenerationBusy=false;
+  };
+
   try{
     const engine = await ensurePetLLM(Math.max(1,deadline-Date.now()));
     if(!engine || Date.now() >= deadline) return null;
 
     const prompt = petPrompt(text);
-    const requestPromise = trackRequest(engine.chat.completions.create({
-      messages:prompt.messages,
-      temperature:0.96,
-      top_p:0.94,
-      repetition_penalty:1.14,
-      frequency_penalty:0.12,
-      presence_penalty:0.08,
-      max_tokens:280
-    }));
+    const requestPromise = trackRequest((async()=>{
+      const stream = await engine.chat.completions.create({
+        messages:prompt.messages,
+        temperature:0.88,
+        top_p:0.92,
+        repetition_penalty:1.13,
+        frequency_penalty:0.10,
+        presence_penalty:0.06,
+        max_tokens:190,
+        stream:true
+      });
+
+      let accumulated='';
+      for await (const chunk of stream){
+        const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+        if(delta){
+          accumulated += delta;
+          const cleaned = cleanGeneratedPetReply(accumulated) || accumulated.trim();
+          if(typeof onPartial==='function' && cleaned) onPartial(cleaned);
+        }
+        if(Date.now() >= deadline){
+          interrupt();
+          return null;
+        }
+      }
+      return accumulated;
+    })());
     requestStarted=true;
 
-    let result = await petAwaitUntil(requestPromise,deadline);
+    const timeoutPromise = new Promise(resolve=>setTimeout(()=>resolve(null),Math.max(1,deadline-Date.now())));
+    let result = await Promise.race([requestPromise, timeoutPromise]);
     if(!result){
-      try{ if(typeof engine.interruptGenerate==='function') engine.interruptGenerate(); }catch(_){ }
-      petLLMActiveRequest=null;
-      petLLMGenerationBusy=false;
+      interrupt();
       return null;
     }
 
-    let reply = cleanGeneratedPetReply(result?.choices?.[0]?.message?.content);
+    let reply = cleanGeneratedPetReply(result);
     if(!reply) return null;
 
-    /* Si la primera redaccion se parece demasiado a una respuesta reciente,
-       usamos el tiempo que quede dentro del mismo limite total para reformular. */
-    if(generatedPetReplyTooSimilar(reply) && Date.now() < deadline-1200){
+    /* Una segunda generacion solo se usa si realmente se repitio una respuesta. */
+    if(generatedPetReplyTooSimilar(reply) && Date.now() < deadline-1500){
       const retryMessages = prompt.messages.slice(0,-1);
       retryMessages.push({
         role:'user',
-        content:`Reformula la respuesta. Conserva el significado de lo que ella acaba de decir y responde al detalle concreto de su mensaje, pero cambia por completo la forma de expresarlo. Que suene espontaneo, humano y propio de Corazoncito. No copies ninguna respuesta reciente. Mensaje actual: ${clampText(text,1200)}`
+        content:`Reformula de manera espontanea tu respuesta anterior. Responde al significado y detalle concreto del mensaje de ella, cambia completamente la redaccion y evita repetir cualquier respuesta reciente. Mantente como Corazoncito: tierna, curiosa y natural. Mensaje actual: ${clampText(text,900)}`
       });
-      const retryPromise = trackRequest(engine.chat.completions.create({
-        messages:retryMessages,
-        temperature:1.03,
-        top_p:0.96,
-        repetition_penalty:1.19,
-        frequency_penalty:0.14,
-        presence_penalty:0.10,
-        max_tokens:280
-      }));
-      const retryResult = await petAwaitUntil(retryPromise,deadline);
-      if(!retryResult){
-        try{ if(typeof engine.interruptGenerate==='function') engine.interruptGenerate(); }catch(_){ }
-        petLLMActiveRequest=null;
-        petLLMGenerationBusy=false;
-        return reply;
+
+      const retryPromise = trackRequest((async()=>{
+        const stream = await engine.chat.completions.create({
+          messages:retryMessages,
+          temperature:0.94,
+          top_p:0.95,
+          repetition_penalty:1.17,
+          frequency_penalty:0.12,
+          presence_penalty:0.08,
+          max_tokens:190,
+          stream:true
+        });
+        let accumulated='';
+        for await (const chunk of stream){
+          const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+          if(delta){
+            accumulated += delta;
+            const cleaned = cleanGeneratedPetReply(accumulated) || accumulated.trim();
+            if(typeof onPartial==='function' && cleaned) onPartial(cleaned);
+          }
+          if(Date.now() >= deadline){
+            interrupt();
+            return null;
+          }
+        }
+        return accumulated;
+      })());
+      const retryResult = await Promise.race([
+        retryPromise,
+        new Promise(resolve=>setTimeout(()=>resolve(null),Math.max(1,deadline-Date.now())))
+      ]);
+      if(retryResult){
+        const retry = cleanGeneratedPetReply(retryResult);
+        if(retry) reply=retry;
+      }else{
+        interrupt();
       }
-      const retry = cleanGeneratedPetReply(retryResult?.choices?.[0]?.message?.content);
-      if(retry) reply=retry;
     }
     return reply;
   }finally{
-    /* Solo liberamos el bloqueo aqui si todavía no existe una generacion
-       subyacente corriendo. Si el timeout la dejó viva, su propia promesa
-       liberará el estado cuando termine. */
-    if(!requestStarted && !petLLMActiveRequest){
-      petLLMGenerationBusy=false;
-    }
+    if(!requestStarted && !petLLMActiveRequest) petLLMGenerationBusy=false;
   }
 }
 
@@ -2594,29 +2646,39 @@ async function loadPetRemoteKnowledge(){
 function remoteKnowledgeAnswer(text){let best=null,score=0;for(const item of petRemoteKnowledge){const keys=Array.isArray(item.keywords)?item.keywords:[];let s=0;for(const k of keys)if(normalizePetText(text).includes(normalizePetText(k)))s+=2;if(s>score){score=s;best=item;}}return best&&Array.isArray(best.responses)&&best.responses.length?choose(best.responses):null;}
 
 /* ---------------- Motor principal ---------------- */
-async function generatePetReply(text){
-  const aiDeadline = Date.now() + PET_LLM_TIMEOUT_MS;
+async function generatePetReply(text, onPartial=null){
+  const aiDeadline = Date.now() + PET_LLM_TIMEOUT_MS; // 120 s de emergencia, no 30 s
   const raw=String(text||'').trim(), c=normalizePetText(raw);
   petState.turn++;
   if(!raw) return 'Dime algo, mi amorcito, que estoy aqui contigo.';
 
-  /* Memoria y aprendizaje son importantes, pero nunca pueden robarse los 30 segundos
-     reservados para la respuesta. Si la nube esta lenta, la IA continua con lo que ya tiene. */
-  const remainingForPrep = Math.max(1, aiDeadline-Date.now());
+  /* La memoria se prepara en paralelo, pero nunca debe impedir que la IA comience a pensar. */
+  const memoryWarmup = Promise.allSettled([loadPetMemory(),loadPetRemoteKnowledge()]);
   await Promise.race([
-    Promise.allSettled([loadPetMemory(),loadPetRemoteKnowledge()]),
-    new Promise(resolve=>setTimeout(resolve,Math.min(4500,remainingForPrep)))
+    memoryWarmup,
+    new Promise(resolve=>setTimeout(resolve,Math.min(1200,Math.max(1,aiDeadline-Date.now()))))
   ]);
 
-  /* Aprende datos estables antes de generar; si Supabase tarda, no bloqueamos la charla. */
-  if(Date.now() < aiDeadline-700){
-    await Promise.race([
-      autoLearn(raw),
-      new Promise(resolve=>setTimeout(resolve,Math.min(2500,Math.max(1,aiDeadline-Date.now()-700))))
-    ]);
+  /* El aprendizaje se guarda sin retrasar la respuesta actual. */
+  autoLearn(raw).catch(()=>{});
+
+  /* LA IA ES SIEMPRE LA PRIMERA OPCION. Los mensajes por defecto solo aparecen
+     cuando el modelo falla o supera el limite de tiempo. */
+  try{
+    const neural=await generateNeuralPetReply(raw,aiDeadline,onPartial);
+    if(neural){
+      updatePetStateFromTurn(raw,neural);
+      learnConversationInsight(raw,neural).catch(()=>{});
+      return neural;
+    }
+  }catch(err){
+    console.warn('Fallo la generacion neuronal; se usa el motor de respaldo:',err);
   }
 
-  /* El saludo inicial conserva una respuesta especial, pero no crea un bucle de frases. */
+  /* ---------------- Respaldo: solo si la IA falla o alcanza el tiempo de emergencia ---------------- */
+  const dr=directRomantic(raw);
+  if(dr){petState.stage='conversation';petState.lastIntent='romantic_direct';petState.topic='amor';return dr;}
+
   if(isGreeting(raw)){
     petState.stage='greeting';
     petState.pendingKind='how_are_you';
@@ -2630,29 +2692,12 @@ async function generatePetReply(text){
     ],raw);
   }
 
-  /* Si existe una pregunta pendiente, dejamos que el pequeño motor contextual la respete. */
   const continued=continueConversation(raw);
-  if(continued && petState.pendingKind==='how_are_you'){
+  if(continued){
     petState.stage='conversation';
     petState.lastIntent='contextual_fallback';
     return continued;
   }
-
-  /* El modelo neuronal intenta primero responder al significado completo del mensaje. */
-  try{
-    const neural=await generateNeuralPetReply(raw,aiDeadline);
-    if(neural){
-      updatePetStateFromTurn(raw,neural);
-      await learnConversationInsight(raw,neural);
-      return neural;
-    }
-  }catch(err){
-    console.warn('Fallo la generacion neuronal; se usa el motor de respaldo:',err);
-  }
-
-  /* ---------------- Respaldo sin modelo ---------------- */
-  const dr=directRomantic(raw);
-  if(dr){petState.stage='conversation';petState.lastIntent='romantic_direct';petState.topic='amor';return dr;}
 
   if(hasAny(c,['que recuerdas de mi','que sabes de mi','mis gustos','recuerdas algo de mi'])){
     const mem=petMemory.slice(0,10).map(x=>x.memory_value).filter(Boolean);
@@ -2667,13 +2712,13 @@ async function generatePetReply(text){
   }
 
   const contextual=contextualResponse(raw);
-  if(contextual){petState.stage='conversation';petState.lastIntent='contextual';await learnConversationInsight(raw,contextual);return contextual;}
+  if(contextual){petState.stage='conversation';petState.lastIntent='contextual';learnConversationInsight(raw,contextual).catch(()=>{});return contextual;}
 
   const remote=remoteKnowledgeAnswer(raw);
-  if(remote){petState.stage='conversation';petState.lastIntent='knowledge';await learnConversationInsight(raw,remote);return warm(remote);}
+  if(remote){petState.stage='conversation';petState.lastIntent='knowledge';return warm(remote);}
 
   const known=knowledgeAnswer(raw);
-  if(known){petState.stage='conversation';petState.lastIntent='knowledge';await learnConversationInsight(raw,known);return warm(known);}
+  if(known){petState.stage='conversation';petState.lastIntent='knowledge';return warm(known);}
 
   const memories=relevantMemories(raw,3);
   if(memories.length && question(raw)){
@@ -2684,7 +2729,7 @@ async function generatePetReply(text){
   if(topic)petState.topic=topic;
   petState.stage='conversation';petState.lastIntent='open';
   const reply=dynamicOpenResponse(raw);
-  await learnConversationInsight(raw,reply);
+  learnConversationInsight(raw,reply).catch(()=>{});
   return reply;
 }
 
@@ -2800,7 +2845,7 @@ function startPetThinkingIndicator(el){
   let timer=null;
   const loop=()=>{
     if(stopped)return;
-    timer=setTimeout(()=>{paint();loop();}, 1100+Math.floor(Math.random()*1700));
+    timer=setTimeout(()=>{paint();loop();}, 2800+Math.floor(Math.random()*2200));
   };
   loop();
   return ()=>{stopped=true;if(timer)clearTimeout(timer);};
@@ -2811,9 +2856,8 @@ function addPetMessage(text,who){
 }
 function seedPetChat(){if(petChatMessages.children.length)return;addPetMessage('Hola mi amorcito, soy Corazoncito, tu mascotita virtual. Una copia de tu bebé.','pet');}
 async function initPetAI(){
-  await Promise.allSettled([loadPetMemory(),loadPetRemoteKnowledge()]);
-  /* El cerebro neuronal se prepara en segundo plano; nunca bloquea el chat. */
-  ensurePetLLM(PET_LLM_TIMEOUT_MS).catch(()=>{});
+  Promise.allSettled([loadPetMemory(),loadPetRemoteKnowledge()]).catch(()=>{});
+  warmupPetLLM();
 }
 function openPetChat(){seedPetChat();initPetAI().catch(()=>{});petChatEl.classList.add('open');petChatEl.setAttribute('aria-hidden','false');heartPetEl.setAttribute('aria-expanded','true');petChatInput.focus();}
 function closePetChat(){petChatEl.classList.remove('open');petChatEl.setAttribute('aria-hidden','true');heartPetEl.setAttribute('aria-expanded','false');}
@@ -2838,7 +2882,15 @@ petChatForm.addEventListener('submit',async e=>{
   if(sendButton)sendButton.disabled=true;
 
   try{
-    const reply=await generatePetReply(msg);
+    let neuralStarted=false;
+    const reply=await generatePetReply(msg, partial=>{
+      if(!neuralStarted){
+        neuralStarted=true;
+        stopThinking();
+      }
+      typing.textContent=partial;
+      petChatMessages.scrollTop=petChatMessages.scrollHeight;
+    });
     stopThinking();
     typing.remove();
     addPetMessage(reply,'pet');
@@ -2878,6 +2930,7 @@ document.getElementById('entry-btn').addEventListener('click', function onEntry(
   migrateLegacyLocalData().catch(()=>{});
   document.getElementById('entry-screen').classList.add('leaving');
   document.getElementById('experience').classList.add('active');
+  setTimeout(()=>warmupPetLLM(),350);
   setTimeout(()=> document.getElementById('central-heart').classList.add('visible'), 650);
   setTimeout(()=> document.getElementById('lock-heart').classList.add('visible'), 1700);
 
