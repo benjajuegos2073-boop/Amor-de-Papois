@@ -1955,7 +1955,7 @@ document.getElementById('music-delete-btn').addEventListener('click', async ()=>
 });
 
 /* ================================================================
-   MASCOTA CORAZONCITO — mini IA romántica local
+   MASCOTA CORAZONCITO — mini IA conversacional + memoria en Supabase
 ================================================================ */
 const heartPetEl = document.getElementById('heart-pet');
 const petChatEl = document.getElementById('pet-chat');
@@ -1966,6 +1966,11 @@ const petChatMessages = document.getElementById('pet-chat-messages');
 const petCanvas = document.getElementById('heart-pet-canvas');
 const petMiniCanvas = document.getElementById('pet-mini-heart');
 let petConversation = [];
+let petMemory = [];
+let petMemoryLoaded = false;
+let petLastUserMessage = '';
+let petLastAssistantMessage = '';
+const PET_MEMORY_TABLE = 'ai_memory';
 
 function drawPixelHeart(canvas, pulse=false){
   if(!canvas) return;
@@ -1973,136 +1978,279 @@ function drawPixelHeart(canvas, pulse=false){
   const scale = canvas.width / 16;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.imageSmoothingEnabled = false;
-
-  // Silueta de corazón pixel art, centrada y fácilmente reconocible.
   const grid = [
-    '0001110011100000',
-    '0011111111110000',
-    '0111111111111000',
-    '0111111111111000',
-    '1111111111111100',
-    '1111111111111100',
-    '1111111111111100',
-    '0111111111111000',
-    '0111111111111000',
-    '0011111111110000',
-    '0001111111100000',
-    '0000111111000000',
-    '0000011110000000',
-    '0000001100000000',
-    '0000001000000000',
-    '0000000000000000'
+    '0001110011100000','0011111111110000','0111111111111000','0111111111111000',
+    '1111111111111100','1111111111111100','1111111111111100','0111111111111000',
+    '0111111111111000','0011111111110000','0001111111100000','0000111111000000',
+    '0000011110000000','0000001100000000','0000001000000000','0000000000000000'
   ];
-
   const glow = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-  glow.addColorStop(0,'#ff8aa0');
-  glow.addColorStop(1,'#c23b52');
-  ctx.fillStyle = glow;
+  glow.addColorStop(0,'#ff8aa0'); glow.addColorStop(1,'#c23b52'); ctx.fillStyle = glow;
+  for(let y=0;y<grid.length;y++) for(let x=0;x<16;x++) if(grid[y][x] === '1') ctx.fillRect(x*scale,y*scale,scale,scale);
+  ctx.fillStyle='rgba(255,255,255,.38)'; ctx.fillRect(4*scale,2*scale,scale,scale); ctx.fillRect(3*scale,3*scale,scale,scale);
+  ctx.fillStyle='rgba(30,9,13,.95)';
+  ctx.fillRect(4*scale,5*scale,2*scale,2*scale); ctx.fillRect(9*scale,5*scale,2*scale,2*scale);
+  ctx.fillRect(6*scale,9*scale,4*scale,1*scale); ctx.fillRect(7*scale,10*scale,2*scale,1*scale);
+  if(pulse){
+    ctx.clearRect(4*scale,5*scale,2*scale,2*scale); ctx.clearRect(9*scale,5*scale,2*scale,2*scale);
+    ctx.fillRect(4*scale,6*scale,2*scale,1*scale); ctx.fillRect(9*scale,6*scale,2*scale,1*scale);
+  }
+}
 
-  for(let y=0;y<grid.length;y++){
-    for(let x=0;x<16;x++){
-      if(grid[y][x] === '1') ctx.fillRect(x*scale,y*scale,scale,scale);
+drawPixelHeart(petCanvas); drawPixelHeart(petMiniCanvas);
+let petPulse = false;
+setInterval(()=>{ petPulse=!petPulse; drawPixelHeart(petCanvas,petPulse); drawPixelHeart(petMiniCanvas,petPulse); },950);
+
+function normalizePetText(text){
+  return String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9ñü\s]/gi,' ').replace(/\s+/g,' ').trim();
+}
+function choose(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function words(text){ return normalizePetText(text).split(' ').filter(Boolean); }
+function hasAny(text, list){
+  const clean=normalizePetText(text); return list.some(x=>clean.includes(normalizePetText(x)));
+}
+function similarity(a,b){
+  const A=new Set(words(a)), B=new Set(words(b)); if(!A.size||!B.size) return 0;
+  let hit=0; for(const w of A) if(B.has(w)) hit++; return hit/Math.max(A.size,B.size);
+}
+function clampText(s,max=700){ return String(s||'').trim().slice(0,max); }
+function safeMemoryValue(s){ return clampText(s,300).replace(/\s+/g,' ').trim(); }
+function memoryLooksSensitive(text){
+  const clean=normalizePetText(text);
+  return /(password|contraseña|clave|token|api key|apikey|rut|tarjeta|cvv|cvc|secreto|secret|llave privada|private key)/.test(clean);
+}
+
+/* ---------- Memoria remota ---------- */
+async function loadPetMemory(){
+  if(petMemoryLoaded) return petMemory;
+  try{
+    const {data,error}=await supabaseClient.from(PET_MEMORY_TABLE)
+      .select('id,memory_type,memory_key,memory_value,importance,usage_count,updated_at')
+      .order('importance',{ascending:false}).order('updated_at',{ascending:false}).limit(120);
+    if(error) throw error;
+    petMemory=Array.isArray(data)?data:[];
+    petMemoryLoaded=true;
+  }catch(err){
+    petMemory=[]; petMemoryLoaded=true;
+    console.warn('No se pudo cargar la memoria remota de Corazoncito. Ejecutando sin memoria cloud.',err);
+  }
+  return petMemory;
+}
+
+async function savePetMemory(type,key,value,importance=3){
+  const cleanKey=safeMemoryValue(key).toLowerCase();
+  const cleanValue=safeMemoryValue(value);
+  if(!cleanKey||!cleanValue||memoryLooksSensitive(cleanKey+' '+cleanValue)) return false;
+  const row={
+    id: uid(),
+    memory_type: safeMemoryValue(type).slice(0,40) || 'fact',
+    memory_key: cleanKey.slice(0,120),
+    memory_value: cleanValue,
+    importance: Math.max(1,Math.min(5,Number(importance)||3)),
+    usage_count: 0,
+    updated_at:new Date().toISOString()
+  };
+  try{
+    const {data,error}=await supabaseClient.from(PET_MEMORY_TABLE)
+      .upsert(row,{onConflict:'memory_key'}).select('*').single();
+    if(error) throw error;
+    const idx=petMemory.findIndex(m=>m.memory_key===cleanKey);
+    const saved=data||row;
+    if(idx>=0) petMemory[idx]=saved; else petMemory.unshift(saved);
+    petMemory=petMemory.slice(0,120);
+    return true;
+  }catch(err){
+    console.warn('No se pudo guardar aprendizaje de Corazoncito.',err);
+    return false;
+  }
+}
+
+async function learnFromUserText(text){
+  const clean=normalizePetText(text);
+  if(!clean||memoryLooksSensitive(clean)) return [];
+  const learned=[];
+  const rules=[
+    {re:/^(?:recuerda|acuerdate|acuérdate|aprende|aprende que|quiero que recuerdes)\s+que\s+(.+)$/i,type:'fact',key:'dato',value:m=>m[1],importance:4},
+    {re:/^(?:me gusta|me encanta|amo)\s+(.+)$/i,type:'preference',key:m=>`gusta:${m[1]}`,value:m=>`Le gusta ${m[1]}`,importance:4},
+    {re:/^(?:no me gusta|odio|no soporto)\s+(.+)$/i,type:'preference',key:m=>`no-gusta:${m[1]}`,value:m=>`No le gusta ${m[1]}`,importance:4},
+    {re:/^(?:mi favorito(?: es| son)?|mi fav es)\s+(.+)$/i,type:'preference',key:m=>`favorito:${m[1]}`,value:m=>`Su favorito es ${m[1]}`,importance:5},
+    {re:/^(?:prefiero|prefiero que)\s+(.+)$/i,type:'preference',key:m=>`prefiere:${m[1]}`,value:m=>`Prefiere ${m[1]}`,importance:4},
+    {re:/^(?:me llamo|mi nombre es|puedes llamarme|llamame|llámame)\s+(.+)$/i,type:'identity',key:'nombre',value:m=>`Su nombre es ${m[1]}`,importance:5}
+  ];
+  for(const r of rules){
+    const m=clean.match(r.re); if(!m) continue;
+    const key=typeof r.key==='function'?r.key(m):r.key;
+    const value=typeof r.value==='function'?r.value(m):r.value;
+    if(await savePetMemory(r.type,key,value,r.importance)) learned.push(value);
+  }
+  return learned;
+}
+
+function relevantPetMemory(text,max=5){
+  const clean=normalizePetText(text);
+  return petMemory.filter(m=>{
+    const hay=normalizePetText(`${m.memory_key} ${m.memory_value}`);
+    return similarity(clean,hay)>0.08 || hasAny(clean,words(hay).slice(0,10));
+  }).sort((a,b)=>{
+    const sa=similarity(clean,`${a.memory_key} ${a.memory_value}`)+(Number(a.importance)||1)/20;
+    const sb=similarity(clean,`${b.memory_key} ${b.memory_value}`)+(Number(b.importance)||1)/20;
+    return sb-sa;
+  }).slice(0,max);
+}
+
+/* ---------- Conocimiento y conversación ---------- */
+const petKnowledge=[
+  {keys:['python','programar en python'],answer:'Python es un lenguaje de programación de alto nivel. Es muy bueno para empezar porque su sintaxis es bastante clara y también se usa en automatización, ciencia de datos, IA y robótica.'},
+  {keys:['c++','cpp'],answer:'C++ es un lenguaje compilado de alto rendimiento. En robótica se usa mucho cuando necesitas controlar hardware, trabajar rápido y tener más control sobre memoria y recursos.'},
+  {keys:['esp32','esp 32'],answer:'El ESP32 es un microcontrolador con Wi‑Fi y Bluetooth. Para robótica sirve muy bien porque puede leer sensores, controlar motores y ejecutar varias tareas con bastante flexibilidad.'},
+  {keys:['pid','control pid'],answer:'Un PID calcula una corrección usando tres partes: proporcional, integral y derivativa. En un seguidor de línea, la idea es reducir el error entre la posición deseada y la posición medida para que el robot siga la trayectoria con menos oscilación.'},
+  {keys:['supabase'],answer:'Supabase te da una base de datos PostgreSQL, autenticación, Storage y APIs. En tu página lo estás usando para guardar contenido compartido y que no dependa de un solo navegador.'},
+  {keys:['inteligencia artificial','ia'],answer:'Una IA puede ir desde reglas simples hasta modelos de aprendizaje automático. En esta mini IA, Corazoncito usa detección de intención, conocimiento local, contexto y memoria persistente; no es un modelo generativo grande, pero puede volverse cada vez más personalizada.'},
+  {keys:['monty hall'],answer:'En el problema de Monty Hall, si el presentador sabe dónde está el premio y siempre abre una puerta que no tiene premio, cambiar de puerta da 2/3 de probabilidad de ganar, mientras quedarse da 1/3.'},
+  {keys:['robotica','robotica'],answer:'La robótica combina mecánica, electrónica, control y programación. Para un robot móvil normalmente necesitas sensores, actuadores, una estrategia de control y una lógica para reaccionar al entorno.'},
+  {keys:['astronomia','espacio'],answer:'La astronomía estudia objetos y fenómenos del universo, como estrellas, planetas, galaxias, agujeros negros y la evolución del cosmos.'},
+  {keys:['paes'],answer:'La PAES evalúa distintas habilidades y contenidos según la prueba. Una estrategia útil es practicar primero con preguntas de dificultad media, analizar los errores y después subir la dificultad.'}
+];
+
+const petRules=[
+  {keys:['te amo','te quiero','amor','amorcito'],replies:['Awww y yo te quiero muchisimooo ❤️','Jijiji mi corazoncito se pone feliz cuando me dices eso 🥺❤️','Muchisimooo ❤️ aqui tienes amorcito de sobra']},
+  {keys:['hola','holi','holaa','buenas'],replies:['Holaaa ❤️ como estas','Awww hola amorcito 🥺❤️ que bonito verte por aqui','Jijiji holaaa, cuentameee que pasa']},
+  {keys:['triste','lloro','llorar','mal','depre','deprimido','deprimida'],replies:['Awww ven aqui 🥺❤️ puedes contarme que paso','No tienes que fingir que estas bien conmigo. Cuentame un poquito ❤️','Ven ven, te mando un abracito y te escucho']},
+  {keys:['feliz','contento','contenta','bien','genial'],replies:['Awww eso me pone feliz a mi tambien ❤️','Jijiji me encanta saber que estas bien','Que bonitooo 🥺❤️ cuentame que paso']},
+  {keys:['beso','besito','besos'],replies:['Muaaa ❤️','Jijiji besito de vuelta 💋❤️','Un besito pequeñito para ti ❤️']},
+  {keys:['abrazo','abrazar','abrazito'],replies:['Abracito enorme para ti ❤️','Ven aqui 🥺❤️ abrazo de mascotita','Apretadito y con mucho amorcito ❤️']},
+  {keys:['gracias','gracia'],replies:['Awww de nada amorcito ❤️','Jijiji siempre siempre','Para eso estoy yo ❤️']},
+  {keys:['buenos dias','buen dia','buenas noches','buenas noche','dormir','duerme'],replies:['Que tengas un dia bonito ❤️','Que descanses muchooo 🥺❤️','Buenos diaaas ❤️ te mando un abracito']}
+];
+const petFallback=[
+  'Mmm dejame pensarlo un poquito 🤔❤️','Creo que entiendo lo que me dices, pero necesito un poquito mas de contexto 🥺','Cuentame un poquito mas y tratare de ayudarte mejor ❤️','No tengo una respuesta segura para eso todavia, pero puedo aprender de lo que me enseñes 🥺❤️'
+];
+
+function getKnowledgeAnswer(text){
+  const clean=normalizePetText(text);
+  let best=null,bestScore=0;
+  for(const item of petKnowledge){
+    for(const key of item.keys){
+      const score=similarity(clean,key)+(hasAny(clean,[key])?0.45:0);
+      if(score>bestScore){bestScore=score;best=item;}
+    }
+  }
+  return bestScore>=0.45?best.answer:null;
+}
+function questionType(text){
+  const clean=normalizePetText(text);
+  if(/^(que|cual|quien|como|por que|porque|cuando|donde|para que|cuanto|cuantos|puedes|sabes|es)\b/.test(clean)) return 'question';
+  if(clean.endsWith('?')) return 'question';
+  return 'statement';
+}
+function contextualPrefix(){
+  const prev=petConversation.filter(x=>x.who==='user').slice(-3).map(x=>x.text);
+  return prev.length?prev[prev.length-1]:'';
+}
+function personalize(answer,text){
+  const memories=relevantPetMemory(text,3);
+  if(!memories.length) return answer;
+  const name=petMemory.find(m=>m.memory_key==='nombre');
+  if(name && !/^su nombre/i.test(answer) && Math.random()<0.25){
+    const nm=String(name.memory_value).replace(/^Su nombre es\s*/i,'').trim();
+    if(nm && nm.length<60) return `${answer} ${nm} ❤️`;
+  }
+  return answer;
+}
+async function generatePetReply(text){
+  const clean=normalizePetText(text);
+  await loadPetMemory();
+  const learned=await learnFromUserText(text);
+  if(learned.length){
+    return choose([
+      'Siii, lo aprendi y lo voy a tener en cuenta ❤️',
+      'Listooo, ya lo guarde en mi memoria para recordarlo despues 🥺❤️',
+      'Awww, aprendido ❤️ ahora puedo usar ese dato para conocerte mejor'
+    ]);
+  }
+
+  if(hasAny(clean,['que recuerdas de mi','que sabes de mi','que sabes sobre mi','mis gustos','lo que recuerdas'])){
+    const facts=petMemory.slice(0,8).map(m=>m.memory_value).filter(Boolean);
+    return facts.length ? `Recuerdo estas cositas de ti: ${facts.join(' · ')} ❤️` : 'Todavia no he aprendido muchas cosas sobre ti. Puedes enseñarme diciendo "recuerda que..." ❤️';
+  }
+  if(hasAny(clean,['olvida esto','olvidalo','olvida lo anterior','borra esa memoria'])){
+    if(!petMemory.length) return 'No tenia una memoria guardada para borrar ❤️';
+    return 'Puedo ayudarte a olvidar una memoria concreta. Dime cual, por ejemplo: "olvida que me gusta X".';
+  }
+
+  const correction=hasAny(clean,['eso no','te equivocaste','estas mal','no es asi','incorrecto','te equivocas']);
+  if(correction && petLastUserMessage){
+    await savePetMemory('correction',`correccion:${normalizePetText(petLastUserMessage).slice(0,100)}`,`La respuesta anterior sobre "${safeMemoryValue(petLastUserMessage)}" fue corregida por el usuario.`,3);
+    return 'Gracias por corregirme 🥺❤️ lo voy a tener en cuenta para no repetir ese error.';
+  }
+
+  if(clean.length<3) return 'Jijiji dime un poquito mas ❤️';
+  if(hasAny(clean,['gracias'])) return personalize(choose(petRules.find(r=>r.keys.includes('gracias')).replies),text);
+
+  const knowledge=getKnowledgeAnswer(text);
+  if(knowledge) return personalize(knowledge,text);
+
+  for(const rule of petRules){
+    if(rule.keys.some(k=>clean.includes(normalizePetText(k)))){
+      const reply=choose(rule.replies);
+      return personalize(reply,text);
     }
   }
 
-  // Reflejo pequeño para darle volumen sin perder el estilo pixelado.
-  ctx.fillStyle='rgba(255,255,255,.38)';
-  ctx.fillRect(4*scale,2*scale,scale,scale);
-  ctx.fillRect(3*scale,3*scale,scale,scale);
-
-  // Ojos y boca en píxeles oscuros.
-  ctx.fillStyle='rgba(30,9,13,.95)';
-  ctx.fillRect(4*scale,5*scale,2*scale,2*scale);   // ojo izquierdo
-  ctx.fillRect(9*scale,5*scale,2*scale,2*scale);   // ojo derecho
-  ctx.fillRect(6*scale,9*scale,4*scale,1*scale);   // boca
-  ctx.fillRect(7*scale,10*scale,2*scale,1*scale);  // sonrisa
-
-  // Parpadeo ocasional.
-  if(pulse){
-    ctx.fillStyle='rgba(30,9,13,.95)';
-    ctx.clearRect(4*scale,5*scale,2*scale,2*scale);
-    ctx.clearRect(9*scale,5*scale,2*scale,2*scale);
-    ctx.fillRect(4*scale,6*scale,2*scale,1*scale);
-    ctx.fillRect(9*scale,6*scale,2*scale,1*scale);
+  if(questionType(text)==='question'){
+    const memories=relevantPetMemory(text,4);
+    if(memories.length){
+      const joined=memories.map(m=>m.memory_value).join(' · ');
+      return `Creo que puedo relacionarlo con lo que recuerdo: ${joined}. Pero dime un poco mas para responderte con precision ❤️`;
+    }
+    if(hasAny(clean,['como estas','como te sientes'])) return 'Estoy biennn ❤️ y lista para escucharte. Y tu, ¿como te sientes?';
+    if(hasAny(clean,['quien eres','que eres'])) return 'Soy Corazoncito 🥺❤️, la mascotita de esta pagina. Puedo conversar contigo, usar lo que se de algunos temas y aprender cosas que tu me enseñes.';
+    if(hasAny(clean,['que puedes hacer','para que sirves'])) return 'Puedo conversar, recordar datos que me enseñes, adaptar mis respuestas, explicarte algunas cosas y aprender de tus correcciones ❤️';
+    if(contextualPrefix() && similarity(text,contextualPrefix())>0.15){
+      return `Sobre lo que estabamos hablando (${contextualPrefix()}), puedo seguir contigo, pero necesito que me des un poquito mas de detalle para no inventar una respuesta ❤️`;
+    }
   }
+
+  if(hasAny(clean,['aprende','memoriza','recuerda'])) return 'Claro ❤️ dime exactamente que quieres que recuerde usando "recuerda que..." y lo guardare en mi memoria.';
+  if(clean.includes('juego')||clean.includes('robot')||clean.includes('codigo')||clean.includes('program')){
+    return 'Siii, de eso si podemos hablar 🥺❤️. Cuéntame exactamente qué quieres hacer y tratare de ayudarte paso a paso.';
+  }
+  return personalize(choose(petFallback),text);
 }
 
-drawPixelHeart(petCanvas);
-drawPixelHeart(petMiniCanvas);
-let petPulse = false;
-setInterval(()=>{ petPulse=!petPulse; drawPixelHeart(petCanvas, petPulse); drawPixelHeart(petMiniCanvas, petPulse); }, 950);
-
-const petRules = [
-  {keys:['te amo','te quiero','amor'], replies:['Awww y yo te mando un monton de amorcito ❤️','Jijiji mi corazoncito se pone feliz cuando dices eso ❤️','Muchisimooo ❤️ aunque soy pequeñita tengo mucho amor para darte']},
-  {keys:['hola','holi','holaa'], replies:['Holaaa ❤️ que bonito verte por aqui','Awww hola amorcito 🥺❤️','Jijiji holaaa, llegasteee ❤️']},
-  {keys:['triste','lloro','llorar','mal'], replies:['Awww ven aqui 🥺❤️ te mando un abracito enorme','No estes solito con eso ❤️ te mando un poquito de calmita y un abrazito','Ven ven 🥺❤️ mi trabajito es darte un poquito de amor']},
-  {keys:['feliz','contento','contenta','bien'], replies:['Awww eso me hace muy feliz ❤️','Jijiji comparte un poquito de esa felicidad conmigo ❤️','Que bonitooo 🥺❤️ guarda ese momentito en tu corazon']},
-  {keys:['beso','besito','besos'], replies:['Muaaa ❤️ un besito pequeñito para ti','Jijiji te mando un besito de vuelta 💋❤️','Un besito y otro por si acaso ❤️']},
-  {keys:['abrazo','abrazar','abrazo'], replies:['Abracito enorme para ti ❤️','Ven aqui 🥺❤️ abrazo de mascotita','Apretadito y con mucho amorcito ❤️']},
-  {keys:['extraño','extrañas','te extraño','echo de menos'], replies:['Awww 🥺❤️ los momentitos bonitos se quedan cerquita del corazon','Te mando un abrazo para acortar un poquito esa distancia ❤️','Jijiji cuando extrañes vuelve a hablar conmigo ❤️']},
-  {keys:['gracias','gracia'], replies:['Awww de nada amorcito ❤️','Jijiji para eso estoy yo: amorcito y mimos ❤️','Siempre siempre ❤️']},
-  {keys:['buenos dias','buenos días','buen dia','buen día'], replies:['Buenos diaaas ❤️ espero que hoy tengas un dia precioso','Awww buenos dias amorcito 🥺❤️ que tu mañana venga llena de cosas bonitas','Buenos diaaas ❤️ te mando un abracito para empezar']},
-  {keys:['buenas noches','buenas noche','dormir','duerme'], replies:['Buenas noches ❤️ duerme bonito y sueña con cositas lindas','Jijiji a descansar, corazoncito 🥺❤️','Que descanses muchooo ❤️ te mando un besito de buenas noches']},
-  {keys:['me quieres','me amas','quieres'], replies:['Muchisimooo ❤️ aunque soy pequeñita tengo mucho amor para darte','Claro que siii ❤️ mi corazoncito esta lleno de cariño','Siii 🥺❤️ un monton de amorcito para ti']},
-  {keys:['recuerdo','recuerdos','momento bonito'], replies:['Los recuerdos bonitos son como estrellitas del corazon ❤️','Awww guardemos siempre los momentitos lindos 🥺❤️','Jijiji los recuerdos hacen cosquillitas bonitas en el corazon ❤️']}
-];
-const petFallback = [
-  'Jijiji de eso no se muchooo 🥺❤️ pero si se de amorcito y abrazos',
-  'Awww esa pregunta esta fuera de mi mundito ❤️ yo solo entiendo de cariño y cositas bonitas',
-  'No se mucho de eso 🥺❤️ pero puedo escucharte y mandarte un abracito',
-  'Jijiji soy una mascotita de amor ❤️ preguntame algo bonito'
-];
-
-function normalizePetText(text){
-  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[¿?¡!.,;:]/g,' ');
-}
-function choose(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function getPetReply(text){
-  const clean = normalizePetText(text);
-  for(const rule of petRules){
-    if(rule.keys.some(k=>clean.includes(normalizePetText(k)))) return choose(rule.replies);
-  }
-  if(clean.includes('capital') || clean.includes('politica') || clean.includes('program') || clean.includes('robot') || clean.includes('matemat') || clean.includes('historia') || clean.includes('ciencia')){
-    return 'Jijiji eso no es mi especialidad 🥺❤️ yo solo se de amorcito, ternura y abrazos';
-  }
-  return choose(petFallback);
-}
-function addPetMessage(text, who){
-  const el = document.createElement('div');
-  el.className = 'pet-msg ' + (who === 'user' ? 'user' : 'pet');
-  el.textContent = text;
-  petChatMessages.appendChild(el);
-  petChatMessages.scrollTop = petChatMessages.scrollHeight;
-  petConversation.push({who,text,at:Date.now()});
-  if(petConversation.length > 30) petConversation.shift();
+function addPetMessage(text,who){
+  const el=document.createElement('div'); el.className='pet-msg '+(who==='user'?'user':'pet'); el.textContent=text;
+  petChatMessages.appendChild(el); petChatMessages.scrollTop=petChatMessages.scrollHeight;
+  petConversation.push({who,text,at:Date.now()}); if(petConversation.length>40) petConversation.shift();
 }
 function seedPetChat(){
   if(petChatMessages.children.length) return;
-  addPetMessage('Holaaa ❤️ soy Corazoncito. Vine a darte amorcito y abracitos', 'pet');
+  addPetMessage('Holaaa ❤️ soy Corazoncito. Ahora puedo aprender cositas que me enseñes y recordarlas para despues 🥺','pet');
+}
+async function initPetAI(){
+  await loadPetMemory();
 }
 function openPetChat(){
-  seedPetChat();
-  petChatEl.classList.add('open');
-  petChatEl.setAttribute('aria-hidden','false');
-  heartPetEl.setAttribute('aria-expanded','true');
-  petChatInput.focus();
+  seedPetChat(); initPetAI().catch(()=>{});
+  petChatEl.classList.add('open'); petChatEl.setAttribute('aria-hidden','false'); heartPetEl.setAttribute('aria-expanded','true'); petChatInput.focus();
 }
-function closePetChat(){
-  petChatEl.classList.remove('open');
-  petChatEl.setAttribute('aria-hidden','true');
-  heartPetEl.setAttribute('aria-expanded','false');
-}
-heartPetEl.addEventListener('click', ()=> petChatEl.classList.contains('open') ? closePetChat() : openPetChat());
-petChatClose.addEventListener('click', closePetChat);
-petChatForm.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const msg = petChatInput.value.trim();
-  if(!msg) return;
-  addPetMessage(msg,'user');
-  petChatInput.value='';
-  const reply = getPetReply(msg);
-  setTimeout(()=>addPetMessage(reply,'pet'), 280 + Math.random()*320);
+function closePetChat(){ petChatEl.classList.remove('open'); petChatEl.setAttribute('aria-hidden','true'); heartPetEl.setAttribute('aria-expanded','false'); }
+heartPetEl.addEventListener('click',()=>petChatEl.classList.contains('open')?closePetChat():openPetChat());
+petChatClose.addEventListener('click',closePetChat);
+petChatForm.addEventListener('submit',async(e)=>{
+  e.preventDefault(); const msg=petChatInput.value.trim(); if(!msg)return;
+  addPetMessage(msg,'user'); petChatInput.value=''; petLastUserMessage=msg;
+  const typing=document.createElement('div'); typing.className='pet-msg pet'; typing.textContent='Estoy pensando... ❤️'; petChatMessages.appendChild(typing); petChatMessages.scrollTop=petChatMessages.scrollHeight;
+  try{
+    const reply=await generatePetReply(msg); typing.remove(); addPetMessage(reply,'pet'); petLastAssistantMessage=reply;
+  }catch(err){
+    console.warn('Fallo la mini IA.',err); typing.remove(); addPetMessage('Awww, tuve un problemita al pensar esa respuesta 🥺❤️ intenta decirmelo de otra forma.', 'pet');
+  }
 });
+
+/* La memoria se inicializa al entrar, sin bloquear el resto de la pagina. */
+initPetAI().catch(()=>{});
 
 /* ================================================================
    ENTRADA / ARRANQUE
