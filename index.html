@@ -1995,7 +1995,7 @@ function petLLMStatusText(){
   return 'preparando mi cabecita';
 }
 
-async function ensurePetLLM(){
+async function ensurePetLLM(timeoutMs=14000){
   if(petLLMReady && petLLMEngine) return petLLMEngine;
   if(petLLMFailed) return null;
   if(!('gpu' in navigator)){
@@ -2003,7 +2003,28 @@ async function ensurePetLLM(){
     console.warn('WebGPU no esta disponible; Corazoncito usara el motor de respaldo.');
     return null;
   }
-  if(petLLMLoadPromise) return petLLMLoadPromise;
+
+  /* WebGPU puede existir en el navegador pero no tener un adaptador usable. */
+  try{
+    const adapter = await navigator.gpu.requestAdapter();
+    if(!adapter){
+      petLLMFailed = true;
+      console.warn('No hay un adaptador WebGPU usable; Corazoncito usara el motor de respaldo.');
+      return null;
+    }
+  }catch(err){
+    petLLMFailed = true;
+    console.warn('No se pudo inicializar WebGPU:',err);
+    return null;
+  }
+
+  if(petLLMLoadPromise){
+    /* Nunca dejamos la conversación colgada esperando una descarga/inicialización. */
+    return await Promise.race([
+      petLLMLoadPromise,
+      new Promise(resolve=>setTimeout(()=>resolve(null),timeoutMs))
+    ]);
+  }
 
   petLLMLoadPromise = (async()=>{
     try{
@@ -2020,6 +2041,7 @@ async function ensurePetLLM(){
       });
       petLLMReady = true;
       petLLMFailed = false;
+      petLLMProgress = 100;
       return petLLMEngine;
     }catch(err){
       petLLMFailed = true;
@@ -2028,7 +2050,11 @@ async function ensurePetLLM(){
       return null;
     }
   })();
-  return petLLMLoadPromise;
+
+  return await Promise.race([
+    petLLMLoadPromise,
+    new Promise(resolve=>setTimeout(()=>resolve(null),timeoutMs))
+  ]);
 }
 
 function petConversationForModel(limit=14){
@@ -2092,7 +2118,7 @@ function generatedPetReplyTooSimilar(reply){
 }
 
 async function generateNeuralPetReply(text){
-  const engine = await ensurePetLLM();
+  const engine = await ensurePetLLM(2500);
   if(!engine) return null;
   const prompt = petPrompt(text);
   let result = await engine.chat.completions.create({
@@ -2529,7 +2555,11 @@ function addPetMessage(text,who){
   const el=document.createElement('div');el.className='pet-msg '+(who==='user'?'user':'pet');el.textContent=text;petChatMessages.appendChild(el);petChatMessages.scrollTop=petChatMessages.scrollHeight;petConversation.push({who,text,at:Date.now()});if(petConversation.length>80)petConversation.shift();
 }
 function seedPetChat(){if(petChatMessages.children.length)return;addPetMessage('Hola mi amorcito, soy Corazoncito, tu mascotita virtual. Una copia de tu bebé. 🥺❤️','pet');}
-async function initPetAI(){await Promise.allSettled([loadPetMemory(),loadPetRemoteKnowledge(),ensurePetLLM()]);}
+async function initPetAI(){
+  await Promise.allSettled([loadPetMemory(),loadPetRemoteKnowledge()]);
+  /* El cerebro neuronal se prepara en segundo plano; nunca bloquea el chat. */
+  ensurePetLLM(0).catch(()=>{});
+}
 function openPetChat(){seedPetChat();initPetAI().catch(()=>{});petChatEl.classList.add('open');petChatEl.setAttribute('aria-hidden','false');heartPetEl.setAttribute('aria-expanded','true');petChatInput.focus();}
 function closePetChat(){petChatEl.classList.remove('open');petChatEl.setAttribute('aria-hidden','true');heartPetEl.setAttribute('aria-expanded','false');}
 heartPetEl.addEventListener('click',()=>petChatEl.classList.contains('open')?closePetChat():openPetChat());
@@ -2537,7 +2567,7 @@ petChatClose.addEventListener('click',closePetChat);
 petChatForm.addEventListener('submit',async e=>{
   e.preventDefault();const msg=petChatInput.value.trim();if(!msg)return;
   addPetMessage(msg,'user');petChatInput.value='';petLastUserMessage=msg;
-  const typing=document.createElement('div');typing.className='pet-msg pet';typing.textContent=petLLMReady ? 'Estoy pensando, mi amorcito... ❤️' : `${petLLMStatusText()}...`;petChatMessages.appendChild(typing);petChatMessages.scrollTop=petChatMessages.scrollHeight;
+  const typing=document.createElement('div');typing.className='pet-msg pet';typing.textContent='Estoy pensando en lo que me dijiste, mi amorcito... ❤️';petChatMessages.appendChild(typing);petChatMessages.scrollTop=petChatMessages.scrollHeight;
   try{const reply=await generatePetReply(msg);typing.remove();addPetMessage(reply,'pet');petLastAssistantMessage=reply;}catch(err){console.warn('Fallo la mini IA:',err);typing.remove();addPetMessage('Awww, corazoncito 🥺❤️ tuve un problemita al pensar esa respuesta. Dímelo de otra forma y seguimos juntitas.','pet');}
 });
 
