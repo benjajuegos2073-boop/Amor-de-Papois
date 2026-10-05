@@ -193,6 +193,20 @@
   .pet-chat-input{flex:1;min-width:0;height:40px;padding:9px 11px !important;border-radius:999px !important;font-size:12px !important;}
   .pet-chat-send{width:40px;height:40px;flex:0 0 40px;border-radius:50%;background:linear-gradient(135deg,var(--ember),#7a2436);font-size:15px;display:flex;align-items:center;justify-content:center;}
   .pet-chat-send:hover{box-shadow:0 8px 20px -10px var(--ember-glow);transform:translateY(-1px);}
+  .pet-chat-voice{width:40px;height:40px;flex:0 0 40px;border-radius:50%;border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;color:var(--ink-dim);background:rgba(255,255,255,.035);transition:all .25s var(--ease);}
+  .pet-chat-voice:hover{color:var(--ink);border-color:var(--thread-dim);background:rgba(203,180,137,.06);transform:translateY(-1px);}
+  .pet-chat-voice.active{color:#fff;border-color:rgba(232,99,122,.55);background:rgba(194,59,82,.18);box-shadow:0 0 22px rgba(194,59,82,.18);}
+  .pet-chat-voice svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .pet-chat-voice-panel{display:none;flex:1;min-height:120px;align-items:center;justify-content:center;flex-direction:column;gap:14px;overflow:hidden;padding:24px 16px;}
+  .pet-chat.voice-mode .pet-chat-messages{display:none;}
+  .pet-chat.voice-mode .pet-chat-voice-panel{display:flex;}
+  .pet-voice-heart{width:118px;height:118px;image-rendering:pixelated;image-rendering:crisp-edges;filter:drop-shadow(0 0 22px rgba(194,59,82,.35));transition:transform .35s var(--ease),filter .35s var(--ease);}
+  .pet-voice-heart.listening{animation:petVoicePulse 1.25s ease-in-out infinite;}
+  .pet-voice-heart.speaking{animation:petVoiceSpeak .42s ease-in-out infinite alternate;}
+  @keyframes petVoicePulse{0%,100%{transform:scale(.96);filter:drop-shadow(0 0 16px rgba(194,59,82,.25));}50%{transform:scale(1.06);filter:drop-shadow(0 0 30px rgba(194,59,82,.48));}}
+  @keyframes petVoiceSpeak{from{transform:scale(.98);}to{transform:scale(1.07);}}
+  .pet-voice-status{font-size:11px;color:var(--ink-dim);letter-spacing:.03em;text-align:center;min-height:17px;}
+  .pet-voice-status strong{color:var(--ink);font-weight:600;}
   .pet-chat-note{font-size:9px;color:var(--ink-faint);padding:0 14px 10px;line-height:1.35;}
   @keyframes petFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
   .heart-pet-canvas{animation:petFloat 2.8s ease-in-out infinite;}
@@ -451,9 +465,19 @@
         <button class="pet-chat-close" id="pet-chat-close" type="button" aria-label="Cerrar chat">×</button>
       </div>
       <div class="pet-chat-messages" id="pet-chat-messages" aria-live="polite"></div>
+      <div class="pet-chat-voice-panel" id="pet-chat-voice-panel" aria-live="polite">
+        <canvas class="pet-voice-heart" id="pet-voice-heart" width="16" height="16" aria-hidden="true"></canvas>
+        <div class="pet-voice-status" id="pet-voice-status">Activa el altavoz para hablar conmigo.</div>
+      </div>
       <div class="pet-chat-note">Solo se hablar de amorcito, ternura y cosas bonitas. 💗</div>
       <form class="pet-chat-form" id="pet-chat-form">
         <input class="pet-chat-input" id="pet-chat-input" type="text" maxlength="180" autocomplete="off" placeholder="Escribe algo bonito..." aria-label="Mensaje para Corazoncito">
+        <button class="pet-chat-voice" id="pet-chat-voice" type="button" aria-label="Activar conversación por voz" aria-pressed="false" title="Hablar con Corazoncito">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9v6h4l5 4V5L8 9H4z"/>
+            <path d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10"/>
+          </svg>
+        </button>
         <button class="pet-chat-send" type="submit" aria-label="Enviar mensaje">➤</button>
       </form>
     </section>
@@ -1966,6 +1990,9 @@ const petChatInput = document.getElementById('pet-chat-input');
 const petChatMessages = document.getElementById('pet-chat-messages');
 const petCanvas = document.getElementById('heart-pet-canvas');
 const petMiniCanvas = document.getElementById('pet-mini-heart');
+const petVoiceButton = document.getElementById('pet-chat-voice');
+const petVoiceHeart = document.getElementById('pet-voice-heart');
+const petVoiceStatus = document.getElementById('pet-voice-status');
 
 let petConversation = [];
 let petMemory = [];
@@ -2461,10 +2488,11 @@ function drawPixelHeart(canvas, pulse=false){
   ctx.fillRect(6*scale,9*scale,4*scale,1*scale); ctx.fillRect(7*scale,10*scale,2*scale,1*scale);
   if(pulse){ctx.clearRect(4*scale,5*scale,2*scale,2*scale);ctx.clearRect(9*scale,5*scale,2*scale,2*scale);ctx.fillRect(4*scale,6*scale,2*scale,1*scale);ctx.fillRect(9*scale,6*scale,2*scale,1*scale);}
 }
-drawPixelHeart(petCanvas); drawPixelHeart(petMiniCanvas);
+drawPixelHeart(petCanvas); drawPixelHeart(petMiniCanvas); if(petVoiceHeart) drawPixelHeart(petVoiceHeart);
 let petPulse=false;
-setInterval(()=>{petPulse=!petPulse;drawPixelHeart(petCanvas,petPulse);drawPixelHeart(petMiniCanvas,petPulse);},950);
+setInterval(()=>{petPulse=!petPulse;drawPixelHeart(petCanvas,petPulse);drawPixelHeart(petMiniCanvas,petPulse);if(petVoiceHeart)drawPixelHeart(petVoiceHeart,petPulse);},950);
 
+function escapePetHtml(text){return String(text||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));}
 function normalizePetText(text){
   return String(text||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9ñü\s¿?¡!]/gi,' ').replace(/\s+/g,' ').trim();
 }
@@ -2934,16 +2962,259 @@ async function initPetAI(){
   warmupPetLLM();
 }
 function openPetChat(){seedPetChat();initPetAI().catch(()=>{});petChatEl.classList.add('open');petChatEl.setAttribute('aria-hidden','false');heartPetEl.setAttribute('aria-expanded','true');petChatInput.focus();}
-function closePetChat(){petChatEl.classList.remove('open');petChatEl.setAttribute('aria-hidden','true');heartPetEl.setAttribute('aria-expanded','false');}
+function closePetChat(){if(typeof cancelPetVoice==='function')cancelPetVoice();petChatEl.classList.remove('open');petChatEl.setAttribute('aria-hidden','true');heartPetEl.setAttribute('aria-expanded','false');}
 heartPetEl.addEventListener('click',()=>petChatEl.classList.contains('open')?closePetChat():openPetChat());
 petChatClose.addEventListener('click',closePetChat);
-petChatForm.addEventListener('submit',async e=>{
-  e.preventDefault();
-  const msg=petChatInput.value.trim();
-  if(!msg)return;
-  addPetMessage(msg,'user');
+/* ================================================================
+   VOZ DE CORAZONCITO — conversación manos libres
+================================================================ */
+const PetSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const petVoiceSupported = !!PetSpeechRecognition && 'speechSynthesis' in window;
+let petVoiceMode = false;
+let petVoiceListening = false;
+let petVoiceSpeaking = false;
+let petVoiceRecognition = null;
+let petVoiceSession = 0;
+let petVoiceVoices = [];
+let petVoiceMusicWasPlaying = false;
+let petVoiceMusicPaused = false;
+let petMicPermissionWarm = false;
+let petMicPermissionPromise = null;
+
+async function preparePetMicrophone(){
+  if(petMicPermissionWarm) return true;
+  if(petMicPermissionPromise) return petMicPermissionPromise;
+  petMicPermissionPromise = (async()=>{
+    try{
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+
+      // Si el navegador permite consultar el estado, evitamos pedir permiso otra vez
+      // cuando ya fue concedido para este sitio.
+      try{
+        if(navigator.permissions && navigator.permissions.query){
+          const permission = await navigator.permissions.query({name:'microphone'});
+          if(permission.state === 'granted'){
+            petMicPermissionWarm = true;
+            return true;
+          }
+          if(permission.state === 'denied') return false;
+        }
+      }catch(_){ }
+
+      // Se solicita una vez durante la entrada, aprovechando el mismo gesto del boton
+      // "Entra". No guardamos audio: solo abrimos el microfono y cerramos inmediatamente.
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      stream.getTracks().forEach(track=>track.stop());
+      petMicPermissionWarm = true;
+      return true;
+    }catch(err){
+      console.warn('No se pudo preparar el permiso del microfono:',err);
+      return false;
+    }finally{
+      petMicPermissionPromise = null;
+    }
+  })();
+  return petMicPermissionPromise;
+}
+
+function pausePetMusicForVoice(){
+  petVoiceMusicWasPlaying = !!bgAudio && !bgAudio.paused;
+  petVoiceMusicPaused = false;
+  if(petVoiceMusicWasPlaying){
+    bgAudio.pause();
+    petVoiceMusicPaused = true;
+  }
+}
+
+function resumePetMusicAfterVoice(){
+  const shouldResume = petVoiceMusicWasPlaying && petVoiceMusicPaused;
+  petVoiceMusicWasPlaying = false;
+  petVoiceMusicPaused = false;
+  if(shouldResume && document.getElementById('experience').classList.contains('active')){
+    bgAudio.play().catch(()=>{});
+  }
+}
+
+function refreshPetVoiceVoices(){
+  if(!('speechSynthesis' in window)) return;
+  petVoiceVoices = window.speechSynthesis.getVoices() || [];
+}
+refreshPetVoiceVoices();
+if('speechSynthesis' in window) window.speechSynthesis.addEventListener('voiceschanged', refreshPetVoiceVoices);
+
+function getPetSpanishVoice(){
+  refreshPetVoiceVoices();
+  const spanish = petVoiceVoices.filter(v=>/^es(-|_)/i.test(v.lang||''));
+  if(!spanish.length) return null;
+  const preferred = spanish.find(v=>/Google.*(español|espanol)|Microsoft.*(Sabina|Helena|Elvira)|Paulina|Monica|Sonia/i.test(v.name||''));
+  return preferred || spanish.find(v=>/^es-419/i.test(v.lang||'')) || spanish[0];
+}
+
+function setPetVoiceStatus(text, strong=false){
+  if(!petVoiceStatus) return;
+  petVoiceStatus.innerHTML = strong ? `<strong>${escapePetHtml(text)}</strong>` : escapePetHtml(text);
+}
+
+function setPetVoiceVisual(state){
+  if(!petVoiceHeart) return;
+  petVoiceHeart.classList.toggle('listening',state==='listening');
+  petVoiceHeart.classList.toggle('speaking',state==='speaking');
+}
+
+function stopPetVoiceRecognition(){
+  petVoiceListening=false;
+  if(petVoiceRecognition){
+    try{petVoiceRecognition.stop();}catch(_){ }
+  }
+}
+
+function cancelPetVoice(){
+  const wasInVoiceMode = petVoiceMode;
+  petVoiceSession++;
+  petVoiceMode=false;
+  petVoiceListening=false;
+  petVoiceSpeaking=false;
+  stopPetVoiceRecognition();
+  if('speechSynthesis' in window){
+    try{window.speechSynthesis.cancel();}catch(_){ }
+  }
+  setPetVoiceVisual('idle');
+  setPetVoiceStatus('Activa el altavoz para hablar conmigo.');
+  petChatEl.classList.remove('voice-mode');
+  petVoiceButton.classList.remove('active');
+  petVoiceButton.setAttribute('aria-pressed','false');
+  petVoiceButton.setAttribute('aria-label','Activar conversación por voz');
+  if(wasInVoiceMode) resumePetMusicAfterVoice();
+}
+
+function speakPetReply(text, session){
+  return new Promise(resolve=>{
+    if(!petVoiceMode || session!==petVoiceSession || !('speechSynthesis' in window) || !text){resolve();return;}
+    try{
+      window.speechSynthesis.cancel();
+      const utterance=new SpeechSynthesisUtterance(String(text));
+      const voice=getPetSpanishVoice();
+      if(voice) utterance.voice=voice;
+      utterance.lang=voice?.lang || 'es-CL';
+      // Un poquito grave y calmada para que se sienta simpatica/robotica sin sonar chillona.
+      utterance.rate=0.98;
+      utterance.pitch=0.88;
+      utterance.volume=1;
+      petVoiceSpeaking=true;
+      setPetVoiceVisual('speaking');
+      setPetVoiceStatus('Estoy hablando contigo...');
+      utterance.onend=()=>{
+        petVoiceSpeaking=false;
+        setPetVoiceVisual('idle');
+        resolve();
+      };
+      utterance.onerror=()=>{
+        petVoiceSpeaking=false;
+        setPetVoiceVisual('idle');
+        resolve();
+      };
+      window.speechSynthesis.speak(utterance);
+    }catch(_){
+      petVoiceSpeaking=false;
+      setPetVoiceVisual('idle');
+      resolve();
+    }
+  });
+}
+
+function startPetVoiceListening(session=petVoiceSession){
+  if(!petVoiceMode || session!==petVoiceSession || !petVoiceSupported || petVoiceSpeaking) return false;
+  stopPetVoiceRecognition();
+  const recognition=new PetSpeechRecognition();
+  petVoiceRecognition=recognition;
+  recognition.lang='es-CL';
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+  recognition.onstart=()=>{
+    if(session!==petVoiceSession || !petVoiceMode){try{recognition.stop();}catch(_){ }return;}
+    petVoiceListening=true;
+    setPetVoiceVisual('listening');
+    setPetVoiceStatus('Te escucho, mi amorcito...',true);
+  };
+  recognition.onresult=event=>{
+    if(session!==petVoiceSession || !petVoiceMode) return;
+    const transcript=String(event?.results?.[0]?.[0]?.transcript||'').trim();
+    petVoiceListening=false;
+    try{recognition.stop();}catch(_){ }
+    if(!transcript){
+      setPetVoiceVisual('idle');
+      setPetVoiceStatus('No alcancé a escucharte. Háblame otra vez.');
+      setTimeout(()=>startPetVoiceListening(session),650);
+      return;
+    }
+    setPetVoiceVisual('idle');
+    setPetVoiceStatus('Te entendí. Estoy pensando...');
+    sendPetChatMessage(transcript,{fromVoice:true,voiceSession:session}).catch(()=>{});
+  };
+  recognition.onerror=event=>{
+    petVoiceListening=false;
+    setPetVoiceVisual('idle');
+    if(session!==petVoiceSession || !petVoiceMode) return;
+    if(event?.error==='not-allowed' || event?.error==='service-not-allowed'){
+      setPetVoiceStatus('Necesito permiso para usar el micrófono.');
+      return;
+    }
+    if(event?.error==='no-speech'){
+      setPetVoiceStatus('No te escuché, mi amorcito...');
+      setTimeout(()=>startPetVoiceListening(session),700);
+      return;
+    }
+    setPetVoiceStatus('Hubo un problemita con el micrófono.');
+    setTimeout(()=>startPetVoiceListening(session),1000);
+  };
+  recognition.onend=()=>{
+    petVoiceListening=false;
+    if(session!==petVoiceSession || !petVoiceMode || petVoiceSpeaking) return;
+    setTimeout(()=>startPetVoiceListening(session),350);
+  };
+  try{
+    recognition.start();
+    return true;
+  }catch(_){
+    petVoiceListening=false;
+    setPetVoiceStatus('No pude activar el micrófono todavía.');
+    return false;
+  }
+}
+
+async function togglePetVoiceMode(){
+  if(!petVoiceSupported){
+    setPetVoiceStatus('Tu navegador no admite esta conversación por voz. Prueba Chrome.');
+    return;
+  }
+  if(petVoiceMode){
+    cancelPetVoice();
+    petChatInput.focus();
+    return;
+  }
+  petVoiceSession++;
+  const session=petVoiceSession;
+  petVoiceMode=true;
+  pausePetMusicForVoice();
+  petChatEl.classList.add('voice-mode');
+  petVoiceButton.classList.add('active');
+  petVoiceButton.setAttribute('aria-pressed','true');
+  petVoiceButton.setAttribute('aria-label','Desactivar conversación por voz');
+  setPetVoiceStatus('Preparando mi vocecita...');
+  startPetVoiceListening(session);
+}
+
+petVoiceButton.addEventListener('click',togglePetVoiceMode);
+
+function sendPetChatMessage(msg,{fromVoice=false,voiceSession=petVoiceSession}={}){
+  const message=String(msg||'').trim();
+  if(!message) return Promise.resolve();
+  if(petChatInput.disabled && !fromVoice) return Promise.resolve();
+
+  addPetMessage(message,'user');
   petChatInput.value='';
-  petLastUserMessage=msg;
+  petLastUserMessage=message;
 
   const typing=document.createElement('div');
   typing.className='pet-msg pet';
@@ -2955,31 +3226,49 @@ petChatForm.addEventListener('submit',async e=>{
   petChatInput.disabled=true;
   if(sendButton)sendButton.disabled=true;
 
-  try{
-    let neuralStarted=false;
-    const reply=await generatePetReply(msg, partial=>{
-      if(!neuralStarted){
-        neuralStarted=true;
-        stopThinking();
-      }
+  return generatePetReply(message, partial=>{
+    if(!fromVoice && !petVoiceMode){
       typing.textContent=partial;
       petChatMessages.scrollTop=petChatMessages.scrollHeight;
-    });
+    }
+    stopThinking();
+  }).then(async reply=>{
     stopThinking();
     typing.remove();
     addPetMessage(reply,'pet');
     petLastAssistantMessage=reply;
-  }catch(err){
+    if(fromVoice && petVoiceMode && voiceSession===petVoiceSession){
+      await speakPetReply(reply,voiceSession);
+      if(petVoiceMode && voiceSession===petVoiceSession) startPetVoiceListening(voiceSession);
+    }
+    return reply;
+  }).catch(err=>{
     console.warn('Fallo la mini IA:',err);
     stopThinking();
     typing.remove();
-    addPetMessage('Awww, mi amorcito 🥺 tuve un problemita al pensar esa respuesta. Dímelo de otra forma y seguimos juntitas.','pet');
-  }finally{
+    const fallback='Awww, mi amorcito 🥺 tuve un problemita al pensar esa respuesta. Dímelo de otra forma y seguimos juntitas.';
+    addPetMessage(fallback,'pet');
+    if(fromVoice && petVoiceMode && voiceSession===petVoiceSession){
+      return speakPetReply(fallback,voiceSession).then(()=>{
+        if(petVoiceMode && voiceSession===petVoiceSession) startPetVoiceListening(voiceSession);
+        return fallback;
+      });
+    }
+    throw err;
+  }).finally(()=>{
     petChatInput.disabled=false;
     if(sendButton)sendButton.disabled=false;
-    petChatInput.focus();
-  }
+    if(!petVoiceMode) petChatInput.focus();
+  });
+}
+
+petChatForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(petChatInput.disabled) return;
+  sendPetChatMessage(petChatInput.value).catch(()=>{});
 });
+
+
 
 
 /* ================================================================
@@ -3001,6 +3290,9 @@ function prepareBackgroundMusic(){
 prepareBackgroundMusic();
 
 document.getElementById('entry-btn').addEventListener('click', function onEntry(){
+  // Preparamos el permiso del microfono dentro del mismo gesto de entrada,
+  // igual que hacemos con la reproduccion de la musica.
+  preparePetMicrophone().catch(()=>{});
   migrateLegacyLocalData().catch(()=>{});
   document.getElementById('entry-screen').classList.add('leaving');
   document.getElementById('experience').classList.add('active');
