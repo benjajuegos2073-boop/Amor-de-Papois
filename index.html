@@ -3087,18 +3087,38 @@ function cancelPetVoice(){
   if(wasInVoiceMode) resumePetMusicAfterVoice();
 }
 
+function stripPetSpeechEmojis(text){
+  // Los emojis siguen visibles en el chat; aqui solo quitamos sus simbolos
+  // antes de entregarlos a speechSynthesis para que la voz no los intente leer.
+  try{
+    return String(text||'')
+      .replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{200D}]/gu,' ')
+      .replace(/\s{2,}/g,' ')
+      .trim();
+  }catch(_){
+    // Compatibilidad con navegadores que no admitan propiedades Unicode.
+    return String(text||'')
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,' ')
+      .replace(/\s{2,}/g,' ')
+      .trim();
+  }
+}
+
 function speakPetReply(text, session){
   return new Promise(resolve=>{
     if(!petVoiceMode || session!==petVoiceSession || !('speechSynthesis' in window) || !text){resolve();return;}
     try{
+      const spokenText=stripPetSpeechEmojis(text);
+      if(!spokenText){resolve();return;}
       window.speechSynthesis.cancel();
-      const utterance=new SpeechSynthesisUtterance(String(text));
+      const utterance=new SpeechSynthesisUtterance(spokenText);
       const voice=getPetSpanishVoice();
       if(voice) utterance.voice=voice;
       utterance.lang=voice?.lang || 'es-CL';
-      // Un poquito grave y calmada para que se sienta simpatica/robotica sin sonar chillona.
-      utterance.rate=0.98;
-      utterance.pitch=0.88;
+      // Un poquito mas pausada y cercana para que suene mas natural,
+      // manteniendo el toque suave/robotico sin volverla chillona.
+      utterance.rate=0.94;
+      utterance.pitch=0.93;
       utterance.volume=1;
       petVoiceSpeaking=true;
       setPetVoiceVisual('speaking');
