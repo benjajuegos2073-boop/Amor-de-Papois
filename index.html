@@ -1985,7 +1985,7 @@ const PET_LLM_MODEL = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
 const PET_LLM_TIMEOUT_MS = 20000; // Solo para el cerebro local que queda como respaldo tecnico.
 
 /* Cerebro remoto: mucho mas rapido que ejecutar el modelo dentro del navegador. */
-const PET_REMOTE_AI_URL = `${SUPABASE_URL}/functions/v1/corazoncito-chat`;
+const PET_REMOTE_AI_URL = 'https://mvtjtlxtjgfojuogwotk.supabase.co/functions/v1/swift-processor';
 const PET_REMOTE_AI_TIMEOUT_MS = 60000; // Emergencia; la respuesta normal llega por streaming mucho antes.
 let petLLMEngine = null;
 let petLLMLoadPromise = null;
