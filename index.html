@@ -2313,7 +2313,23 @@ async function generateRemotePetReply(text, externalDeadline=null, onPartial=nul
 
       while(true){
         if(Date.now()>=deadline) throw new Error('Tiempo de emergencia agotado.');
-        const {value,done}=await reader.read();
+
+        // Gemini puede dejar abierta la conexion despues de haber enviado toda
+        // la respuesta visible. No hacemos depender el chat del cierre del socket:
+        // si ya recibimos contenido y durante 1200 ms no llega ningun fragmento
+        // nuevo, damos la respuesta por terminada y cancelamos el lector.
+        const readPromise=reader.read().then(result=>({kind:'read',result}));
+        const waitForIdle=state.accumulated.trim()
+          ? new Promise(resolve=>setTimeout(()=>resolve({kind:'idle'}),1200))
+          : new Promise(()=>{});
+        const race=await Promise.race([readPromise,waitForIdle]);
+
+        if(race.kind==='idle'){
+          try{await reader.cancel();}catch(_){}
+          break;
+        }
+
+        const {value,done}=race.result;
         if(done) break;
         buffer += decoder.decode(value,{stream:true}).replace(/\r/g,'');
         const lines=buffer.split('\n');
@@ -2325,7 +2341,7 @@ async function generateRemotePetReply(text, externalDeadline=null, onPartial=nul
 
           let payload=trimmed;
           if(trimmed.startsWith('data:')) payload=trimmed.slice(5).trim();
-          if(!payload || payload==='[DONE]') continue;
+          if(!payload || payload==='[DONE]' || payload==='\"[DONE]\"') continue;
 
           // JSON SSE, JSON por linea o texto por linea.
           try{
@@ -2343,7 +2359,7 @@ async function generateRemotePetReply(text, externalDeadline=null, onPartial=nul
         if(!trimmed) continue;
         let payload=trimmed;
         if(trimmed.startsWith('data:')) payload=trimmed.slice(5).trim();
-        if(!payload || payload==='[DONE]') continue;
+        if(!payload || payload==='[DONE]' || payload==='\"[DONE]\"') continue;
         try{emitCandidate(extractTextFromPayload(JSON.parse(payload)),state);}
         catch(_){if(!trimmed.startsWith('event:') && !trimmed.startsWith(':')) emitCandidate(payload,state);}
       }
