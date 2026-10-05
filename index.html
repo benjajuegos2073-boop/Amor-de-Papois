@@ -1986,7 +1986,7 @@ const PET_LLM_TIMEOUT_MS = 20000; // Solo para el cerebro local que queda como r
 
 /* Cerebro remoto: mucho mas rapido que ejecutar el modelo dentro del navegador. */
 const PET_REMOTE_AI_URL = 'https://mvtjtlxtjgfojuogwotk.supabase.co/functions/v1/swift-processor';
-const PET_REMOTE_AI_TIMEOUT_MS = 60000; // Emergencia; la respuesta normal llega por streaming mucho antes.
+const PET_REMOTE_AI_TIMEOUT_MS = 180000; // Solo una proteccion contra bloqueos infinitos; la IA puede tardar sin caer al default a los 60 s.
 let petLLMEngine = null;
 let petLLMLoadPromise = null;
 let petLLMReady = false;
@@ -2207,62 +2207,155 @@ async function generateRemotePetReply(text, externalDeadline=null, onPartial=nul
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), remaining);
 
+  const emitCandidate = (candidate, state)=>{
+    if(candidate == null) return;
+    const value = String(candidate);
+    if(!value) return;
+    state.accumulated += value;
+    const clean = cleanGeneratedPetReply(state.accumulated) || state.accumulated.trim();
+    if(clean && typeof onPartial === 'function') onPartial(clean);
+  };
+
+  const extractTextFromPayload = (data)=>{
+    if(data == null) return '';
+    if(typeof data === 'string') return data;
+
+    const out = [];
+    const push = value=>{ if(typeof value === 'string' && value) out.push(value); };
+
+    if(Array.isArray(data)){
+      for(const item of data) push(extractTextFromPayload(item));
+      return out.join('');
+    }
+
+    // OpenAI-compatible responses / SSE chunks.
+    push(data?.choices?.[0]?.delta?.content);
+    push(data?.choices?.[0]?.message?.content);
+    push(data?.choices?.[0]?.text);
+
+    // Gemini REST responses.
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if(Array.isArray(parts)){
+      for(const part of parts){
+        if(part?.thought === true) continue;
+        push(part?.text);
+      }
+    }
+
+    push(data?.text);
+    push(data?.output_text);
+    push(data?.response);
+    push(data?.reply);
+    push(data?.answer);
+    push(data?.content);
+
+    return out.join('');
+  };
+
   try{
     const prompt = petPrompt(text);
     const response = await fetch(PET_REMOTE_AI_URL, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:prompt.messages}),
+      headers:{
+        'Content-Type':'application/json',
+        'Accept':'text/event-stream, application/json, text/plain, */*',
+        // Supabase puede exigir este encabezado antes de dejar pasar la peticion
+        // a la Edge Function cuando verify_jwt esta activo.
+        'apikey':SUPABASE_PUBLISHABLE_KEY
+      },
+      body:JSON.stringify({
+        messages:prompt.messages
+      }),
       signal:controller.signal
     });
 
     if(!response.ok){
       let detail='';
-      try{ detail=await response.text(); }catch(_){ }
-      throw new Error(`IA remota ${response.status}: ${detail.slice(0,240)}`);
+      try{detail=await response.text();}catch(_){ }
+      if(response.status===401){
+        console.warn('Corazoncito: Supabase rechazo swift-processor con 401. Revisa verify_jwt y el encabezado apikey.');
+      }
+      throw new Error(`IA remota ${response.status}: ${detail.slice(0,400)}`);
     }
 
-    if(!response.body) throw new Error('La IA remota no devolvio un stream.');
+    const contentType=(response.headers.get('content-type')||'').toLowerCase();
+    const state={accumulated:''};
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer='';
-    let accumulated='';
-
-    const emitSSE = (payload)=>{
-      if(!payload || payload==='[DONE]') return;
+    /*
+       Aceptamos las tres formas habituales:
+       1) SSE (streaming)
+       2) JSON completo
+       3) texto plano
+       Asi un cambio interno de swift-processor no obliga a usar el fallback.
+    */
+    if(contentType.includes('application/json') || contentType.includes('+json')){
+      const raw=await response.text();
       try{
-        const data=JSON.parse(payload);
-        const delta=data?.choices?.[0]?.delta?.content ?? '';
-        if(delta){
-          accumulated += delta;
-          const clean=cleanGeneratedPetReply(accumulated) || accumulated.trim();
-          if(clean && typeof onPartial==='function') onPartial(clean);
+        const data=JSON.parse(raw);
+        emitCandidate(extractTextFromPayload(data),state);
+      }catch(_){
+        // Algunos proxies devuelven JSON precedido por texto/espacios: intentamos SSE igualmente.
+        const lines=raw.replace(/\r/g,'').split('\n');
+        for(const line of lines){
+          const payload=line.startsWith('data:')?line.slice(5).trim():line.trim();
+          if(!payload || payload==='[DONE]') continue;
+          try{emitCandidate(extractTextFromPayload(JSON.parse(payload)),state);}catch(_){ }
         }
-      }catch(_){ }
-    };
+      }
+    }else if(contentType.includes('text/plain') && !contentType.includes('event-stream')){
+      const raw=await response.text();
+      emitCandidate(raw,state);
+    }else{
+      if(!response.body) throw new Error('La IA remota no devolvio un cuerpo de respuesta.');
+      const reader=response.body.getReader();
+      const decoder=new TextDecoder('utf-8');
+      let buffer='';
 
-    while(true){
-      if(Date.now() >= deadline) throw new Error('Tiempo de emergencia agotado.');
-      const {value,done}=await reader.read();
-      if(done) break;
-      buffer += decoder.decode(value,{stream:true}).replace(/\r/g,'');
-      const lines=buffer.split('\n');
-      buffer=lines.pop() || '';
-      for(const line of lines){
-        if(line.startsWith('data: ')) emitSSE(line.slice(6).trim());
+      while(true){
+        if(Date.now()>=deadline) throw new Error('Tiempo de emergencia agotado.');
+        const {value,done}=await reader.read();
+        if(done) break;
+        buffer += decoder.decode(value,{stream:true}).replace(/\r/g,'');
+        const lines=buffer.split('\n');
+        buffer=lines.pop() || '';
+
+        for(const line of lines){
+          const trimmed=line.trim();
+          if(!trimmed) continue;
+
+          let payload=trimmed;
+          if(trimmed.startsWith('data:')) payload=trimmed.slice(5).trim();
+          if(!payload || payload==='[DONE]') continue;
+
+          // JSON SSE, JSON por linea o texto por linea.
+          try{
+            const data=JSON.parse(payload);
+            emitCandidate(extractTextFromPayload(data),state);
+          }catch(_){
+            if(!trimmed.startsWith('event:') && !trimmed.startsWith(':')) emitCandidate(payload,state);
+          }
+        }
+      }
+
+      buffer += decoder.decode();
+      for(const line of buffer.split('\n')){
+        const trimmed=line.trim();
+        if(!trimmed) continue;
+        let payload=trimmed;
+        if(trimmed.startsWith('data:')) payload=trimmed.slice(5).trim();
+        if(!payload || payload==='[DONE]') continue;
+        try{emitCandidate(extractTextFromPayload(JSON.parse(payload)),state);}
+        catch(_){if(!trimmed.startsWith('event:') && !trimmed.startsWith(':')) emitCandidate(payload,state);}
       }
     }
 
-    buffer += decoder.decode();
-    for(const line of buffer.split('\n')){
-      if(line.startsWith('data: ')) emitSSE(line.slice(6).trim());
-    }
-
-    const reply=cleanGeneratedPetReply(accumulated);
-    if(!reply) throw new Error('La IA remota termino sin contenido.');
+    const reply=cleanGeneratedPetReply(state.accumulated);
+    if(!reply) throw new Error('La IA remota termino sin contenido interpretable.');
     if(generatedPetReplyTooSimilar(reply)) throw new Error('La IA remota genero una respuesta demasiado parecida a una anterior.');
     return reply;
+  }catch(err){
+    console.warn('Error detallado de Corazoncito / swift-processor:',err);
+    throw err;
   }finally{
     clearTimeout(timer);
   }
