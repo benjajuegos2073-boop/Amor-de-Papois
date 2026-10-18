@@ -130,6 +130,23 @@
     45%{transform:scale(1.08); filter:drop-shadow(0 0 32px var(--ember-glow));}
   }
   .central-heart .sparkle{position:absolute; inset:-30%; pointer-events:none;}
+  .heart-unread-badge{
+    position:absolute;top:5%;right:5%;z-index:3;display:flex;align-items:center;justify-content:center;
+    width:13px;height:13px;border-radius:999px;background:#f28c28;border:2px solid #fff2df;
+    color:#241307;font-family:var(--sans);font-size:11px;font-weight:800;line-height:1;
+    box-shadow:0 0 13px rgba(242,140,40,.55);pointer-events:none;transform:scale(1);transition:transform .2s var(--ease);
+  }
+  .heart-unread-badge.count{width:23px;height:23px;top:0;right:0;border-width:1.5px;font-size:11px;}
+  .heart-unread-badge.hidden{display:none !important;}
+  .cartita-notification{
+    position:fixed;top:18px;right:18px;z-index:200;max-width:min(340px,calc(100vw - 28px));
+    padding:13px 17px;border:1px solid rgba(242,140,40,.55);border-radius:15px;
+    background:linear-gradient(135deg,rgba(38,25,17,.97),rgba(15,12,12,.98));color:#fff4e7;
+    box-shadow:0 14px 42px rgba(0,0,0,.45),0 0 20px rgba(242,140,40,.14);font-size:12px;line-height:1.5;
+    text-align:left;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px);
+    transition:opacity .25s var(--ease),transform .25s var(--ease),visibility .25s var(--ease);
+  }
+  .cartita-notification.visible{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0);cursor:pointer;}
 
   /* Lock heart — candado cuyo cuerpo es un corazón */
   .lock-heart{
@@ -304,8 +321,12 @@
   .cartita-editor textarea{min-height:180px;}
   .cartitas-menu-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-height:52vh;overflow:auto;}
   .cartita-menu-card{
-    width:100%; text-align:left; padding:14px 16px; border:1px solid var(--glass-border);
+    position:relative;width:100%; text-align:left; padding:14px 38px 14px 16px; border:1px solid var(--glass-border);
     border-radius:14px; background:rgba(255,255,255,.035); transition:all .25s var(--ease);
+  }
+  .cartita-unread-dot{
+    position:absolute;top:13px;right:14px;width:11px;height:11px;border-radius:50%;
+    background:#f28c28;border:1.5px solid #fff2df;box-shadow:0 0 11px rgba(242,140,40,.42);
   }
   .cartita-menu-card:hover,.cartita-menu-card:focus-visible{
     border-color:var(--thread-dim); background:rgba(203,180,137,.06); transform:translateY(-1px);
@@ -432,6 +453,7 @@
           <path d="M12 21.35s-6.98-4.35-9.86-8.49C.28 9.5 1.02 5.6 4.2 3.94 6.9 2.53 9.7 3.6 12 6.4c2.3-2.8 5.1-3.87 7.8-2.46 3.18 1.66 3.92 5.56 2.06 8.92C18.98 17 12 21.35 12 21.35z"/>
         </svg>
       </span>
+      <span class="heart-unread-badge hidden" id="heart-unread-badge" aria-hidden="true"></span>
     </button>
 
     <button class="lock-heart" id="lock-heart" type="button" aria-label="Abrir las reglas">
@@ -1458,6 +1480,143 @@ galleryModalEl.addEventListener('touchend', (e)=>{
    CORAZÓN CENTRAL → carta / cartitas con doble toque
 ================================================================ */
 const centralHeartEl = document.getElementById('central-heart');
+const heartUnreadBadgeEl = document.getElementById('heart-unread-badge');
+const CARTITA_READ_STORAGE_KEY = 'espacio-privado-cartitas-leidas-v1';
+// El seguimiento empieza con las cartitas creadas desde el 16 de octubre de 2026.
+// Las anteriores no se marcan como nuevas automáticamente tras instalar esta función.
+const CARTITA_NOTIFICATIONS_ENABLED_AT = Date.parse('2026-10-16T00:00:00-03:00');
+let cartitaReadIds = new Set();
+let cartitaSnapshot = [];
+let cartitaKnownIds = new Set();
+let cartitaNotificationsInitialized = false;
+let cartitaNotificationPollingTimer = null;
+let cartitaRefreshInProgress = false;
+let cartitaNotificationTimer = null;
+
+try{
+  const storedCartitaReads = JSON.parse(localStorage.getItem(CARTITA_READ_STORAGE_KEY) || '[]');
+  if(Array.isArray(storedCartitaReads)) cartitaReadIds = new Set(storedCartitaReads.map(String));
+}catch(_){ cartitaReadIds = new Set(); }
+
+function cartitaTimestamp(cartita){
+  const value = cartita?.addedAt;
+  const timestamp = typeof value === 'number' ? value : Date.parse(value || '');
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+function isCartitaUnread(cartita){
+  return Boolean(cartita && cartita.id != null && cartitaTimestamp(cartita) >= CARTITA_NOTIFICATIONS_ENABLED_AT && !cartitaReadIds.has(String(cartita.id)));
+}
+function saveCartitaReadIds(){
+  try{ localStorage.setItem(CARTITA_READ_STORAGE_KEY, JSON.stringify([...cartitaReadIds])); }catch(err){ console.warn('No se pudo guardar el estado de lectura de las cartitas.', err); }
+}
+function updateHeartUnreadBadge(){
+  if(!heartUnreadBadgeEl) return;
+  const count = cartitaSnapshot.filter(isCartitaUnread).length;
+  heartUnreadBadgeEl.classList.toggle('hidden', count < 1);
+  heartUnreadBadgeEl.classList.toggle('count', count >= 2);
+  heartUnreadBadgeEl.textContent = count >= 2 ? String(count) : '';
+  heartUnreadBadgeEl.setAttribute('aria-hidden', count < 1 ? 'true' : 'false');
+  centralHeartEl.setAttribute('aria-label', count ? `Abrir las cartitas${count === 1 ? ': 1 sin leer' : `: ${count} sin leer`}` : 'Abrir la carta');
+  document.querySelectorAll('.cartita-menu-card').forEach(card=>{
+    const dot = card.querySelector('.cartita-unread-dot');
+    const unread = cartitaSnapshot.find(item=>String(item.id) === card.dataset.cartitaId);
+    if(dot) dot.classList.toggle('hidden', !isCartitaUnread(unread));
+  });
+}
+function markCartitaAsRead(id){
+  if(id == null) return;
+  cartitaReadIds.add(String(id));
+  saveCartitaReadIds();
+  updateHeartUnreadBadge();
+}
+function showCartitaNotification(message, cartitaName='una cartita nueva'){
+  // Notificación nativa del sistema operativo (si la usuaria concedió permiso).
+  // Funciona con el sitio abierto o en segundo plano; para una página completamente
+  // cerrada hace falta configurar Web Push y un servicio de envío en el servidor.
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const nativeNotice = new Notification('Tienes una cartita nueva ❤️', {
+        body: String(cartitaName || message || 'Hay una sorpresa esperándote').slice(0,180),
+        tag: 'cartita-nueva-' + Date.now(),
+        icon: './favicon.ico',
+        renotify: true
+      });
+      nativeNotice.onclick = () => {
+        try { window.focus(); } catch (_) {}
+        nativeNotice.close();
+        openCartitasMenu();
+      };
+    } catch (err) {
+      console.warn('El navegador no permitió mostrar la notificación del sistema.', err);
+    }
+  }
+  let toast = document.getElementById('cartita-notification');
+  if(!toast){
+    toast = document.createElement('button');
+    toast.type = 'button';
+    toast.id = 'cartita-notification';
+    toast.className = 'cartita-notification';
+    toast.setAttribute('aria-live','polite');
+    toast.setAttribute('aria-label','Notificación de cartita nueva. Abrir cartitas');
+    toast.addEventListener('click',()=>{
+      toast.classList.remove('visible');
+      openCartitasMenu();
+    });
+    document.body.appendChild(toast);
+  }
+  toast.textContent = `✉  ${message}`;
+  toast.classList.add('visible');
+  if(cartitaNotificationTimer) clearTimeout(cartitaNotificationTimer);
+  cartitaNotificationTimer = setTimeout(()=>toast.classList.remove('visible'),6000);
+}
+async function refreshCartitaNotifications({notifyNew=false,notifyInitialUnread=false}={}){
+  if(cartitaRefreshInProgress) return cartitaSnapshot;
+  cartitaRefreshInProgress = true;
+  try{
+    const cartitas = (await dbGetAll('cartitas')).sort((a,b)=>cartitaTimestamp(a)-cartitaTimestamp(b));
+    const currentIds = new Set(cartitas.filter(item=>item?.id != null).map(item=>String(item.id)));
+    const isFirstCheck = !cartitaNotificationsInitialized;
+    const newUnread = isFirstCheck ? [] : cartitas.filter(item=>!cartitaKnownIds.has(String(item.id)) && isCartitaUnread(item));
+    cartitaSnapshot = cartitas;
+    updateHeartUnreadBadge();
+    cartitaKnownIds = currentIds;
+    cartitaNotificationsInitialized = true;
+
+    if(isFirstCheck && notifyInitialUnread){
+      const unreadCount = cartitaSnapshot.filter(isCartitaUnread).length;
+      if(unreadCount === 1) showCartitaNotification('Tienes una cartita nueva sin leer.', 'Tienes una cartita sin leer.');
+      else if(unreadCount > 1) showCartitaNotification(`Tienes ${unreadCount} cartitas sin leer.`, `Tienes ${unreadCount} cartitas sin leer.`);
+    }else if(notifyNew && newUnread.length){
+      const latest = newUnread[newUnread.length-1];
+      showCartitaNotification(`Nueva cartita: ${latest.name || 'una sorpresa para ti'}`, latest.name || 'Hay una sorpresa esperándote.');
+    }
+    return cartitaSnapshot;
+  }catch(err){
+    console.warn('No se pudo actualizar el aviso de cartitas.', err);
+    return cartitaSnapshot;
+  }finally{
+    cartitaRefreshInProgress = false;
+  }
+}
+function startCartitaNotificationPolling(){
+  if(cartitaNotificationPollingTimer) return;
+  refreshCartitaNotifications({notifyNew:true,notifyInitialUnread:true}).catch(()=>{});
+  cartitaNotificationPollingTimer = setInterval(()=>{
+    refreshCartitaNotifications({notifyNew:true}).catch(()=>{});
+  },18000);
+}
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && cartitaNotificationsInitialized) refreshCartitaNotifications({notifyNew:true}).catch(()=>{});
+});
+window.addEventListener('storage',event=>{
+  if(event.key !== CARTITA_READ_STORAGE_KEY) return;
+  try{
+    const ids = JSON.parse(event.newValue || '[]');
+    cartitaReadIds = new Set(Array.isArray(ids) ? ids.map(String) : []);
+  }catch(_){ cartitaReadIds = new Set(); }
+  updateHeartUnreadBadge();
+});
+
 let centralHeartTapTimer = null;
 let centralHeartLastTap = 0;
 
@@ -1465,7 +1624,9 @@ async function renderCartitasMenu(){
   const list = document.getElementById('cartitas-menu-list');
   const empty = document.getElementById('cartitas-menu-empty');
   const reader = document.getElementById('cartita-reader');
-  const cartitas = (await dbGetAll('cartitas')).sort((a,b)=> a.addedAt-b.addedAt);
+  const cartitas = (await dbGetAll('cartitas')).sort((a,b)=> cartitaTimestamp(a)-cartitaTimestamp(b));
+  cartitaSnapshot = cartitas;
+  updateHeartUnreadBadge();
   list.innerHTML = '';
   list.classList.remove('hidden');
   empty.classList.toggle('hidden', cartitas.length > 0);
@@ -1476,6 +1637,7 @@ async function renderCartitasMenu(){
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cartita-menu-card';
+    btn.dataset.cartitaId = String(cartita.id);
     const title = document.createElement('div');
     title.className = 'cartita-menu-card-title';
     title.textContent = cartita.name || ('Cartita ' + (index+1));
@@ -1483,12 +1645,20 @@ async function renderCartitasMenu(){
     meta.className = 'cartita-menu-card-meta';
     meta.textContent = 'Toca para abrirla';
     btn.append(title, meta);
+    if(isCartitaUnread(cartita)){
+      const dot = document.createElement('span');
+      dot.className = 'cartita-unread-dot';
+      dot.title = 'Cartita sin leer';
+      dot.setAttribute('aria-label','Cartita sin leer');
+      btn.appendChild(dot);
+    }
     btn.addEventListener('click', ()=> openCartitaReader(cartita, false));
     list.appendChild(btn);
   });
 }
 
 function openCartitaReader(cartita, adminPreview=false){
+  if(!adminPreview) markCartitaAsRead(cartita.id);
   document.getElementById('cartitas-menu-list').classList.add('hidden');
   document.getElementById('cartitas-menu-empty').classList.add('hidden');
   const reader = document.getElementById('cartita-reader');
@@ -1573,11 +1743,18 @@ cartitaSaveBtn.addEventListener('click', async ()=>{
     return;
   }
   try{
+    const isNewCartita = !editingCartitaId;
+    const existingCartita = editingCartitaId
+      ? (await dbGetAll('cartitas')).find(item=>String(item.id) === String(editingCartitaId))
+      : null;
     const id = editingCartitaId || uid();
-    await dbAdd('cartitas', {id, name:title, content, addedAt:Date.now()});
+    const addedAt = existingCartita?.addedAt || Date.now();
+    await dbAdd('cartitas', {id, name:title, content, addedAt});
     resetCartitaEditor();
     await renderCartitasAdminList();
-    showCartitaStatus('Cartita guardada en la nube. ❤️');
+    if(isNewCartita) await refreshCartitaNotifications({notifyNew:true,notifyInitialUnread:true});
+    else await refreshCartitaNotifications({notifyNew:false});
+    showCartitaStatus(isNewCartita ? 'Cartita guardada en la nube. ❤️' : 'Cartita actualizada. ❤️');
   }catch(err){
     console.warn('No se pudo guardar la cartita.', err);
     showCartitaStatus('No se pudo guardar la cartita.', true);
@@ -1614,6 +1791,7 @@ async function renderCartitasAdminList(){
         await dbDelete('cartitas', cartita.id);
         if(editingCartitaId === cartita.id) resetCartitaEditor();
         await renderCartitasAdminList();
+        await refreshCartitaNotifications({notifyNew:false});
       })
     );
     li.append(info, actions);
@@ -3310,6 +3488,12 @@ function prepareBackgroundMusic(){
 prepareBackgroundMusic();
 
 document.getElementById('entry-btn').addEventListener('click', function onEntry(){
+  startCartitaNotificationPolling();
+  // Solicita el permiso de notificaciones durante el mismo gesto de entrada.
+  // Si ya aceptó o rechazó, el navegador respeta la decisión guardada.
+  if ('Notification' in window && Notification.permission === 'default') {
+    try { Notification.requestPermission().catch(()=>{}); } catch (_) {}
+  }
   // Preparamos el permiso del microfono dentro del mismo gesto de entrada,
   // igual que hacemos con la reproduccion de la musica.
   preparePetMicrophone().catch(()=>{});
