@@ -3723,6 +3723,8 @@ async function initGame(){
    myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity};
    if(myPos.activity==='rest') await action('stand');
   }
+  // Recupera también a quienes ya quedaron atrapados en una sesión anterior.
+  await rescueSofaPosition();
   playing=true;hideModal();lastFrame=performance.now();lastSync=performance.now();lastPersist=performance.now();
   cancelAnimationFrame(frameId);frameId=requestAnimationFrame(frame);
  }catch(e){playing=false;dialog('Conexión necesaria',`<p>${esc(friendly(e))}</p><p>La casa requiere tablas, permisos RLS y Realtime instalados. No usaremos datos locales falsos.</p>`,[
@@ -3787,6 +3789,18 @@ async function persist(){
  try{await safeCall('house_move',{p_x:Math.round(myPos.x),p_y:Math.round(myPos.y),p_room:myPos.room,p_facing:myPos.facing});}
  catch(e){console.warn('Guardado de posición:',e);await sync(true).catch(()=>{});}
 }
+// Libera partidas guardadas por versiones antiguas donde el personaje quedaba
+// de pie, pero dentro de la colisión del sillón (y=445). También funciona
+// aunque el usuario todavía no haya actualizado las funciones SQL.
+async function rescueSofaPosition(){
+ if(!me||me.sick||myPos.room!=='main'||!['idle','rest'].includes(myPos.activity))return;
+ if(myPos.x<385||myPos.x>520||myPos.y<415||myPos.y>462||!blocked(myPos.x,myPos.y))return;
+ const safeY=480; // Por debajo del sillón, fuera del rectángulo sólido y su margen.
+ try{
+  await safeCall('house_move',{p_x:Math.round(myPos.x),p_y:safeY,p_room:myPos.room,p_facing:myPos.facing});
+  myPos.y=safeY;pendingMove=false;broadcast(true);
+ }catch(e){toast('No se pudo liberar el personaje: '+friendly(e));}
+}
 async function runAction(name,value){
  if(me?.sick){toast('Estás enfermo. Necesitas cuidados de tu pareja.');return;}
  try{
@@ -3799,6 +3813,7 @@ async function runAction(name,value){
    }
   }
   if(name==='stand'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),activity:'idle'};}
+  if(name==='stand')await rescueSofaPosition();
   broadcast(true);hideModal();
  }catch(e){toast(friendly(e));}
 }
