@@ -422,6 +422,58 @@
     .game-player-title{font-size:22px;}
   }
 </style>
+<!-- CASA DIGITAL: CSS INTEGRADO (sin archivos separados) -->
+<style id="casa-digital-css">
+/* Casa Digital: estilos aislados, sin modificar los de la experiencia principal. */
+.house-launch{display:inline-flex;align-items:center;justify-content:center;padding:7px 9px;min-width:39px;min-height:39px;border:1px solid rgba(203,180,137,.22);border-radius:12px;background:rgba(12,13,22,.48);vertical-align:middle;transition:transform .2s,background .2s}
+.house-launch:hover,.house-launch:focus-visible{background:rgba(194,59,82,.2);transform:translateY(-2px)}
+.house-launch svg{image-rendering:pixelated;width:23px;height:23px;shape-rendering:crispEdges}
+.house-screen{position:fixed;inset:0;z-index:250;background:#16121d;color:#fff0d9;font-family:'Trebuchet MS',Verdana,sans-serif;overflow:hidden;touch-action:none;image-rendering:pixelated}
+.house-screen[hidden]{display:none!important}
+.house-screen button,.house-screen input{font-family:inherit}
+.house-screen button{cursor:pointer}
+.house-canvas{display:block;width:100%;height:100%;image-rendering:pixelated;touch-action:none}
+.house-topbar{position:absolute;top:10px;left:10px;right:12px;display:flex;gap:10px;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.house-topbar>*{pointer-events:auto}
+.house-title{font-size:15px;font-weight:900;letter-spacing:1px;color:#ffe3a8;text-shadow:2px 2px #392438;background:#2b2134e8;padding:8px 12px;border:3px solid #71516a;box-shadow:3px 3px 0 #17121c}
+.house-subtitle{display:block;font-size:10px;color:#d1b1bd;margin-top:4px;letter-spacing:0}
+.house-close{font-size:27px;font-weight:1000;color:#fff;background:#b92542;border:3px solid #fbb6bd;width:43px;height:42px;box-shadow:4px 4px 0 #390c20;line-height:1}
+.house-close:hover{background:#e4425c}
+.house-bars{position:absolute;left:10px;top:74px;width:181px;display:flex;flex-direction:column;gap:5px;padding:9px;background:#251b32e8;border:3px solid #634d65;box-shadow:3px 3px 0 #111019;font-size:11px}
+.house-meter{display:grid;grid-template-columns:57px 1fr;gap:6px;align-items:center}
+.house-track{height:12px;background:#4e3447;border:2px solid #b59090}
+.house-fill{height:100%;transition:width .4s linear}
+.house-fill.hungry{background:#f7ab5c}.house-fill.sleepy{background:#86a2eb}.house-fill.dirty{background:#85bd93}
+.house-help{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);text-align:center;background:#22182ddb;color:#ffe6c0;border:2px solid #72526f;padding:8px 14px;font-size:12px;max-width:90vw;white-space:normal;line-height:1.4;pointer-events:none}
+.house-toast{position:absolute;top:18%;left:50%;transform:translateX(-50%);background:#312035ed;border:3px solid #eda96e;padding:10px 16px;max-width:80vw;text-align:center;font-size:13px;z-index:7;pointer-events:none}
+.house-toast[hidden]{display:none!important}
+.house-dialog-backdrop{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:#120d17b8;padding:12px;touch-action:auto}
+.house-dialog-backdrop[hidden]{display:none!important}
+.house-dialog{position:relative;background:linear-gradient(#3b2b44,#241c31);border:4px solid #e1ae83;box-shadow:6px 6px 0 #0f0c14;padding:20px;width:min(445px,94vw);max-height:85vh;overflow:auto;color:#fff1db;image-rendering:auto;touch-action:auto}
+.house-dialog h2{font-size:19px;margin:0 35px 12px 0;color:#ffe1a7;font-family:inherit}
+.house-dialog p{font-size:13px;line-height:1.55;color:#e0cfca;margin:8px 0 14px}
+.house-dialog label{display:block;font-size:12px;margin:10px 0 6px}
+.house-dialog input{width:100%;padding:10px;background:#1b1425;border:2px solid #93748b;border-radius:0;color:white;font-size:15px}
+.house-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.house-action{border:2px solid #ffe0ab;background:#7b4f72;color:#fff8ec;padding:10px 12px;font-size:12px;line-height:1.3;box-shadow:3px 3px 0 #241626;flex:1 1 125px;min-height:44px}
+.house-action.primary{background:#a65b61}
+.house-action:hover{filter:brightness(1.17)}
+.house-action:disabled{opacity:.45;cursor:not-allowed}
+.house-dialog-x{position:absolute;top:10px;right:10px;background:#a53550;padding:4px 10px;font-size:20px;border:2px solid #f6a2a7}
+.house-status{min-height:22px;font-size:12px;color:#ffc480;margin:10px 0 0}
+.house-character-choice{display:flex;justify-content:space-around;gap:12px;margin-top:13px}
+.house-character-choice button{flex:1;background:#493449;border:3px solid #b68995;color:#ffe7cc;padding:10px;min-width:0}
+.house-character-choice button:hover{background:#6a4961}
+.house-character-choice canvas{margin:auto;display:block;image-rendering:pixelated;width:78px;height:118px}
+.house-joystick{display:none;position:absolute;bottom:62px;left:17px;width:118px;height:118px;border-radius:50%;background:#1c152ccc;border:3px solid #9e8495;touch-action:none;user-select:none}
+.house-knob{position:absolute;left:38px;top:38px;width:40px;height:40px;border-radius:50%;background:#d89c9d;border:3px solid #ffdcac;box-shadow:2px 2px #422d41;pointer-events:none}
+.house-touch-e{display:none;position:absolute;right:24px;bottom:90px;background:#bd5e64;border:4px solid #ffe4b0;color:white;font-size:16px;font-weight:bold;width:75px;height:75px;border-radius:50%;touch-action:manipulation}
+.house-online{font-size:10px;background:#261d32e8;border:2px solid #70566c;padding:7px 9px;position:absolute;right:67px;top:12px;white-space:nowrap}
+.house-progress{position:absolute;top:72px;right:12px;width:min(205px,39vw);padding:8px;background:#251b32e8;border:2px solid #78576d;font-size:11px}
+.house-progress[hidden]{display:none!important}
+.house-progress-bar{height:11px;background:#564252;margin-top:7px}.house-progress-bar>div{height:100%;background:#f1b56b}
+@media (pointer:coarse),(max-width:680px){.house-joystick,.house-touch-e{display:block}.house-help{bottom:7px;font-size:10px;padding:5px 10px;max-width:62vw}.house-title{font-size:12px;padding:5px 7px}.house-bars{top:61px;width:146px;padding:6px;font-size:9px}.house-meter{grid-template-columns:45px 1fr}.house-online{right:60px;top:8px;font-size:9px;padding:5px}.house-progress{top:61px}}
+</style>
 </head>
 <body>
 
@@ -443,7 +495,18 @@
       aria-label="Símbolo de infinito formado por la frase Te Amo. Actívalo para ver la galería de recuerdos."></canvas>
 
     <nav class="navbar" aria-label="Navegación principal">
+      <div style="display:flex;align-items:center;gap:6px;pointer-events:auto">
       <button class="nav-btn" id="btn-codigo" type="button" aria-label="Ver archivos de código guardados">Código</button>
+      <button id="house-launch" class="house-launch" type="button" aria-label="Entrar a la casa digital" aria-expanded="false" title="Nuestra casita">
+        <svg viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <rect x="11" y="2" width="3" height="3" fill="#f4b090"/><rect x="8" y="5" width="8" height="3" fill="#c76478"/>
+          <rect x="5" y="8" width="14" height="3" fill="#c76478"/><rect x="2" y="11" width="20" height="3" fill="#8d445e"/>
+          <rect x="5" y="14" width="14" height="8" fill="#eed1ae"/><rect x="9" y="16" width="6" height="6" fill="#70506b"/>
+          <rect x="11" y="19" width="2" height="3" fill="#b9827e"/><rect x="6" y="15" width="3" height="3" fill="#b3d6d0"/>
+          <rect x="15" y="15" width="3" height="3" fill="#b3d6d0"/><rect x="4" y="22" width="16" height="2" fill="#563d55"/>
+        </svg>
+      </button>
+      </div>
       <button class="nav-btn" id="btn-agregar" type="button" aria-label="Abrir panel para agregar contenido">Agregar</button>
     </nav>
 
@@ -690,6 +753,32 @@
       </div>
     </div>
   </div>
+
+<!-- CASA DIGITAL: pantalla aislada del sitio existente; la X solo oculta esta vista. -->
+<section class="house-screen" id="house-screen" hidden aria-label="Casa digital compartida">
+  <canvas id="house-canvas" class="house-canvas" aria-label="Videojuego de casa digital en pixel art"></canvas>
+  <div class="house-topbar">
+    <div class="house-title">♥ NUESTRA CASITA <small class="house-subtitle" id="house-subtitle">Sala principal</small></div>
+    <button class="house-close" type="button" id="house-close" aria-label="Cerrar casa y volver a la página principal">×</button>
+  </div>
+  <div class="house-online" id="house-online">♡ Conectando…</div>
+  <div class="house-bars" aria-label="Necesidades del personaje">
+    <div class="house-meter"><span>🍞 Hambre</span><div class="house-track"><div class="house-fill hungry" id="house-hunger-fill"></div></div><span class="visually-hidden" id="house-hunger-value">85</span></div>
+    <div class="house-meter"><span>🌙 Sueño</span><div class="house-track"><div class="house-fill sleepy" id="house-sleep-fill"></div></div><span class="visually-hidden" id="house-sleep-value">85</span></div>
+    <div class="house-meter"><span>🫧 Suciedad</span><div class="house-track"><div class="house-fill dirty" id="house-dirt-fill"></div></div><span class="visually-hidden" id="house-dirt-value">15</span></div>
+  </div>
+  <div class="house-progress" id="house-progress" hidden><span id="house-progress-label"></span><div class="house-progress-bar"><div id="house-progress-fill"></div></div></div>
+  <div class="house-toast" id="house-toast" hidden role="status"></div>
+  <div class="house-help" id="house-help">WASD / Flechas · E para interactuar</div>
+  <div class="house-joystick" id="house-joystick" aria-label="Joystick para caminar"><div class="house-knob" id="house-knob"></div></div>
+  <button class="house-touch-e" id="house-touch-e" type="button" aria-label="Interactuar con un objeto">E</button>
+  <div class="house-dialog-backdrop" id="house-dialog-backdrop" hidden>
+    <div class="house-dialog" role="dialog" aria-modal="true" aria-labelledby="house-dialog-title">
+      <button type="button" class="house-dialog-x" id="house-dialog-x" aria-label="Cerrar panel">×</button>
+      <h2 id="house-dialog-title"></h2><div id="house-dialog-content"></div><div class="house-actions" id="house-dialog-actions"></div>
+    </div>
+  </div>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -3526,6 +3615,531 @@ lockPos = {x:lockTarget.x, y:lockTarget.y};
 requestAnimationFrame(drawParticles);
 requestAnimationFrame(drawInfinity);
 requestAnimationFrame(stepLock);
+</script>
+<!-- CASA DIGITAL: JS INTEGRADO (sin archivos separados) -->
+<script id="casa-digital-js">
+/* Casa Digital · extensión autónoma para la web original.
+   Requiere el SQL adjunto, Supabase Auth y dos cuentas reales. */
+(()=>{
+'use strict';
+const sb=window.supabaseClient || (typeof supabaseClient!=='undefined'?supabaseClient:null);
+const $=id=>document.getElementById(id);
+const screen=$('house-screen'),launch=$('house-launch'),closeBtn=$('house-close');
+if(!screen||!launch||!sb){console.warn('Casa Digital: faltan elementos o cliente Supabase');return;}
+const canvas=$('house-canvas'),ctx=canvas.getContext('2d',{alpha:false});
+const modal=$('house-dialog-backdrop'),modalTitle=$('house-dialog-title'),modalContent=$('house-dialog-content'),modalActions=$('house-dialog-actions');
+const roomLabel=$('house-subtitle'),hint=$('house-help'),onlineLabel=$('house-online'),progressBox=$('house-progress'),toastEl=$('house-toast');
+const joy=$('house-joystick'),knob=$('house-knob'),touchE=$('house-touch-e');
+const W=1440,H=720,DAY_SECS=1200,SPEED=148;
+const RECIPES={eggs:{name:'Huevos',ingredients:{egg:2},seconds:8,heal:22},rice:{name:'Arroz',ingredients:{rice:1,tomato:1},seconds:13,heal:30},pasta:{name:'Pasta',ingredients:{pasta:1,cheese:1},seconds:16,heal:34},sandwich:{name:'Sándwich',ingredients:{bread:1,cheese:1},seconds:7,heal:20}};
+const INGREDIENTS={egg:'Huevos',rice:'Arroz',pasta:'Pasta',bread:'Pan',cheese:'Queso',tomato:'Tomate'};
+const ROOMS={main:'Sala principal',bathroom:'Baño',bedroom:'Dormitorio'};
+let me=null,people=[],world=null,user=null,channel=null,visible=false,playing=false,choiceBusy=false;
+let myPos={x:1315,y:525,room:'main',facing:'left',activity:'idle'},keys=new Set(),stick={x:0,y:0},remote=new Map(),online=new Set();
+let lastFrame=0,lastBroadcast=0,lastPersist=0,lastSync=0,frameId=0,pendingMove=false;
+let serverOffset=0,noticeUntil=0,notifyText='',busyUntil=0,introUntil=0,introStartedAt=0,gamePaused=false;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const d=(a,b)=>Math.hypot((a?.x||0)-(b?.x||0),(a?.y||0)-(b?.y||0));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const own=()=>people.find(p=>p.user_id===user?.id)||null;
+const partner=()=>people.find(p=>p.user_id!==user?.id)||null;
+const inv=(id)=>Number(own()?.inventory?.[id]||0);
+const timeNow=()=>Date.now()+serverOffset;
+function toast(str,ms=3500){notifyText=str;noticeUntil=performance.now()+ms;toastEl.textContent=str;toastEl.hidden=false;}
+function hideModal(){modal.hidden=true;modalActions.innerHTML='';modalContent.innerHTML='';gamePaused=false;}
+function dialog(title,html,actions=[],locked=false){
+ modalTitle.textContent=title;modalContent.innerHTML=html;modalActions.innerHTML='';modal.hidden=false;gamePaused=true;
+ $('house-dialog-x').style.display=locked?'none':'';
+ for(const a of actions){const b=document.createElement('button');b.className='house-action'+(a.primary?' primary':'');b.textContent=a.label;b.disabled=!!a.disabled;b.onclick=async()=>{if(choiceBusy)return;choiceBusy=true;b.disabled=true;try{await a.run();}catch(e){toast(friendly(e));}finally{choiceBusy=false;b.disabled=false;}};modalActions.appendChild(b);}
+}
+function friendly(e){return String(e?.message||e||'Error inesperado').replace(/^.*?message: /i,'').slice(0,180);}
+function safeCall(name,args){return sb.rpc(name,args).then(({data,error})=>{if(error)throw error;return data;});}
+function action(name,value=null){return safeCall('house_action',{p_action:name,p_value:value});}
+function setSessionError(str){const el=$('house-auth-error');if(el)el.textContent=str;else toast(str);}
+async function openHouse(){
+ visible=true;screen.hidden=false;launch.setAttribute('aria-expanded','true');resize();
+ try{const {data:{user:u},error}=await sb.auth.getUser();if(error||!u){user=null;showAuth();return;}
+  user=u;await memberReady();
+ }catch(e){showAuth();setSessionError(friendly(e));}
+}
+function showAuth(){
+ playing=false;dialog('Tu hogar para dos',`<p>Inicia sesión con tu cuenta de Supabase para conservar tu personaje en cualquier dispositivo. No se usa un perfil local ficticio.</p>
+ <label for="house-email">Correo electrónico</label><input type="email" id="house-email" autocomplete="email" placeholder="tu@correo.com">
+ <label for="house-pass">Contraseña (mínimo 6 caracteres)</label><input type="password" id="house-pass" autocomplete="current-password" placeholder="••••••••">
+ <p id="house-auth-error" class="house-status"></p>`,[
+ {label:'Entrar',primary:true,run:()=>authenticate(false)},
+ {label:'Crear cuenta',run:()=>authenticate(true)}
+ ],true);
+}
+async function authenticate(register){
+ const email=$('house-email')?.value.trim(),password=$('house-pass')?.value;
+ if(!email||!password){setSessionError('Introduce correo y contraseña.');return;}
+ if(password.length<6){setSessionError('La contraseña necesita al menos 6 caracteres.');return;}
+ setSessionError('Conectando…');
+ const r=register?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
+ if(r.error){setSessionError(r.error.message);return;}
+ if(!r.data?.session){setSessionError('Cuenta creada. Confirma el correo si Supabase te lo solicita y después inicia sesión.');return;}
+ user=r.data.user;await memberReady();
+}
+async function memberReady(){
+ const {data,error}=await sb.from('house_members').select('*').eq('user_id',user.id).maybeSingle();
+ if(error){showAuth();setSessionError('No se puede consultar la casa. Ejecuta casa-supabase.sql en Supabase: '+error.message);return;}
+ if(!data){showChoose();return;}
+ me=data;hideModal();await initGame();
+}
+function showChoose(){
+ playing=false;
+ dialog('Elige quién vivirás en la casa',`<p>La elección se guarda en Supabase y no podrá cambiarse una vez confirmada. Solo hay dos habitantes.</p>
+ <div class="house-character-choice">
+ <button id="house-choose-boy" type="button"><canvas width="28" height="38" id="house-preview-boy"></canvas>Él</button>
+ <button id="house-choose-girl" type="button"><canvas width="28" height="38" id="house-preview-girl"></canvas>Ella</button></div>
+ <label for="house-code">Código privado de invitación a la casa</label><input id="house-code" type="password" autocomplete="off" placeholder="Código configurado en el SQL">
+ <p id="house-auth-error" class="house-status">Selecciona un personaje. La casa acepta solo dos cuentas.</p>`,[],true);
+ for(const ch of ['boy','girl']){
+  const cv=$('house-preview-'+ch);const c=cv.getContext('2d');c.imageSmoothingEnabled=false;drawPixelPerson(c,14,33,ch,'down','idle',0,1);
+  $('house-choose-'+ch).addEventListener('click',()=>choose(ch));
+ }
+}
+async function choose(avatar){
+ if(choiceBusy)return;choiceBusy=true;
+ try{const code=$('house-code').value;
+  if(!code){setSessionError('Escribe el código privado de la casa.');return;}
+  me=await safeCall('house_join',{p_avatar:avatar,p_code:code});
+  hideModal();await initGame();
+ }catch(e){setSessionError(friendly(e));}finally{choiceBusy=false;}
+}
+async function initGame(){
+ try{
+  // Deja que Supabase renueve automáticamente el JWT del canal privado.
+  await sb.realtime.setAuth();
+  await sync(true);await connect();
+  if(!me.has_entered){
+   introStartedAt=performance.now();introUntil=introStartedAt+3200;
+   myPos={x:1390,y:530,room:'main',facing:'left',activity:'welcome'};
+   await action('welcome');
+   toast('¡Bienvenid@ a nuestro pequeño hogar! ♥',3500);
+  }else{
+   myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity};
+   if(myPos.activity==='rest') await action('stand');
+  }
+  playing=true;hideModal();lastFrame=performance.now();lastSync=performance.now();lastPersist=performance.now();
+  cancelAnimationFrame(frameId);frameId=requestAnimationFrame(frame);
+ }catch(e){playing=false;dialog('Conexión necesaria',`<p>${esc(friendly(e))}</p><p>La casa requiere tablas, permisos RLS y Realtime instalados. No usaremos datos locales falsos.</p>`,[
+ {label:'Reintentar',primary:true,run:async()=>{hideModal();await memberReady();}}
+ ],true);}
+}
+async function sync(first=false){
+ const data=await safeCall('house_sync');
+ people=Array.isArray(data.members)?data.members:[];
+ world=data.room||{};serverOffset=Number(data.server_time||Date.now())-Date.now();
+ me=own();if(!me)throw Error('La cuenta ya no pertenece a esta casa');
+ if(first){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity};}
+ else if(me.sick){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:'sick'};}
+ else if(!pendingMove){
+   const previousActivity=myPos.activity;myPos.activity=me.activity;
+   // Una animación larga puede terminar mientras el cliente está conectado.
+   // Tomar también la nueva posición segura que fijó el servidor.
+   if(previousActivity!==me.activity&&['shower','wash','sleep','toilet','care','welcome'].includes(previousActivity)){
+     myPos.x=Number(me.x);myPos.y=Number(me.y);myPos.room=me.room;
+   }
+ }
+ setBars();setRoomLabel();
+}
+async function connect(){
+ if(channel){try{await sb.removeChannel(channel);}catch(_){}}
+ channel=sb.channel('house:1',{config:{private:true,broadcast:{self:false,ack:false},presence:{key:user.id}}});
+ channel.on('broadcast',{event:'move'},({payload})=>{
+  if(!payload||!people.some(p=>p.user_id===payload.id)||payload.id===user.id)return;
+  const x=Number(payload.x),y=Number(payload.y);if(!Number.isFinite(x)||!Number.isFinite(y)||x<30||x>1410||y<30||y>690)return;
+  remote.set(payload.id,{x,y,room:payload.room,facing:payload.facing,activity:payload.activity,at:performance.now()});
+ });
+ channel.on('presence',{event:'sync'},()=>{
+  const state=channel.presenceState();online=new Set(Object.keys(state));
+  updateOnline();
+ });
+ channel.subscribe(async(status)=>{
+  if(status==='SUBSCRIBED'){
+   try{await channel.track({id:user.id,visible:visible,joined:Date.now()});updateOnline();}
+   catch(e){console.warn('Presencia falló',e);}
+  }else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+   toast('Conexión en tiempo real interrumpida. Reintentando…');
+  }
+ });
+}
+function updateOnline(){
+ const p=partner();onlineLabel.textContent=p?(online.has(p.user_id)?'♥ Tu pareja está online':'☾ Tu pareja está descansando'):'♡ Esperando a tu pareja';
+}
+function setRoomLabel(){roomLabel.textContent=ROOMS[myPos.room]||'Casa';}
+function setBars(){
+ const p=own();if(!p)return;
+ const elapsed=Math.max(0,(timeNow()-Date.parse(p.last_tick||Date.now()))/60000);
+ const hungry=clamp(Number(p.hunger)-(p.sick?0:elapsed*.8),0,100);
+ const sleepy=clamp(Number(p.sleep)+(p.sick?0:p.activity==='sleep'?elapsed*4:-elapsed*.65),0,100);
+ const dirty=clamp(Number(p.dirt)+(p.sick?0:elapsed*.7),0,100);
+ for(const [id,num] of [['hunger',hungry],['sleep',sleepy],['dirt',dirty]]){
+  $("house-"+id+'-fill').style.width=num+'%';$('house-'+id+'-value').textContent=Math.round(num);
+ }
+}
+async function persist(){
+ if(!playing||!visible||!user||me?.sick||!pendingMove)return;
+ pendingMove=false;
+ try{await safeCall('house_move',{p_x:Math.round(myPos.x),p_y:Math.round(myPos.y),p_room:myPos.room,p_facing:myPos.facing});}
+ catch(e){console.warn('Guardado de posición:',e);await sync(true).catch(()=>{});}
+}
+async function runAction(name,value){
+ if(me?.sick){toast('Estás enfermo. Necesitas cuidados de tu pareja.');return;}
+ try{
+  if(pendingMove)await persist();
+  await action(name,value);await sync(false);
+  if(me){
+   myPos.activity=me.activity;
+   if(['table','sofa','sleep','shower','wash','toilet','care_feed','care_company','stand'].includes(name)){
+     myPos.x=Number(me.x);myPos.y=Number(me.y);
+   }
+  }
+  if(name==='stand'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),activity:'idle'};}
+  broadcast(true);hideModal();
+ }catch(e){toast(friendly(e));}
+}
+async function transition(to){
+ try{
+  if(pendingMove)await persist();
+  const data=await safeCall('house_transition',{p_to:to});
+  await sync(false);
+  myPos={...myPos,x:Number(data.x),y:Number(data.y),room:data.room,activity:'idle'};
+  broadcast(true);hideModal();setRoomLabel();toast('Entraste a '+ROOMS[to].toLowerCase());
+ }catch(e){toast(friendly(e));}
+}
+function sendRest(){
+ myPos.activity='rest';broadcast(true);
+ return action('rest').catch(e=>console.warn('No se pudo guardar el descanso',e));
+}
+async function closeHouse(){
+ if(!visible)return;
+ // La X cierra la pantalla inmediatamente, también si la red está lenta.
+ // La posición se envía primero y luego el estado de descanso al servidor.
+ const shouldRest=playing&&!me?.sick&&myPos.activity!=='sleep';
+ const saved=pendingMove?persist().catch(()=>{}):Promise.resolve();
+ visible=false;screen.hidden=true;keys.clear();stick={x:0,y:0};knob.style.transform='';
+ launch.setAttribute('aria-expanded','false');hideModal();gamePaused=false;
+ saved.then(()=>{if(shouldRest&&!visible)sendRest();}).catch(()=>{});
+ if(channel){try{await channel.track({id:user.id,visible:false,joined:Date.now()});}catch(_){}}
+ // El canal NO se cierra: el otro jugador continúa viendo a este personaje.
+}
+
+const objects={
+ main:[
+  {id:'fridge',label:'Refrigerador',x:970,y:180,range:160},
+  {id:'stove',label:'Fogones',x:1100,y:180,range:160},
+  {id:'table',label:'Mesa y sillas',x:870,y:400,range:165},
+  {id:'sofa',label:'Sillón',x:440,y:420,range:145},
+  {id:'tv',label:'Televisión',x:440,y:355,range:135},
+  {id:'bathDoor',label:'Puerta del baño',x:120,y:230,range:140},
+  {id:'bedDoor',label:'Puerta del dormitorio',x:120,y:420,range:140},
+  {id:'entrance',label:'Puerta principal',x:1330,y:530,range:145}
+ ],
+ bathroom:[
+  {id:'shower',label:'Ducha',x:1020,y:260,range:145},
+  {id:'wash',label:'Lavamanos',x:660,y:260,range:145},
+  {id:'toilet',label:'Inodoro',x:300,y:260,range:145},
+  {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155}
+ ],
+ bedroom:[
+  {id:'bed',label:'Cama de dos plazas',x:520,y:300,range:215},
+  {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155}
+ ]
+};
+function nearby(){
+ const items=objects[myPos.room]||[];
+ return items.map(o=>({...o,d:d(myPos,o)})).filter(o=>o.d<o.range).sort((a,b)=>a.d-b.d)[0];
+}
+const inventoryText=(prefix='')=>Object.entries(own()?.inventory||{}).filter(([,n])=>Number(n)>0).map(([key,n])=>`${esc(INGREDIENTS[key]||RECIPES[key.replace('dish_','')]?.name||key)} ×${n}`).join(' · ')||'Vacío';
+const actionBtn=(label,name,value)=>({label,run:()=>runAction(name,value)});
+function interact(){
+ if(!playing||!visible||gamePaused)return;
+ if(me?.sick){toast('La enfermedad solo termina tras tres días consecutivos de cuidados de tu pareja.');return;}
+ if(['cook','shower','eat','wash','toilet','care','welcome'].includes(myPos.activity)){toast('Termina la acción actual antes de interactuar.');return;}
+ if(myPos.activity==='sleep'){runAction('stand');return;}
+ const o=nearby();if(!o){toast('Acércate a un mueble o una puerta para interactuar (E).');return;}
+ let actions=[],text='';
+ const invStr=inventoryText();
+ switch(o.id){
+ case 'fridge':text=`Estado: ${world.fridge_open?'abierto':'cerrado'}. Existencias compartidas: ${Object.entries(world.stock||{}).map(([k,n])=>`${INGREDIENTS[k]} ${n}`).join(' · ')}`;
+  actions.push(actionBtn(world.fridge_open?'Cerrar refrigerador':'Abrir refrigerador','fridge'));
+  if(world.fridge_open)for(const [key,label]of Object.entries(INGREDIENTS))actions.push({label:'Sacar '+label,disabled:Number(world.stock?.[key]||0)<1,run:async()=>{await runAction('take',key);interact();}});
+  break;
+ case 'stove':text=`Tu mochila: ${invStr}. Cada receta consume ingredientes y necesita esperar un tiempo real. Puedes cocinar al mismo tiempo que tu pareja.`;
+  if(own()?.pending_recipe){
+   const secs=Math.max(0,Math.ceil((Date.parse(own().cook_ready_at)-timeNow())/1000));
+   text+=`\nPreparando ${RECIPES[own().pending_recipe]?.name}. ${secs?`Faltan ${secs} s.`:'¡Listo para retirar!'}`;
+   actions.push({label:'Recoger plato listo',disabled:secs>0,run:()=>runAction('collect')});
+  }else for(const [key,r]of Object.entries(RECIPES)){
+   const ok=Object.entries(r.ingredients).every(([k,n])=>inv(k)>=n);
+   actions.push({label:`${r.name} · ${r.seconds}s · +${r.heal} hambre`,disabled:!ok,run:()=>runAction('cook',key)});
+  }break;
+ case 'table':text='Aquí pueden sentarse los dos. Solo se puede comer un plato que hayas cocinado y recogido.';
+  if(myPos.activity!=='table')actions.push(actionBtn('Sentarse a la mesa','table'));
+  if(myPos.activity==='table'){
+   for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Comer '+r.name+' (+ '+r.heal+')','eat',key));
+   actions.push(actionBtn('Levantarse','stand'));
+  }break;
+ case 'sofa':text='Un sillón amplio para los dos.';
+  actions.push(actionBtn(myPos.activity==='sofa'?'Levantarse':'Sentarse en el sillón',myPos.activity==='sofa'?'stand':'sofa'));break;
+ case 'tv':text='La televisión se comparte: el otro jugador verá cuándo está encendida.';
+  actions.push(actionBtn(world.tv_on?'Apagar televisión':'Encender televisión','tv'));break;
+ case 'bathDoor':text='Puerta independiente del baño.';
+  actions.push(actionBtn(world.bath_door_open?'Cerrar puerta':'Abrir puerta','bath_door'));
+  if(world.bath_door_open)actions.push({label:'Entrar al baño',primary:true,run:()=>transition('bathroom')});break;
+ case 'bedDoor':text='Puerta independiente del dormitorio.';
+  actions.push(actionBtn(world.bedroom_door_open?'Cerrar puerta':'Abrir puerta','bed_door'));
+  if(world.bedroom_door_open)actions.push({label:'Entrar al dormitorio',primary:true,run:()=>transition('bedroom')});break;
+ case 'entrance':text='La entrada por la que llegaron a su hogar.';
+  actions.push(actionBtn(world.entrance_open?'Cerrar puerta':'Abrir puerta','entrance'));break;
+ case 'shower':text='Ducharte tarda 8 segundos y reduce 70 puntos de suciedad.';actions.push(actionBtn('Ducharse','shower'));break;
+ case 'wash':text='Lavarse las manos reduce 12 puntos de suciedad.';actions.push(actionBtn('Lavarse las manos','wash'));break;
+ case 'toilet':text='Una interacción discreta de cinco segundos.';actions.push(actionBtn('Usar inodoro','toilet'));break;
+ case 'bed':{
+  const p=partner();text=p?.sick?`Tu pareja necesita comida y compañía durante tres días consecutivos (20 min por día). Racha: ${p.care_streak||0}/3. Hoy: comida ${p.care_flags&1?'✓':'pendiente'}, compañía ${p.care_flags&2?'✓':'pendiente'}.`:'La cama es de dos plazas. Dormir recupera el sueño mientras pasa el tiempo.';
+  actions.push(actionBtn('Acostarse y dormir','sleep'));
+  if(p?.sick){for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Llevar '+r.name+' al enfermo','care_feed',key));
+   actions.push(actionBtn('Acompañar y cuidar','care_company'));}
+  break;
+ }
+ case 'back':text='Regresa al pasillo y conserva tu estado.';actions.push({label:'Salir de la habitación',primary:true,run:()=>transition('main')});break;
+ }
+ dialog(o.label,`<p>${esc(text).replace(/\n/g,'<br>')}</p>${o.id==='stove'?'<p>Ingredientes necesarios: huevos (2 huevos), arroz (arroz + tomate), pasta (pasta + queso), sándwich (pan + queso).</p>':''}`,actions);
+}
+const rects={
+ main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:550,y:380,w:80,h:70}],
+ bathroom:[{x:964,y:139,w:142,h:110},{x:596,y:145,w:129,h:100},{x:238,y:158,w:110,h:98}],
+ bedroom:[{x:432,y:185,w:189,h:156},{x:790,y:115,w:210,h:74},{x:1120,y:166,w:94,h:90}]
+};
+function blocked(x,y){
+ const radius=15;if(x<63||x>1370||y<110||y>650)return true;
+ return (rects[myPos.room]||[]).some(r=>x+radius>r.x&&x-radius<r.x+r.w&&y+radius>r.y&&y-radius<r.y+r.h);
+}
+function updateMovement(dt){
+ if(!playing||!visible||gamePaused||me?.sick)return;
+ if(introUntil>performance.now()){
+  const fraction=clamp((performance.now()-introStartedAt)/3100,0,1);
+  myPos.x=1390-75*fraction;myPos.activity='welcome';return;
+ }
+ if(myPos.activity==='welcome'){myPos.activity='idle';sync(false).catch(()=>{});}
+ if(!['idle','rest'].includes(myPos.activity))return;
+ let ax=stick.x,ay=stick.y;
+ if(keys.has('a')||keys.has('arrowleft'))ax-=1;
+ if(keys.has('d')||keys.has('arrowright'))ax+=1;
+ if(keys.has('w')||keys.has('arrowup'))ay-=1;
+ if(keys.has('s')||keys.has('arrowdown'))ay+=1;
+ const len=Math.hypot(ax,ay);if(len>.02){
+  ax/=Math.max(1,len);ay/=Math.max(1,len);
+  const dx=ax*SPEED*dt,dy=ay*SPEED*dt;
+  let moved=false;
+  if(!blocked(myPos.x+dx,myPos.y)){myPos.x+=dx;moved=true;}
+  if(!blocked(myPos.x,myPos.y+dy)){myPos.y+=dy;moved=true;}
+  if(Math.abs(ax)>Math.abs(ay))myPos.facing=ax<0?'left':'right';else myPos.facing=ay<0?'up':'down';
+  if(moved){myPos.activity='idle';pendingMove=true;}
+ }
+}
+function broadcast(force=false){
+ if(!channel||!user)return;
+ if(!force&&performance.now()-lastBroadcast<110)return;
+ lastBroadcast=performance.now();
+ channel.send({type:'broadcast',event:'move',payload:{id:user.id,x:Math.round(myPos.x),y:Math.round(myPos.y),room:myPos.room,facing:myPos.facing,activity:(myPos.activity==='idle'&&(stick.x||stick.y||[...keys].some(k=>MOVE_KEYS.has(k)))?'walk':myPos.activity)}}).catch(()=>{});
+}
+function resize(){
+ const pixelRatio=Math.min(2,window.devicePixelRatio||1);const w=screen.clientWidth,h=screen.clientHeight;
+ canvas.width=Math.max(1,Math.round(w*pixelRatio));canvas.height=Math.max(1,Math.round(h*pixelRatio));
+ canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.imageSmoothingEnabled=false;
+}
+function camera(){
+ const w=screen.clientWidth,h=screen.clientHeight;
+ const scale=w<700?Math.max(w/700,h/720):Math.min(w/1440,h/720);
+ const viewW=w/scale,viewH=h/scale;
+ const camX=clamp(myPos.x-viewW/2,0,Math.max(0,W-viewW));
+ const camY=clamp(myPos.y-viewH/2,0,Math.max(0,H-viewH));
+ return {scale,camX,camY,padX:Math.max(0,(w-W*scale)/2),padY:Math.max(0,(h-H*scale)/2)};
+}
+function r(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));}
+function outline(x,y,w,h,color='#2c2636',thick=4){r(x,y,w,h,color);r(x+thick,y+thick,w-thick*2,h-thick*2,'#b88d81');}
+function label(str,x,y,size=15,color='#fbe7bd'){
+ ctx.fillStyle='#272032';ctx.font=`bold ${size}px monospace`;ctx.textAlign='center';ctx.fillText(str,x+2,y+2);ctx.fillStyle=color;ctx.fillText(str,x,y);
+}
+function furniture(x,y,w,h,base,top){r(x+6,y+7,w,h,'#493345');r(x,y,w,h,base);r(x+7,y+7,w-14,Math.max(8,h-16),top);r(x+8,y+8,w-16,5,'#f2cb9f');}
+function drawRoom(time){
+ r(0,0,W,H,'#3a2b42');
+ for(let y=85;y<680;y+=48)for(let x=48;x<1390;x+=48){r(x,y,47,47,(Math.floor(x/48)+Math.floor(y/48))%2?'#ad826f':'#b88f78');r(x,y,46,2,'#997260');}
+ r(0,0,W,82,'#51405b');r(0,0,W,12,'#f3b685');r(0,660,W,60,'#55435a');r(0,664,W,8,'#d09b88');
+ r(0,0,47,H,'#56435f');r(1385,0,55,H,'#56435f');
+ for(let x=85;x<W;x+=220){r(x,38,110,21,'#7c5c71');r(x+12,45,86,5,'#dcac91');}
+ if(myPos.room==='main')drawMain(time);
+ else if(myPos.room==='bathroom')drawBathroom(time);
+ else drawBedroom(time);
+}
+function drawMain(t){
+ // Ventanas, cuadros y flores en el pasillo central.
+ for(let x of [470,780,1150]){r(x,12,95,65,'#785e79');r(x+8,18,80,48,'#7da9ae');r(x+8,43,80,4,'#e3c7ad');r(x+45,18,4,48,'#e3c7ad');}
+ // Cocina arriba a la derecha, frigorífico con puertas que cambian de estado.
+ r(885,87,420,8,'#e9b7a2');
+ furniture(941,90,60,80,'#e7d4c2','#b5dbe0');
+ r(970,105,4,25,'#70596a');r(950,142,43,4,'#798e94');
+ if(world?.fridge_open){r(999,89,43,88,'#c7f0ef');r(1003,100,30,65,'#6b9da4');}
+ label('FRÍO',975,197,13);
+ furniture(1020,93,142,85,'#644458','#ddaf87');
+ for(let i=0;i<2;i++){r(1045+i*58,112,36,29,'#3c3248');r(1051+i*58,118,24,17,t%500<280&&own()?.activity==='cook'?'#ffba63':'#77718c');}
+ r(1045,148,95,9,'#f4cbac');label('COCINA',1090,198,13);
+ furniture(1190,93,95,82,'#60475b','#e1b08d');for(let i=0;i<3;i++)r(1205+i*25,101,18,16,'#b58786');
+ // Alfombra de comedor y mesa.
+ r(740,280,250,219,'#805d6c');r(751,289,226,201,'#d9a081');r(766,304,196,170,'#efbd9a');
+ furniture(804,323,145,81,'#6f4659','#b98167');
+ for(let x of [820,905]){r(x,413,47,23,'#66516e');r(x+5,413,37,6,'#cfa786');}
+ r(811,339,130,5,'#e3b29a');label('♡',872,380,30,'#ffddc9');
+ // Sillón con dos asientos y TV.
+ r(325,335,285,205,'#8a6372');r(335,346,265,181,'#d0a18e');r(352,361,230,150,'#e3bba1');
+ furniture(365,390,177,47,'#704565','#bc7582');r(372,400,161,13,'#eab2ae');r(442,390,7,46,'#8c5266');
+ furniture(368,280,138,45,'#413c54',world?.tv_on?'#78b5b7':'#202437');
+ if(world?.tv_on){r(378,289,118,25,'#9ee1d9');r(395,295,77,12,'#dfb2dd');}
+ furniture(550,380,80,70,'#795067','#ca9887');r(571,395,40,31,'#f2c1a3');
+ // Decoración / corazones / cuadros.
+ r(620,43,80,75,'#6f536a');r(629,54,62,51,'#e9bca4');label('♥',661,90,34,'#c95f75');
+ for(let x of [735,1320]){r(x,105,18,55,'#578670');r(x+4,105,10,10,'#e4a5a9');r(x-6,155,32,25,'#ba8977');}
+ drawDoor(87,200,world?.bath_door_open,'BAÑO');drawDoor(87,386,world?.bedroom_door_open,'DORM.');
+ drawDoor(1307,487,world?.entrance_open||(introUntil>performance.now()&&performance.now()-introStartedAt>500),'ENTRADA');
+}
+function drawDoor(x,y,isOpen,name){
+ r(x-6,y-27,106,101,'#332537');r(x,y-23,90,88,'#e6aa85');r(x+7,y-15,76,72,isOpen?'#2b2139':'#a66d6c');
+ if(!isOpen){r(x+63,y+20,6,6,'#fbd3a1');r(x+13,y-5,53,4,'#d99b88');}
+ else{r(x+70,y-15,11,73,'#d89d7d');r(x+35,y-12,6,65,'#735063');}
+ label(name,x+44,y-34,13);
+}
+function drawBathroom(t){
+ label('BAÑITO ♡',690,80,23);
+ for(let x of [250,600,990]){r(x,36,100,35,'#789c9d');r(x+8,44,84,18,'#abd7cf');}
+ furniture(238,158,110,98,'#e8d4bf','#c9e2e0');r(267,178,56,36,'#fffbeb');r(278,200,33,16,'#c1dae3');
+ furniture(596,145,129,100,'#7b576c','#d0b59d');r(626,158,75,40,'#a9d4d2');r(642,199,36,8,'#f9e4c8');
+ furniture(964,139,142,110,'#8b6075','#b9dce2');r(981,150,108,84,'#8dccde');
+ r(1048,120,12,26,'#f7dfc1');
+ for(let i=0;i<6;i++)r(978+i*20,195+((t/110+i*9)%45),5,11,'#e1fbff');
+ r(1160,494,91,67,'#b77d70');r(1172,501,68,46,'#3c334b');label('SALIR',1211,475,17);
+ r(500,398,380,125,'#8c7082');r(513,411,353,97,'#d8b0a7');label('Alfombrita',689,475,17);
+}
+function drawBedroom(t){
+ label('NUESTRO DORMITORIO ♥',700,80,22);
+ r(380,172,290,251,'#8b6079');r(393,184,266,228,'#e0b59e');
+ furniture(432,185,189,156,'#845768','#daaa9e');
+ r(440,210,173,33,'#eee3d6');r(445,214,80,29,'#fcf0e3');r(530,214,79,29,'#fcf0e3');
+ r(441,245,171,86,'#b67d93');r(446,249,161,69,'#d1a0ad');r(450,282,152,5,'#f0c0a1');
+ furniture(790,115,210,74,'#704c62','#ce9e80');for(let i=0;i<5;i++)r(807+i*36,123,20,24,'#e5b99f');
+ furniture(1120,166,94,90,'#695167','#e3b8a5');r(1140,182,55,43,'#f2d8bb');
+ r(800,378,230,190,'#977487');r(814,392,201,163,'#e7bcaa');label('Te amo',914,476,26,'#bc6179');
+ r(1160,494,91,67,'#b77d70');r(1172,501,68,46,'#3c334b');label('SALIR',1211,475,17);
+}
+// Sprite original construido a partir de píxeles (sin depender de archivos de KFC externos).
+function drawPixelPerson(c,x,y,avatar,facing,activity,t,scale=3){
+ const girl=avatar==='girl',hair=girl?'#171826':'#36231f',skin='#efb78e',eyes=girl?'#397a59':'#49312c';
+ const shirt=girl?'#bb688a':'#5875a3',trouser=girl?'#614d79':'#393953';
+ const pixel=(px,py,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x+(px-8)*scale),Math.round(y+(py-24)*scale),Math.round(w*scale),Math.round(h*scale));};
+ const move=activity==='idle'?Math.round(Math.sin(t/145)*1):0;
+ const rest=['rest','sofa','table','eat','care','toilet'].includes(activity);
+ const horizontal=['sleep','sick'].includes(activity);
+ c.save();if(horizontal){c.translate(x,y);c.rotate(-Math.PI/2);x=0;y=0;}
+ pixel(2,5,12,17,'#332435');
+ if(girl){pixel(2,5,3,17,hair);pixel(11,5,3,17,hair);}
+ pixel(3,2,10,9,hair);
+ pixel(4,6,8,7,skin);
+ pixel(4,2,8,4,hair);
+ if(facing!=='up'){pixel(facing==='left'?5:6,9,2,2,eyes);if(facing==='down')pixel(10,9,2,2,eyes);pixel(7,12,2,1,'#a76665');}
+ pixel(4,14,8,7,shirt);pixel(2,15,2,6,skin);pixel(12,15,2,6,skin);
+ const legAnim=activity==='idle'&&Math.abs(move)?move:Math.round(Math.sin(t/120)*2);
+ if(rest){pixel(4,20,9,3,trouser);pixel(3,22,4,2,'#352a41');pixel(10,22,4,2,'#352a41');}
+ else{pixel(4,21,4,3+Math.max(0,legAnim),trouser);pixel(9,21,4,3+Math.max(0,-legAnim),trouser);pixel(4,24,4,2,'#3e3043');pixel(9,24,4,2,'#3e3043');}
+ if(activity==='cook'){pixel(12,13,5,2,'#efe8dc');pixel(15,11,2,4,'#f3c56b');}
+ if(activity==='eat'||activity==='care'){pixel(12,15,4,2,'#f2eee4');pixel(15,11,2,5,'#cac9d0');}
+ if(activity==='shower'){pixel(1,4,2,2,'#d4e9f4');pixel(14,6,2,2,'#a5e0f2');pixel(0,14,2,3,'#e5f6fb');}
+ if(activity==='sick'){pixel(2,3,12,3,'#9abe8f');pixel(9,10,3,2,'#779a70');}
+ c.restore();
+}
+function drawPerson(p,isMe,t){
+ if(!p)return;
+ const data=!isMe?remote.get(p.user_id):null;
+ const present=isMe?true:online.has(p.user_id),live=!!(data&&present&&performance.now()-data.at<5000);
+ const room=isMe?myPos.room:(live?data.room:p.room);
+ if(room!==myPos.room)return;
+ let x=isMe?myPos.x:(live?data.x:Number(p.x)), y=isMe?myPos.y:(live?data.y:Number(p.y));
+ let activity=isMe?myPos.activity:(live?data.activity:p.activity),facing=isMe?myPos.facing:(live?data.facing:p.facing);
+ if(!present&&!isMe&&!['sleep','sick'].includes(activity))activity='rest';
+ if(!isMe&&present&&data&&live){
+  const last=data.rendered||{x:Number(p.x),y:Number(p.y)};
+  const nx=last.x+(x-last.x)*.23,ny=last.y+(y-last.y)*.23;
+  data.rendered={x:nx,y:ny};x=nx;y=ny;
+ }
+ r(x-19,y+3,38,9,'#4f3947a0');
+ if(['sleep','sick'].includes(activity)&&p.room==='bedroom'){
+  // Cada jugador ocupa su propia mitad de la cama.
+  x=p.avatar==='boy'?482:553;y=300;
+ }
+ if(isMe&&activity==='idle'&&(Math.hypot(stick.x,stick.y)>.1||[...keys].some(k=>MOVE_KEYS.has(k)))) activity='walk';
+ drawPixelPerson(ctx,x,y,p.avatar,facing,activity,t,3);
+ label(isMe?'TÚ':present?'♥ PAREJA':'☾ AUSENTE',x,y-82,12,isMe?'#fff1ce':'#e8c0e0');
+ if(p.sick){label('ENFERMO · '+p.care_streak+'/3',x,y-97,12,'#f1c37a');}
+}
+function draw(t){
+ const pixelRatio=Math.min(2,window.devicePixelRatio||1);ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+ ctx.clearRect(0,0,screen.clientWidth,screen.clientHeight);
+ r(0,0,screen.clientWidth,screen.clientHeight,'#3a2b42');
+ const {scale,camX,camY,padX,padY}=camera();ctx.translate(padX,padY);ctx.scale(scale,scale);ctx.translate(-camX,-camY);
+ drawRoom(t);
+ const drawList=people.filter(p=>(p.user_id!==user?.id)).concat(me?[me]:[]);
+ drawList.forEach(p=>drawPerson(p,p.user_id===user?.id,t));
+}
+function frame(t){
+ if(!playing||!visible){frameId=0;return;}
+ const dt=Math.min(.05,Math.max(0,(t-lastFrame)/1000));lastFrame=t;
+ updateMovement(dt);
+ if(t-lastBroadcast>115)broadcast();
+ if(t-lastPersist>2400){lastPersist=t;persist().catch(()=>{});}
+ if(t-lastSync>10000){lastSync=t;sync().catch(e=>toast('Sincronización: '+friendly(e)));}
+ if(t>noticeUntil)toastEl.hidden=true;
+ if(!gamePaused){
+  const near=nearby();hint.textContent=me?.sick?'Necesitas tres días seguidos de comida y compañía de tu pareja':myPos.activity==='sleep'?'Pulsa E para levantarte':near?`E · ${near.label}   ·   WASD / Flechas para caminar`:'WASD / Flechas · E para interactuar';
+ }
+ setBars();
+ const p=own();const timer=p?.pending_recipe?Math.max(0,(Date.parse(p.cook_ready_at)-timeNow())/1000):0;
+ if(timer>0){progressBox.hidden=false;$('house-progress-label').textContent='Cocinando '+(RECIPES[p.pending_recipe]?.name||'comida');$('house-progress-fill').style.width=(100-clamp(timer/(RECIPES[p.pending_recipe]?.seconds||10)*100,0,100))+'%';}
+ else if(['shower','toilet','wash','eat','care'].includes(myPos.activity)&&p?.activity_until){
+  progressBox.hidden=false;$('house-progress-label').textContent='Realizando '+myPos.activity;$('house-progress-fill').style.width=(100-clamp((Date.parse(p.activity_until)-timeNow())/8000*100,0,100))+'%';
+ }else progressBox.hidden=true;
+ draw(t);frameId=requestAnimationFrame(frame);
+}
+const MOVE_KEYS=new Set(['w','a','s','d','arrowleft','arrowup','arrowright','arrowdown']);
+document.addEventListener('keydown',e=>{
+ if(!visible||!playing||e.target.closest('input,textarea'))return;
+ const k=e.key.toLowerCase();if(MOVE_KEYS.has(k)){e.preventDefault();if(!gamePaused)keys.add(k);}
+ if(k==='e'){e.preventDefault();interact();}
+ if(k==='escape'){e.preventDefault();if(!modal.hidden&&$('house-dialog-x').style.display!=='none')hideModal();else closeHouse();}
+});
+document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+window.addEventListener('blur',()=>{keys.clear();stick={x:0,y:0};knob.style.transform='';});
+function joystickEvent(e){
+ const bounds=joy.getBoundingClientRect(),cx=bounds.left+bounds.width/2,cy=bounds.top+bounds.height/2;
+ let x=(e.clientX-cx)/39,y=(e.clientY-cy)/39;
+ const len=Math.max(1,Math.hypot(x,y));x/=len;y/=len;stick={x,y};knob.style.transform=`translate(${x*34}px,${y*34}px)`;
+}
+joy.addEventListener('pointerdown',e=>{joy.setPointerCapture(e.pointerId);joystickEvent(e);});
+joy.addEventListener('pointermove',e=>{if(joy.hasPointerCapture(e.pointerId))joystickEvent(e);});
+function joyRelease(){stick={x:0,y:0};knob.style.transform='';}
+joy.addEventListener('pointerup',joyRelease);joy.addEventListener('pointercancel',joyRelease);
+touchE.addEventListener('click',interact);
+launch.addEventListener('click',openHouse);closeBtn.addEventListener('click',closeHouse);
+$('house-dialog-x').addEventListener('click',hideModal);
+window.addEventListener('resize',()=>{if(visible)resize();});
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){keys.clear();if(playing&&visible&&pendingMove)persist().catch(()=>{});}
+ else if(visible&&playing)sync().catch(()=>{});
+});
+// Cerrar un navegador quita presencia automáticamente; los espectadores muestran el sprite ausente.
+})();
 </script>
 </body>
 </html>
