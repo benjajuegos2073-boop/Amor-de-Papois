@@ -3635,7 +3635,7 @@ const canvas=$('house-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const modal=$('house-dialog-backdrop'),modalTitle=$('house-dialog-title'),modalContent=$('house-dialog-content'),modalActions=$('house-dialog-actions');
 const roomLabel=$('house-subtitle'),hint=$('house-help'),onlineLabel=$('house-online'),progressBox=$('house-progress'),toastEl=$('house-toast');
 const joy=$('house-joystick'),knob=$('house-knob'),touchE=$('house-touch-e');
-const W=1440,H=720,DAY_SECS=1200,SPEED=148;
+const W=1440,H=720,SPEED=148;
 const RECIPES={eggs:{name:'Huevos',ingredients:{egg:2},seconds:8,heal:22},rice:{name:'Arroz',ingredients:{rice:1,tomato:1},seconds:13,heal:30},pasta:{name:'Pasta',ingredients:{pasta:1,cheese:1},seconds:16,heal:34},sandwich:{name:'Sándwich',ingredients:{bread:1,cheese:1},seconds:7,heal:20}};
 const INGREDIENTS={egg:'Huevos',rice:'Arroz',pasta:'Pasta',bread:'Pan',cheese:'Queso',tomato:'Tomate'};
 const ROOMS={main:'Sala principal',bathroom:'Baño',bedroom:'Dormitorio'};
@@ -3646,7 +3646,7 @@ let lastFrame=0,lastBroadcast=0,lastPersist=0,lastSync=0,frameId=0,pendingMove=f
 // ordenados, mientras que las posiciones remotas viajan por Realtime.
 let positionSavePromise=null,positionRetryAt=0,lastBroadcastState='',moveSequence=0;
 const REMOTE_BUFFER_MS=160,REMOTE_EXTRAPOLATE_MS=90;
-let serverOffset=0,noticeUntil=0,notifyText='',busyUntil=0,introUntil=0,introStartedAt=0,gamePaused=false;
+let serverOffset=0,careToday=null,nextCareMidnight=0,noticeUntil=0,notifyText='',busyUntil=0,introUntil=0,introStartedAt=0,gamePaused=false;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const d=(a,b)=>Math.hypot((a?.x||0)-(b?.x||0),(a?.y||0)-(b?.y||0));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -3743,6 +3743,7 @@ async function sync(first=false){
    toast('♥ ¡Se han recuperado juntos! Pueden volver a caminar y cuidarse.',4600);
  }
  world=data.room||{};serverOffset=Number(data.server_time||Date.now())-Date.now();
+ careToday=Number(data.care_day);nextCareMidnight=Number(data.next_care_midnight||0);
  me=own();if(!me)throw Error('La cuenta ya no pertenece a esta casa');
  if(first){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity};}
  else if(me.sick){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:'sick'};}
@@ -3799,8 +3800,15 @@ function updateOnline(){
 }
 function setRoomLabel(){roomLabel.textContent=ROOMS[myPos.room]||'Casa';}
 function secondsToNextHouseDay(){
- const second=Math.floor(timeNow()/1000),mod=((second%DAY_SECS)+DAY_SECS)%DAY_SECS;
- return DAY_SECS-mod;
+ // Corte autoritativo enviado por Supabase: próxima medianoche en Chile.
+ return nextCareMidnight ? Math.max(0,Math.ceil((nextCareMidnight-timeNow())/1000)) : 0;
+}
+function careTimeLeft(){
+ const s=secondsToNextHouseDay(),h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
+ return `${h} h ${m} min`;
+}
+function careCompletedToday(p){
+ return p && careToday!==null && Number(p.care_last_completed_day)===careToday;
 }
 function setBars(){
  const p=own();if(!p)return;
@@ -3866,11 +3874,13 @@ async function runAction(name,value){
   broadcast(true);hideModal();
   if(['care_feed','care_company'].includes(name)){
    const cared=partner();
-   if(cared?.sick){
-    const flags=Number(cared.care_flags||0);
-    const remaining=secondsToNextHouseDay();
-    const mins=Math.floor(remaining/60),secs=remaining%60;
-    toast(`♥ Cuidado registrado. Hoy: comida ${flags&1?'✓':'pendiente'} · compañía ${flags&2?'✓':'pendiente'}. Racha ${cared.care_streak||0}/3; el día termina en ${mins}m ${secs}s.`,6900);
+   if(cared&&!cared.sick){
+     toast('♥ ¡Completaron los tres días de cuidados y tu pareja se recuperó!',6900);
+   }else if(careCompletedToday(cared)){
+     toast(`♥ ¡Día ${cared.care_streak}/3 completado! Ya recibió comida y compañía. El siguiente podrá marcarse a partir de las 00:00 del día siguiente (Chile), en ${careTimeLeft()}.`,6900);
+   }else if(cared?.sick){
+     const flags=Number(cared.care_flags||0);
+     toast(`♥ Cuidado guardado: comida ${flags&1?'✓':'pendiente'} · compañía ${flags&2?'✓':'pendiente'}. Al completar ambos, se marcará el día inmediatamente.`,6900);
    }
   }
  }catch(e){toast(friendly(e));}
@@ -3973,12 +3983,17 @@ function interact(){
  case 'wash':text='Lavarse las manos reduce 12 puntos de suciedad.';actions.push(actionBtn('Lavarse las manos','wash'));break;
  case 'toilet':text='Una interacción discreta de cinco segundos.';actions.push(actionBtn('Usar inodoro','toilet'));break;
  case 'bed':{
-  const p=partner();
-  const left=secondsToNextHouseDay();
-  text=p?.sick?`Tu pareja necesita comida y compañía EN EL MISMO DÍA del juego. Cada día dura 20 minutos. Racha completada: ${p.care_streak||0}/3. Cuidados de hoy: comida ${p.care_flags&1?'✓':'pendiente'}, compañía ${p.care_flags&2?'✓':'pendiente'}. El contador sube cuando termina el día; faltan ${Math.floor(left/60)}m ${left%60}s. Si se olvida algún cuidado, la racha se reinicia.`:'La cama es de dos plazas. Dormir recupera el sueño mientras pasa el tiempo.';
+  const p=partner(),done=careCompletedToday(p),flags=Number(p?.care_flags||0);
+  text=p?.sick
+    ? done
+      ? `♥ ¡Día ${p.care_streak}/3 completado! Ya se registraron comida y compañía. Para sumar otro día deben esperar hasta a partir de las 00:00 del día siguiente (hora de Chile) y repetir AMBAS acciones. Faltan ${careTimeLeft()}. Si saltan un día, la racha se reinicia.`
+      : `Tu pareja necesita comida y compañía en este día, de 00:00 a 00:00 (hora de Chile). Racha: ${p.care_streak||0}/3. Comida ${flags&1?'✓':'pendiente'}, compañía ${flags&2?'✓':'pendiente'}. Al completar las dos, se suma un día INMEDIATAMENTE. El próximo período comienza en ${careTimeLeft()}. Si saltan un día, la racha se reinicia.`
+    : 'La cama es de dos plazas. Dormir recupera el sueño mientras pasa el tiempo.';
   actions.push(actionBtn('Acostarse y dormir','sleep'));
-  if(p?.sick){for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Llevar '+r.name+' al enfermo','care_feed',key));
-   actions.push(actionBtn('Acompañar y cuidar','care_company'));}
+  if(p?.sick&&!done){
+   if(!(flags&1))for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Llevar '+r.name+' al enfermo','care_feed',key));
+   if(!(flags&2))actions.push(actionBtn('Acompañar y cuidar','care_company'));
+  }
   break;
  }
  case 'back':text='Regresa al pasillo y conserva tu estado.';actions.push({label:'Salir de la habitación',primary:true,run:()=>transition('main')});break;
@@ -4261,7 +4276,7 @@ function frame(t){
  if(t-lastSync>10000){lastSync=t;sync().catch(e=>toast('Sincronización: '+friendly(e)));}
  if(t>noticeUntil)toastEl.hidden=true;
  if(!gamePaused){
-  const near=nearby();hint.textContent=me?.sick?'Necesitas tres días seguidos de comida y compañía de tu pareja':myPos.activity==='sleep'?'Pulsa E para levantarte':near?`E · ${near.label}   ·   WASD / Flechas para caminar`:'WASD / Flechas · E para interactuar';
+  const near=nearby();hint.textContent=me?.sick?'Necesitas comida y compañía cada día; el día se marca al recibir ambas acciones (cambio diario a las 00:00, Chile)':myPos.activity==='sleep'?'Pulsa E para levantarte':near?`E · ${near.label}   ·   WASD / Flechas para caminar`:'WASD / Flechas · E para interactuar';
  }
  setBars();
  const p=own();const timer=p?.pending_recipe?Math.max(0,(Date.parse(p.cook_ready_at)-timeNow())/1000):0;
