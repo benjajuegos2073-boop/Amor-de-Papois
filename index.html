@@ -3642,6 +3642,10 @@ const ROOMS={main:'Sala principal',bathroom:'Baño',bedroom:'Dormitorio'};
 let me=null,people=[],world=null,user=null,channel=null,visible=false,playing=false,choiceBusy=false;
 let myPos={x:1315,y:525,room:'main',facing:'left',activity:'idle'},keys=new Set(),stick={x:0,y:0},remote=new Map(),online=new Set();
 let lastFrame=0,lastBroadcast=0,lastPersist=0,lastSync=0,frameId=0,pendingMove=false;
+// El movimiento local es instantáneo. La base de datos solo recibe checkpoints
+// ordenados, mientras que las posiciones remotas viajan por Realtime.
+let positionSavePromise=null,positionRetryAt=0,lastBroadcastState='',moveSequence=0;
+const REMOTE_BUFFER_MS=160,REMOTE_EXTRAPOLATE_MS=90;
 let serverOffset=0,noticeUntil=0,notifyText='',busyUntil=0,introUntil=0,introStartedAt=0,gamePaused=false;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const d=(a,b)=>Math.hypot((a?.x||0)-(b?.x||0),(a?.y||0)-(b?.y||0));
@@ -3757,8 +3761,25 @@ async function connect(){
  channel=sb.channel('house:1',{config:{private:true,broadcast:{self:false,ack:false},presence:{key:user.id}}});
  channel.on('broadcast',{event:'move'},({payload})=>{
   if(!payload||!people.some(p=>p.user_id===payload.id)||payload.id===user.id)return;
-  const x=Number(payload.x),y=Number(payload.y);if(!Number.isFinite(x)||!Number.isFinite(y)||x<30||x>1410||y<30||y>690)return;
-  remote.set(payload.id,{x,y,room:payload.room,facing:payload.facing,activity:payload.activity,at:performance.now()});
+  const x=Number(payload.x),y=Number(payload.y),room=payload.room;
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x<30||x>1410||y<30||y>690||!ROOMS[room])return;
+  const time=performance.now(),sentAt=Number(payload.sentAt||0),prior=remote.get(payload.id);
+  // Descarta paquetes atrasados que provocarían un movimiento hacia atrás.
+  if(prior&&sentAt&&prior.lastSentAt&&sentAt<=prior.lastSentAt)return;
+  const snap={x,y,room,facing:payload.facing,activity:payload.activity,
+              at:time,sentAt};
+  // Cada jugador conserva un pequeño historial para interpolar entre muestras.
+  // Cambiar de habitación reinicia el historial, evitando atravesar paredes.
+  const sameRoom=prior&&prior.room===room;
+  const samples=sameRoom?prior.samples.filter(v=>time-v.at<1300):[];
+  // Una gran discontinuidad sí requiere un salto: por ejemplo, levantarse
+  // o entrar por una puerta. Nunca se suaviza a través de habitaciones.
+  const previous=samples[samples.length-1];
+  if(previous&&Math.hypot(previous.x-x,previous.y-y)>180)samples.length=0;
+  samples.push(snap);
+  if(samples.length>18)samples.splice(0,samples.length-18);
+  remote.set(payload.id,{samples,room,lastPacketAt:time,
+    lastSentAt:sentAt||prior?.lastSentAt||0});
  });
  channel.on('presence',{event:'sync'},()=>{
   const state=channel.presenceState();online=new Set(Object.keys(state));
@@ -3777,6 +3798,10 @@ function updateOnline(){
  const p=partner();onlineLabel.textContent=p?(online.has(p.user_id)?'♥ Tu pareja está online':'☾ Tu pareja está descansando'):'♡ Esperando a tu pareja';
 }
 function setRoomLabel(){roomLabel.textContent=ROOMS[myPos.room]||'Casa';}
+function secondsToNextHouseDay(){
+ const second=Math.floor(timeNow()/1000),mod=((second%DAY_SECS)+DAY_SECS)%DAY_SECS;
+ return DAY_SECS-mod;
+}
 function setBars(){
  const p=own();if(!p)return;
  const elapsed=Math.max(0,(timeNow()-Date.parse(p.last_tick||Date.now()))/60000);
@@ -3787,11 +3812,31 @@ function setBars(){
   $("house-"+id+'-fill').style.width=Math.round(num)+'%';$('house-'+id+'-value').textContent=Math.round(num);
  }
 }
-async function persist(){
- if(!playing||!visible||!user||me?.sick||!pendingMove)return;
+async function persist(force=false){
+ if(!playing||!user||me?.sick||(!visible&&!force))return;
+ // Nunca enviar dos checkpoints a la vez: respuestas fuera de orden podían
+ // sobrescribir el progreso posterior en Supabase.
+ if(positionSavePromise){
+  await positionSavePromise;
+  if(force&&pendingMove)return persist(true);
+  return;
+ }
+ if(!pendingMove)return;
+ if(!force&&performance.now()<positionRetryAt)return;
+ const snapshot={p_x:Math.round(myPos.x),p_y:Math.round(myPos.y),
+   p_room:myPos.room,p_facing:myPos.facing};
  pendingMove=false;
- try{await safeCall('house_move',{p_x:Math.round(myPos.x),p_y:Math.round(myPos.y),p_room:myPos.room,p_facing:myPos.facing});}
- catch(e){console.warn('Guardado de posición:',e);await sync(true).catch(()=>{});}
+ const operation=safeCall('house_move',snapshot).catch(err=>{
+  pendingMove=true;
+  positionRetryAt=performance.now()+1200;
+  console.warn('Guardado de posición:',err);
+  // Una caída de red NO debe teletransportar al jugador a una posición vieja.
+  if(force)throw err;
+ }).finally(()=>{positionSavePromise=null;});
+ positionSavePromise=operation;
+ await operation;
+ // Para interacciones, garantizar que el servidor haya visto el último paso.
+ if(force&&pendingMove)return persist(true);
 }
 // Libera partidas guardadas por versiones antiguas donde el personaje quedaba
 // de pie, pero dentro de la colisión del sillón (y=445). También funciona
@@ -3808,7 +3853,7 @@ async function rescueSofaPosition(){
 async function runAction(name,value){
  if(me?.sick){toast('Estás enfermo. Necesitas cuidados de tu pareja.');return;}
  try{
-  if(pendingMove)await persist();
+  if(pendingMove||positionSavePromise)await persist(true);
   await action(name,value);await sync(false);
   if(me){
    myPos.activity=me.activity;
@@ -3819,11 +3864,20 @@ async function runAction(name,value){
   if(name==='stand'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),activity:'idle'};}
   if(name==='stand')await rescueSofaPosition();
   broadcast(true);hideModal();
+  if(['care_feed','care_company'].includes(name)){
+   const cared=partner();
+   if(cared?.sick){
+    const flags=Number(cared.care_flags||0);
+    const remaining=secondsToNextHouseDay();
+    const mins=Math.floor(remaining/60),secs=remaining%60;
+    toast(`♥ Cuidado registrado. Hoy: comida ${flags&1?'✓':'pendiente'} · compañía ${flags&2?'✓':'pendiente'}. Racha ${cared.care_streak||0}/3; el día termina en ${mins}m ${secs}s.`,6900);
+   }
+  }
  }catch(e){toast(friendly(e));}
 }
 async function transition(to){
  try{
-  if(pendingMove)await persist();
+  if(pendingMove||positionSavePromise)await persist(true);
   const data=await safeCall('house_transition',{p_to:to});
   await sync(false);
   myPos={...myPos,x:Number(data.x),y:Number(data.y),room:data.room,activity:'idle'};
@@ -3839,7 +3893,7 @@ async function closeHouse(){
  // La X cierra la pantalla inmediatamente, también si la red está lenta.
  // La posición se envía primero y luego el estado de descanso al servidor.
  const shouldRest=playing&&!me?.sick&&myPos.activity!=='sleep';
- const saved=pendingMove?persist().catch(()=>{}):Promise.resolve();
+ const saved=(pendingMove||positionSavePromise)?persist(true).catch(()=>{}):Promise.resolve();
  visible=false;screen.hidden=true;keys.clear();stick={x:0,y:0};knob.style.transform='';
  launch.setAttribute('aria-expanded','false');hideModal();gamePaused=false;
  saved.then(()=>{if(shouldRest&&!visible)sendRest();}).catch(()=>{});
@@ -3919,7 +3973,9 @@ function interact(){
  case 'wash':text='Lavarse las manos reduce 12 puntos de suciedad.';actions.push(actionBtn('Lavarse las manos','wash'));break;
  case 'toilet':text='Una interacción discreta de cinco segundos.';actions.push(actionBtn('Usar inodoro','toilet'));break;
  case 'bed':{
-  const p=partner();text=p?.sick?`Tu pareja necesita comida y compañía durante tres días consecutivos (20 min por día). Racha: ${p.care_streak||0}/3. Hoy: comida ${p.care_flags&1?'✓':'pendiente'}, compañía ${p.care_flags&2?'✓':'pendiente'}.`:'La cama es de dos plazas. Dormir recupera el sueño mientras pasa el tiempo.';
+  const p=partner();
+  const left=secondsToNextHouseDay();
+  text=p?.sick?`Tu pareja necesita comida y compañía EN EL MISMO DÍA del juego. Cada día dura 20 minutos. Racha completada: ${p.care_streak||0}/3. Cuidados de hoy: comida ${p.care_flags&1?'✓':'pendiente'}, compañía ${p.care_flags&2?'✓':'pendiente'}. El contador sube cuando termina el día; faltan ${Math.floor(left/60)}m ${left%60}s. Si se olvida algún cuidado, la racha se reinicia.`:'La cama es de dos plazas. Dormir recupera el sueño mientras pasa el tiempo.';
   actions.push(actionBtn('Acostarse y dormir','sleep'));
   if(p?.sick){for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Llevar '+r.name+' al enfermo','care_feed',key));
    actions.push(actionBtn('Acompañar y cuidar','care_company'));}
@@ -3963,9 +4019,20 @@ function updateMovement(dt){
 }
 function broadcast(force=false){
  if(!channel||!user)return;
- if(!force&&performance.now()-lastBroadcast<110)return;
- lastBroadcast=performance.now();
- channel.send({type:'broadcast',event:'move',payload:{id:user.id,x:Math.round(myPos.x),y:Math.round(myPos.y),room:myPos.room,facing:myPos.facing,activity:(myPos.activity==='idle'&&(stick.x||stick.y||[...keys].some(k=>MOVE_KEYS.has(k)))?'walk':myPos.activity)}}).catch(()=>{});
+ const t=performance.now();
+ const walking=myPos.activity==='idle'&&
+   (Math.hypot(stick.x,stick.y)>.1||[...keys].some(k=>MOVE_KEYS.has(k)));
+ const activity=walking?'walk':myPos.activity;
+ const state=[myPos.room,myPos.facing,activity].join(':');
+ const changed=state!==lastBroadcastState;
+ // 10 actualizaciones/segundo al caminar; en reposo, solo cambios y latidos
+ // cada 1,5 s. No se espera ninguna respuesta de Supabase para caminar.
+ if(!force&&!changed&&t-lastBroadcast<(walking?95:1500))return;
+ if(!force&&t-lastBroadcast<55)return;
+ lastBroadcast=t;lastBroadcastState=state;
+ channel.send({type:'broadcast',event:'move',payload:{id:user.id,
+  x:Math.round(myPos.x),y:Math.round(myPos.y),room:myPos.room,
+  facing:myPos.facing,activity,sentAt:Date.now(),seq:++moveSequence}}).catch(()=>{});
 }
 function resize(){
  const pixelRatio=Math.min(2,window.devicePixelRatio||1);const w=screen.clientWidth,h=screen.clientHeight;
@@ -4118,20 +4185,46 @@ function drawBedBlanket(x,activity){
  r(left+7,297,42,3,'#f1d5d9');
  r(x-3,274,7,5,'#bd657f');r(x-8,270,5,5,'#bd657f');r(x+3,270,5,5,'#bd657f');
 }
+// Recupera una posición interpolada desde el historial de paquetes del otro jugador.
+// Retardo visual pequeño e intencionado (160 ms), sin bloquear los controles propios.
+function interpolatedRemote(data,now){
+ const samples=data?.samples||[];
+ if(!samples.length)return null;
+ const target=now-REMOTE_BUFFER_MS;
+ if(samples.length===1||target<=samples[0].at)return samples[0];
+ for(let i=1;i<samples.length;i++){
+  const a=samples[i-1],b=samples[i];
+  if(target<=b.at){
+   const fraction=clamp((target-a.at)/Math.max(1,b.at-a.at),0,1);
+   return {...b,x:a.x+(b.x-a.x)*fraction,y:a.y+(b.y-a.y)*fraction,
+     activity:fraction<.5?a.activity:b.activity};
+  }
+ }
+ const last=samples[samples.length-1],prev=samples[samples.length-2];
+ const age=now-data.lastPacketAt;
+ if(age>350||last.activity!=='walk')return last;
+ // Una extrapolación MUY limitada cubre pequeñas variaciones de latencia.
+ const delta=Math.max(1,last.at-prev.at);
+ const vx=clamp((last.x-prev.x)/delta,-.19,.19);
+ const vy=clamp((last.y-prev.y)/delta,-.19,.19);
+ const ahead=clamp(target-last.at,0,REMOTE_EXTRAPOLATE_MS);
+ return {...last,x:last.x+vx*ahead,y:last.y+vy*ahead};
+}
 function drawPerson(p,isMe,t){
  if(!p)return;
  const data=!isMe?remote.get(p.user_id):null;
- const present=isMe?true:online.has(p.user_id),live=!!(data&&present&&performance.now()-data.at<5000);
- const room=isMe?myPos.room:(live?data.room:p.room);
+ const present=isMe?true:online.has(p.user_id);
+ const live=!!(data&&present&&t-data.lastPacketAt<3500);
+ const interpolated=live?interpolatedRemote(data,t):null;
+ const room=isMe?myPos.room:(interpolated?.room||p.room);
  if(room!==myPos.room)return;
- let x=isMe?myPos.x:(live?data.x:Number(p.x)), y=isMe?myPos.y:(live?data.y:Number(p.y));
- let activity=isMe?myPos.activity:(live?data.activity:p.activity),facing=isMe?myPos.facing:(live?data.facing:p.facing);
+ let x=isMe?myPos.x:(interpolated?.x??Number(p.x));
+ let y=isMe?myPos.y:(interpolated?.y??Number(p.y));
+ let activity=isMe?myPos.activity:(interpolated?.activity||p.activity);
+ let facing=isMe?myPos.facing:(interpolated?.facing||p.facing);
+ // Los estados críticos confirmados por el servidor siempre tienen prioridad.
+ if(!isMe&&p.sick)activity='sick';
  if(!present&&!isMe&&!['sleep','sick'].includes(activity))activity='rest';
- if(!isMe&&present&&data&&live){
-  const last=data.rendered||{x:Number(p.x),y:Number(p.y)};
-  const nx=last.x+(x-last.x)*.23,ny=last.y+(y-last.y)*.23;
-  data.rendered={x:nx,y:ny};x=nx;y=ny;
- }
  const inBed=['sleep','sick'].includes(activity)&&room==='bedroom';
  const inShower=activity==='shower'&&room==='bathroom';
  if(inBed){
