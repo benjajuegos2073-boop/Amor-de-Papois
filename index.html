@@ -444,7 +444,8 @@
 .house-track{height:12px;background:#4e3447;border:2px solid #b59090}
 .house-fill{height:100%;transition:width .4s linear}
 .house-fill.hungry{background:#f7ab5c}.house-fill.sleepy{background:#86a2eb}.house-fill.dirty{background:#85bd93}.house-fill.pet{background:#f5b66a}
-.house-help{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);text-align:center;background:#22182ddb;color:#ffe6c0;border:2px solid #72526f;padding:8px 14px;font-size:12px;max-width:90vw;white-space:normal;line-height:1.4;pointer-events:none}
+.house-help{position:absolute;bottom:12px;left:50%;transform:translate(-50%,8px);text-align:center;background:#22182ddb;color:#ffe6c0;border:2px solid #72526f;padding:8px 14px;font-size:12px;max-width:90vw;white-space:normal;line-height:1.4;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .18s,transform .18s,visibility .18s;z-index:8}
+.house-help.visible{opacity:1;visibility:visible;transform:translate(-50%,0)}
 .house-toast{position:absolute;top:18%;left:50%;transform:translateX(-50%);background:#312035ed;border:3px solid #eda96e;padding:10px 16px;max-width:80vw;text-align:center;font-size:13px;z-index:7;pointer-events:none}
 .house-toast[hidden]{display:none!important}
 .house-dialog-backdrop{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:#120d17b8;padding:12px;touch-action:auto}
@@ -472,12 +473,21 @@
 .house-character-choice canvas{margin:auto;display:block;image-rendering:pixelated;width:78px;height:118px}
 .house-joystick{display:none;position:absolute;bottom:62px;left:17px;width:118px;height:118px;border-radius:50%;background:#1c152ccc;border:3px solid #9e8495;touch-action:none;user-select:none}
 .house-knob{position:absolute;left:38px;top:38px;width:40px;height:40px;border-radius:50%;background:#d89c9d;border:3px solid #ffdcac;box-shadow:2px 2px #422d41;pointer-events:none}
-.house-touch-e{display:none;position:absolute;right:24px;bottom:90px;background:#bd5e64;border:4px solid #ffe4b0;color:white;font-size:16px;font-weight:bold;width:75px;height:75px;border-radius:50%;touch-action:manipulation}
+.house-board-tools{position:absolute;z-index:8;top:68px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;padding:8px 10px;background:#211a2beF;border:3px solid #80627a;box-shadow:4px 4px 0 #130f1a;max-width:min(760px,94vw);color:#fff0d9;font-size:11px}
+.house-board-tools[hidden]{display:none!important}
+.house-board-tools strong{font-size:10px;letter-spacing:.08em;color:#e9c39e;margin:0 4px}
+.house-board-tool{border:2px solid #9d8497;background:#49364d;color:#fff0d9;padding:7px 9px;min-height:34px;font-size:11px;box-shadow:2px 2px 0 #120e18}
+.house-board-tool.active{border-color:#ffe0a7;background:#805c6c;box-shadow:0 0 0 2px #d5a47e inset}.house-board-tool:disabled{opacity:.38;filter:grayscale(.7);cursor:not-allowed}
+.house-board-tool[data-board-color=black]{border-bottom:4px solid #27252b}
+.house-board-tool[data-board-color=blue]{border-bottom:4px solid #3976bd}
+.house-board-tool[data-board-color=red]{border-bottom:4px solid #c94d54}
+.house-board-tool[data-board-color=eraser]{border-bottom:4px solid #f4efde}
+.house-board-tool.danger{background:#763f52;border-color:#dc9292}
 .house-online{font-size:10px;background:#261d32e8;border:2px solid #70566c;padding:7px 9px;position:absolute;right:67px;top:12px;white-space:nowrap}
 .house-progress{position:absolute;top:72px;right:12px;width:min(205px,39vw);padding:8px;background:#251b32e8;border:2px solid #78576d;font-size:11px}
 .house-progress[hidden]{display:none!important}
 .house-progress-bar{height:11px;background:#564252;margin-top:7px}.house-progress-bar>div{height:100%;background:#f1b56b}
-@media (pointer:coarse),(max-width:680px){.house-joystick,.house-touch-e{display:block}.house-help{bottom:7px;font-size:10px;padding:5px 10px;max-width:62vw}.house-title{font-size:12px;padding:5px 7px}.house-bars{top:61px;width:146px;padding:6px;font-size:9px}.house-meter{grid-template-columns:45px 1fr}.house-online{right:60px;top:8px;font-size:9px;padding:5px}.house-progress{top:61px}}
+@media (pointer:coarse),(max-width:680px){.house-joystick{display:block}.house-help{bottom:7px;font-size:10px;padding:6px 9px;max-width:80vw}.house-title{font-size:12px;padding:5px 7px}.house-bars{top:61px;width:146px;padding:6px;font-size:9px}.house-meter{grid-template-columns:45px 1fr}.house-online{right:60px;top:8px;font-size:9px;padding:5px}.house-progress{top:61px}.house-board-tools{top:auto;bottom:18px;left:140px;right:8px;transform:none;max-width:none;gap:4px;padding:5px}.house-board-tool{padding:6px 7px;font-size:10px;min-height:31px}.house-board-tools strong{display:none}}
 </style>
 </head>
 <body>
@@ -775,9 +785,17 @@
   </div>
   <div class="house-progress" id="house-progress" hidden><span id="house-progress-label"></span><div class="house-progress-bar"><div id="house-progress-fill"></div></div></div>
   <div class="house-toast" id="house-toast" hidden role="status"></div>
-  <div class="house-help" id="house-help">WASD / Flechas · E para interactuar</div>
+  <div class="house-help" id="house-help" role="status" aria-live="polite"></div>
   <div class="house-joystick" id="house-joystick" aria-label="Joystick para caminar"><div class="house-knob" id="house-knob"></div></div>
-  <button class="house-touch-e" id="house-touch-e" type="button" aria-label="Interactuar con un objeto">E</button>
+  <div class="house-board-tools" id="house-board-tools" hidden aria-label="Herramientas de la pizarra">
+    <strong>PIZARRA</strong>
+    <button class="house-board-tool active" type="button" data-board-color="black">● Negro</button>
+    <button class="house-board-tool" type="button" data-board-color="blue">● Azul</button>
+    <button class="house-board-tool" type="button" data-board-color="red">● Rojo</button>
+    <button class="house-board-tool" type="button" data-board-color="eraser">⌫ Goma</button>
+    <button class="house-board-tool danger" type="button" id="house-board-clear">Borrar todo</button>
+    <button class="house-board-tool" type="button" id="house-board-stand">Levantarse</button>
+  </div>
   <div class="house-dialog-backdrop" id="house-dialog-backdrop" hidden>
     <div class="house-dialog" role="dialog" aria-modal="true" aria-labelledby="house-dialog-title">
       <button type="button" class="house-dialog-x" id="house-dialog-x" aria-label="Cerrar panel">×</button>
@@ -3640,14 +3658,17 @@ if(!screen||!launch||!sb){console.warn('Casa Digital: faltan elementos o cliente
 const canvas=$('house-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const modal=$('house-dialog-backdrop'),modalTitle=$('house-dialog-title'),modalContent=$('house-dialog-content'),modalActions=$('house-dialog-actions');
 const roomLabel=$('house-subtitle'),hint=$('house-help'),onlineLabel=$('house-online'),progressBox=$('house-progress'),toastEl=$('house-toast');
-const joy=$('house-joystick'),knob=$('house-knob'),touchE=$('house-touch-e');
-const W=1440,H=720,SPEED=148;
+const joy=$('house-joystick'),knob=$('house-knob'),boardTools=$('house-board-tools');
+const W=1440,H=720,SPEED=148,ROLL_SPEED=190;
+const WHITEBOARD={x:90,y:103,w:255,h:112};
+const BOARD_COLORS={black:'#24232a',blue:'#3476bd',red:'#c84a52',eraser:'#f3efdf'};
 const RECIPES={eggs:{name:'Huevos',ingredients:{egg:2},seconds:8,heal:22},rice:{name:'Arroz',ingredients:{rice:1,tomato:1},seconds:13,heal:30},pasta:{name:'Pasta',ingredients:{pasta:1,cheese:1},seconds:16,heal:34},sandwich:{name:'Sándwich',ingredients:{bread:1,cheese:1},seconds:7,heal:20}};
 const INGREDIENTS={egg:'Huevos',rice:'Arroz',pasta:'Pasta',bread:'Pan',cheese:'Queso',tomato:'Tomate',dog_food:'Comida para perrito'};
 const ROOMS={main:'Sala principal',bathroom:'Baño',bedroom:'Dormitorio'};
 let me=null,people=[],world=null,user=null,channel=null,visible=false,playing=false,choiceBusy=false;
-let myPos={x:1315,y:525,room:'main',facing:'left',activity:'idle'},keys=new Set(),stick={x:0,y:0},remote=new Map(),online=new Set();
+let myPos={x:1315,y:525,room:'main',facing:'left',activity:'idle',chairSpinUntil:0},keys=new Set(),stick={x:0,y:0},remote=new Map(),online=new Set();
 let lastFrame=0,lastBroadcast=0,lastPersist=0,lastSync=0,frameId=0,pendingMove=false;
+let hintUntil=0,lastRollVector=null,whiteboardStrokes=[],whiteboardLive=new Map(),whiteboardDrawing=null,whiteboardColor='black',lastBoardPreview=0;
 // El movimiento local es instantáneo. La base de datos solo recibe checkpoints
 // ordenados, mientras que las posiciones remotas viajan por Realtime.
 let positionSavePromise=null,positionRetryAt=0,lastBroadcastState='',moveSequence=0;
@@ -3668,6 +3689,22 @@ const partner=()=>people.find(p=>p.user_id!==user?.id)||null;
 const inv=(id)=>Number(own()?.inventory?.[id]||0);
 const timeNow=()=>Date.now()+serverOffset;
 function toast(str,ms=3500){notifyText=str;noticeUntil=performance.now()+ms;toastEl.textContent=str;toastEl.hidden=false;}
+function bottomNotice(str,ms=2600){hint.textContent=str;hint.classList.add('visible');hintUntil=performance.now()+ms;}
+const DESK_SEATS={left:{x:175,y:385},pink:{x:315,y:385}};
+function distanceToDeskSeats(x=myPos.x,y=myPos.y){return Math.min(...Object.values(DESK_SEATS).map(seat=>Math.hypot(x-seat.x,y-seat.y)));}
+function canUseWhiteboard(){return myPos.room==='bedroom'&&myPos.activity==='desk'&&distanceToDeskSeats()<330;}
+function refreshBoardTools(){
+ if(!boardTools)return;
+ const seated=visible&&playing&&myPos.room==='bedroom'&&myPos.activity==='desk';
+ const inRange=seated&&canUseWhiteboard();
+ boardTools.hidden=!seated;
+ // La persona conserva el botón Levantarse aunque aleje la silla con ruedas.
+ // Los útiles de dibujo solo se habilitan cuando está al alcance de la pizarra.
+ boardTools.querySelectorAll('[data-board-color],#house-board-clear').forEach(button=>{
+  button.disabled=!inRange;
+  button.title=inRange?'':'Acerca la silla a la pizarra para usar esta herramienta.';
+ });
+}
 function hideModal(){modal.hidden=true;modalActions.innerHTML='';modalContent.innerHTML='';gamePaused=false;}
 function dialog(title,html,actions=[],locked=false){
  modalTitle.textContent=title;modalContent.innerHTML=html;modalActions.innerHTML='';modal.hidden=false;gamePaused=true;
@@ -3729,14 +3766,14 @@ async function initGame(){
  try{
   // Deja que Supabase renueve automáticamente el JWT del canal privado.
   await sb.realtime.setAuth();
-  await sync(true);await connect();
+  await sync(true);await connect();await loadWhiteboard();
   if(!me.has_entered){
    introStartedAt=performance.now();introUntil=introStartedAt+3200;
    myPos={x:1390,y:530,room:'main',facing:'left',activity:'welcome'};
    await action('welcome');
    toast('¡Bienvenid@ a nuestro pequeño hogar! ♥',3500);
   }else{
-   myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity};
+   myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity,deskSeat:me.desk_seat||null};
    if(myPos.activity==='rest') await action('stand');
   }
   // Recupera también a quienes ya quedaron atrapados en una sesión anterior.
@@ -3760,7 +3797,7 @@ async function sync(first=false){
  careToday=Number(data.care_day);nextCareMidnight=Number(data.next_care_midnight||0);
  if(!first&&previousStockDay!==null&&lastRoomStockDay!==previousStockDay){toast('🧺 A las 00:00 se rellenó el refrigerador compartido.',4600);}
  me=own();if(!me)throw Error('La cuenta ya no pertenece a esta casa');
- if(first){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity};}
+ if(first){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity,deskSeat:me.desk_seat||null};}
  else if(me.sick){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:'sick'};}
  else if(!pendingMove){
    const previousActivity=myPos.activity;myPos.activity=me.activity;
@@ -3770,7 +3807,9 @@ async function sync(first=false){
      myPos.x=Number(me.x);myPos.y=Number(me.y);myPos.room=me.room;
    }
  }
- setBars();setRoomLabel();
+ if(!pendingMove&&myPos.room!==me.room){myPos.room=me.room;myPos.x=Number(me.x);myPos.y=Number(me.y);}
+ myPos.deskSeat=me.desk_seat||null;
+ setBars();setRoomLabel();refreshBoardTools();
 }
 async function connect(){
  if(channel){try{await sb.removeChannel(channel);}catch(_){}}
@@ -3782,8 +3821,9 @@ async function connect(){
   const time=performance.now(),sentAt=Number(payload.sentAt||0),prior=remote.get(payload.id);
   // Descarta paquetes atrasados que provocarían un movimiento hacia atrás.
   if(prior&&sentAt&&prior.lastSentAt&&sentAt<=prior.lastSentAt)return;
-  const snap={x,y,room,facing:payload.facing,activity:payload.activity,
-              at:time,sentAt};
+  const snap={x,y,room,facing:payload.facing,activity:payload.activity,deskSeat:payload.deskSeat||prior?.deskSeat||null,
+              chairSpinUntil:payload.chairSpinAt&&Date.now()-Number(payload.chairSpinAt)<650
+                ?time+Math.max(0,650-(Date.now()-Number(payload.chairSpinAt))):(prior?.chairSpinUntil||0),at:time,sentAt};
   // Cada jugador conserva un pequeño historial para interpolar entre muestras.
   // Cambiar de habitación reinicia el historial, evitando atravesar paredes.
   const sameRoom=prior&&prior.room===room;
@@ -3837,6 +3877,20 @@ async function connect(){
      ? {...p,shirt_color:payload.shirt_color,pants_color:payload.pants_color} : p);
    me=own();
  });
+ channel.on('broadcast',{event:'whiteboard_preview'},({payload})=>{
+   if(!payload||payload.id===user?.id||!Array.isArray(payload.points))return;
+   if(!['black','blue','red','eraser'].includes(payload.color))return;
+   whiteboardLive.set(payload.id,{id:payload.id,color:payload.color,points:payload.points.slice(0,500),updatedAt:performance.now()});
+ });
+ channel.on('broadcast',{event:'whiteboard_stroke'},({payload})=>{
+   const stroke=payload?.stroke;if(!stroke||!stroke.id||!Array.isArray(stroke.points))return;
+   whiteboardLive.delete(payload.id);
+   upsertWhiteboardStroke(stroke);
+ });
+ channel.on('broadcast',{event:'whiteboard_clear'},({payload})=>{
+   if(!payload||!people.some(p=>p.user_id===payload.id))return;
+   whiteboardStrokes=[];whiteboardLive.clear();
+ });
  channel.on('presence',{event:'sync'},()=>{
   const state=channel.presenceState();online=new Set(Object.keys(state));
   updateOnline();
@@ -3854,6 +3908,105 @@ function updateOnline(){
  const p=partner();onlineLabel.textContent=p?(online.has(p.user_id)?'♥ Tu pareja está online':'☾ Tu pareja está descansando'):'♡ Esperando a tu pareja';
 }
 function setRoomLabel(){roomLabel.textContent=ROOMS[myPos.room]||'Casa';}
+async function loadWhiteboard(){
+ const data=await safeCall('house_whiteboard_get',{});
+ if(Array.isArray(data))for(const stroke of data)upsertWhiteboardStroke(stroke);
+}
+function upsertWhiteboardStroke(stroke){
+ if(!stroke?.id||!Array.isArray(stroke.points))return;
+ const index=whiteboardStrokes.findIndex(v=>v.id===stroke.id);
+ if(index>=0)whiteboardStrokes[index]=stroke;else whiteboardStrokes.push(stroke);
+ whiteboardStrokes.sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||''))||String(a.id).localeCompare(String(b.id)));
+}
+function boardPointFromWorld(point){
+ const inner=10;
+ return {x:clamp((point.x-(WHITEBOARD.x+inner))/(WHITEBOARD.w-inner*2),0,1),
+         y:clamp((point.y-(WHITEBOARD.y+inner))/(WHITEBOARD.h-inner*2),0,1)};
+}
+function screenToWorld(e){
+ const rect=canvas.getBoundingClientRect(),cam=camera();
+ return {x:cam.camX+(e.clientX-rect.left-cam.padX)/cam.scale,
+         y:cam.camY+(e.clientY-rect.top-cam.padY)/cam.scale};
+}
+function isWhiteboardPoint(p){return p.x>=WHITEBOARD.x+7&&p.x<=WHITEBOARD.x+WHITEBOARD.w-7&&p.y>=WHITEBOARD.y+7&&p.y<=WHITEBOARD.y+WHITEBOARD.h-7;}
+function boardStrokeStyle(color){return BOARD_COLORS[color]||BOARD_COLORS.black;}
+function drawBoardStroke(stroke){
+ if(!stroke||!Array.isArray(stroke.points)||!stroke.points.length)return;
+ const left=WHITEBOARD.x+10,top=WHITEBOARD.y+10,w=WHITEBOARD.w-20,h=WHITEBOARD.h-20;
+ const pts=stroke.points;
+ ctx.save();ctx.beginPath();ctx.rect(left,top,w,h);ctx.clip();
+ ctx.strokeStyle=boardStrokeStyle(stroke.color);ctx.fillStyle=boardStrokeStyle(stroke.color);
+ ctx.lineWidth=stroke.color==='eraser'?13:4.2;ctx.lineCap='round';ctx.lineJoin='round';
+ if(pts.length===1){const p=pts[0];ctx.beginPath();ctx.arc(left+clamp(Number(p.x),0,1)*w,top+clamp(Number(p.y),0,1)*h,stroke.color==='eraser'?6.5:2.1,0,Math.PI*2);ctx.fill();}
+ else{ctx.beginPath();pts.forEach((p,i)=>{const x=left+clamp(Number(p.x),0,1)*w,y=top+clamp(Number(p.y),0,1)*h;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();}
+ ctx.restore();
+}
+function drawWhiteboard(){
+ const b=WHITEBOARD;
+ r(b.x-5,b.y-5,b.w+10,b.h+10,'#4a354b');r(b.x,b.y,b.w,b.h,'#b58c74');
+ r(b.x+5,b.y+5,b.w-10,b.h-10,'#f5f0df');r(b.x+8,b.y+8,b.w-16,b.h-16,'#fffdf2');
+ // Bandeja del plumón y pequeños imanes de colores.
+ r(b.x+8,b.y+b.h-3,b.w-16,7,'#80616a');r(b.x+22,b.y+b.h-4,31,3,'#29272a');
+ r(b.x+b.w-40,b.y+11,7,7,'#c84a52');r(b.x+b.w-29,b.y+11,7,7,'#3476bd');r(b.x+b.w-18,b.y+11,7,7,'#29272a');
+ whiteboardStrokes.forEach(drawBoardStroke);
+ for(const live of whiteboardLive.values())if(performance.now()-live.updatedAt<5000)drawBoardStroke(live);
+ if(whiteboardDrawing)drawBoardStroke(whiteboardDrawing);
+}
+function updateBoardToolSelection(){
+ boardTools?.querySelectorAll('[data-board-color]').forEach(button=>button.classList.toggle('active',button.dataset.boardColor===whiteboardColor));
+}
+async function clearWhiteboard(){
+ if(myPos.activity!=='desk'||!canUseWhiteboard()){bottomNotice('Debes estar sentado en la silla del escritorio para borrar la pizarra.');return;}
+ try{
+  await safeCall('house_whiteboard_clear',{});whiteboardStrokes=[];whiteboardLive.clear();
+  if(channel)channel.send({type:'broadcast',event:'whiteboard_clear',payload:{id:user.id,at:Date.now()}}).catch(()=>{});
+  toast('Pizarra borrada para los dos.',2500);
+ }catch(e){bottomNotice(friendly(e),3500);}
+}
+function startWhiteboardStroke(e,point){
+ whiteboardDrawing={id:'live-'+user.id,color:whiteboardColor,points:[boardPointFromWorld(point)]};
+ lastBoardPreview=0;canvas.setPointerCapture(e.pointerId);e.preventDefault();
+}
+function continueWhiteboardStroke(e,point){
+ if(!whiteboardDrawing)return;
+ const p=boardPointFromWorld(point),last=whiteboardDrawing.points[whiteboardDrawing.points.length-1];
+ const dist=Math.hypot(p.x-last.x,p.y-last.y);
+ if(dist>.002&&whiteboardDrawing.points.length<500)whiteboardDrawing.points.push(p);
+ const now=performance.now();
+ if(channel&&now-lastBoardPreview>65){lastBoardPreview=now;channel.send({type:'broadcast',event:'whiteboard_preview',payload:{id:user.id,color:whiteboardDrawing.color,points:whiteboardDrawing.points,at:Date.now()}}).catch(()=>{});}
+ e.preventDefault();
+}
+async function finishWhiteboardStroke(e){
+ if(!whiteboardDrawing)return;
+ const draft=whiteboardDrawing;whiteboardDrawing=null;
+ whiteboardLive.set(user.id,{id:user.id,color:draft.color,points:draft.points,updatedAt:performance.now()});
+ try{
+  const saved=await safeCall('house_whiteboard_add_stroke',{p_color:draft.color,p_points:draft.points});
+  const stroke=saved?.stroke||saved;
+  whiteboardLive.delete(user.id);
+  upsertWhiteboardStroke(stroke);
+  if(channel)channel.send({type:'broadcast',event:'whiteboard_stroke',payload:{id:user.id,stroke}}).catch(()=>{});
+ }catch(err){whiteboardLive.delete(user.id);bottomNotice('No se pudo guardar el trazo: '+friendly(err),3800);}
+ e?.preventDefault?.();
+}
+function handleCanvasPointerDown(e){
+ if(!playing||!visible||gamePaused||modal&&!modal.hidden)return;
+ const point=screenToWorld(e);
+ if(myPos.room==='bedroom'&&isWhiteboardPoint(point)){
+  if(!canUseWhiteboard()){bottomNotice('Siéntate en la silla del escritorio para poder dibujar en la pizarra.');return;}
+  startWhiteboardStroke(e,point);return;
+ }
+ const hit=objectsAtPoint(point)[0];
+ if(hit){e.preventDefault();interact(hit.id);}
+}
+canvas.addEventListener('pointerdown',handleCanvasPointerDown);
+canvas.addEventListener('pointermove',e=>{if(whiteboardDrawing)continueWhiteboardStroke(e,screenToWorld(e));});
+canvas.addEventListener('pointerup',finishWhiteboardStroke);
+canvas.addEventListener('pointercancel',finishWhiteboardStroke);
+boardTools?.querySelectorAll('[data-board-color]').forEach(button=>button.addEventListener('click',()=>{whiteboardColor=button.dataset.boardColor;updateBoardToolSelection();}));
+$('house-board-clear')?.addEventListener('click',clearWhiteboard);
+$('house-board-stand')?.addEventListener('click',()=>runAction('stand'));
+updateBoardToolSelection();
 function secondsToNextHouseDay(){
  // Corte autoritativo enviado por Supabase: próxima medianoche en Chile.
  return nextCareMidnight ? Math.max(0,Math.ceil((nextCareMidnight-timeNow())/1000)) : 0;
@@ -3925,17 +4078,25 @@ async function rescueSofaPosition(){
 async function runAction(name,value){
  if(me?.sick){toast('Estás enfermo. Necesitas cuidados de tu pareja.');return;}
  try{
-  if(pendingMove||positionSavePromise)await persist(true);
-  await action(name,value);await sync(false);
+  if(name==='desk_sit'){
+   if(positionSavePromise){try{await positionSavePromise;}catch(_){}}
+   await safeCall('house_desk_sit',{p_seat:value||'left',p_x:Math.round(myPos.x),p_y:Math.round(myPos.y),p_facing:myPos.facing});
+   pendingMove=false;positionRetryAt=0;
+  }else{
+   if(pendingMove||positionSavePromise)await persist(true);
+   await action(name,value);
+  }
+  await sync(false);
   if(me){
    myPos.activity=me.activity;
-   if(['table','sofa','sleep','shower','wash','toilet','care_feed','care_company','stand'].includes(name)){
+   if(['table','sofa','sleep','shower','wash','toilet','care_feed','care_company','desk_sit','stand'].includes(name)){
      myPos.x=Number(me.x);myPos.y=Number(me.y);
    }
   }
-  if(name==='stand'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),activity:'idle'};}
+  if(name==='stand'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),activity:'idle',deskSeat:null};}
+  if(name==='desk_sit'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),room:me.room,activity:'desk',deskSeat:me.desk_seat||value||'left'};}
   if(name==='stand')await rescueSofaPosition();
-  broadcast(true);hideModal();
+  broadcast(true);hideModal();refreshBoardTools();
   if(name==='feed_dog'){
     // El mensaje avisa al líder de la animación inmediatamente, sin esperar
     // a los siguientes 10 segundos de sincronización periódica.
@@ -3969,8 +4130,8 @@ async function transition(to){
   if(pendingMove||positionSavePromise)await persist(true);
   const data=await safeCall('house_transition',{p_to:to});
   await sync(false);
-  myPos={...myPos,x:Number(data.x),y:Number(data.y),room:data.room,activity:'idle'};
-  broadcast(true);hideModal();setRoomLabel();toast('Entraste a '+ROOMS[to].toLowerCase());
+  myPos={...myPos,x:Number(data.x),y:Number(data.y),room:data.room,activity:'idle',deskSeat:null};
+  broadcast(true);hideModal();setRoomLabel();refreshBoardTools();toast('Entraste a '+ROOMS[to].toLowerCase());
  }catch(e){toast(friendly(e));}
 }
 function sendRest(){
@@ -3992,27 +4153,29 @@ async function closeHouse(){
 
 const objects={
  main:[
-  {id:'fridge',label:'Refrigerador',x:970,y:180,range:160},
-  {id:'stove',label:'Fogones',x:1100,y:180,range:160},
-  {id:'table',label:'Mesa y sillas',x:870,y:400,range:165},
-  {id:'sofa',label:'Sillón',x:440,y:420,range:145},
-  {id:'tv',label:'Televisión',x:440,y:355,range:135},
-  {id:'bathDoor',label:'Puerta del baño',x:120,y:230,range:140},
-  {id:'bedDoor',label:'Puerta del dormitorio',x:120,y:420,range:140},
-  {id:'entrance',label:'Puerta principal',x:1330,y:530,range:145}
+  {id:'fridge',label:'Refrigerador',x:970,y:180,range:160,hitRadius:82},
+  {id:'stove',label:'Fogones',x:1100,y:180,range:160,hitRadius:88},
+  {id:'table',label:'Mesa y sillas',x:870,y:400,range:165,hitRadius:92},
+  {id:'sofa',label:'Sillón',x:440,y:420,range:145,hitRadius:84},
+  {id:'tv',label:'Televisión',x:440,y:355,range:135,hitRadius:78},
+  {id:'bathDoor',label:'Puerta del baño',x:120,y:230,range:140,hitRadius:72},
+  {id:'bedDoor',label:'Puerta del dormitorio',x:120,y:420,range:140,hitRadius:72},
+  {id:'entrance',label:'Puerta principal',x:1330,y:530,range:145,hitRadius:85}
  ],
  bathroom:[
-  {id:'shower',label:'Ducha',x:1020,y:260,range:145},
-  {id:'wash',label:'Lavamanos',x:660,y:260,range:145},
-  {id:'toilet',label:'Inodoro',x:300,y:260,range:145},
-  {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155}
+  {id:'shower',label:'Ducha',x:1020,y:260,range:145,hitRadius:82},
+  {id:'wash',label:'Lavamanos',x:660,y:260,range:145,hitRadius:80},
+  {id:'toilet',label:'Inodoro',x:300,y:260,range:145,hitRadius:76},
+  {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155,hitRadius:75}
  ],
  bedroom:[
-  {id:'bed',label:'Cama de dos plazas',x:520,y:300,range:215},
-  {id:'wardrobe',label:'Armario',x:910,y:260,range:155},
-  {id:'dogBowl',label:'Plato del perrito',x:1020,y:515,range:150},
-  {id:'dogBed',label:'Camita del perrito',x:860,y:505,range:142},
-  {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155}
+  {id:'deskChair',label:'Silla del escritorio',x:175,y:385,range:135,hitRadius:58,seat:'left'},
+  {id:'deskChairPink',label:'Silla rosada del escritorio',x:315,y:385,range:135,hitRadius:58,seat:'pink'},
+  {id:'bed',label:'Cama de dos plazas',x:520,y:300,range:215,hitRadius:100},
+  {id:'wardrobe',label:'Armario',x:910,y:260,range:155,hitRadius:90},
+  {id:'dogBowl',label:'Plato del perrito',x:1020,y:515,range:150,hitRadius:65},
+  {id:'dogBed',label:'Camita del perrito',x:860,y:505,range:142,hitRadius:70},
+  {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155,hitRadius:75}
  ]
 };
 function partnerDisplay(){
@@ -4024,25 +4187,24 @@ function partnerDisplay(){
  return {id:p.user_id,x:Number(snap?.x??p.x),y:Number(snap?.y??p.y),
    room:snap?.room||p.room,activity:snap?.activity||p.activity||'idle',sick:!!p.sick};
 }
-function nearby(){
+function interactionTargets(){
  const items=[...(objects[myPos.room]||[])];
- // El perrito es móvil: nunca se interactúa con una posición fija antigua.
  const pet=getDogDisplay(performance.now());
- if(pet && pet.room===myPos.room){
-   items.push({id:'dog',label:'Perrito',x:pet.x,y:pet.y,range:94});
- }
- // La opción de beso sólo aparece si la pareja está conectada, despierta
- // y suficientemente cerca dentro de la misma habitación.
+ if(pet&&pet.room===myPos.room)items.push({id:'dog',label:'Papoi',x:pet.x,y:pet.y,range:94,hitRadius:60});
  const companion=partnerDisplay();
- if(companion&&companion.room===myPos.room&&!companion.sick&&
-    ['idle','rest','walk','sofa','table'].includes(companion.activity)){
-   items.push({id:'partner',label:'Tu pareja',x:companion.x,y:companion.y,range:135,partnerId:companion.id});
+ if(companion&&companion.room===myPos.room&&!companion.sick&&['idle','rest','walk','sofa','table'].includes(companion.activity)){
+  items.push({id:'partner',label:'Tu pareja',x:companion.x,y:companion.y,range:135,hitRadius:62,partnerId:companion.id});
  }
- const available=items.map(o=>({...o,d:d(myPos,o)})).filter(o=>o.d<o.range);
- // Si la pareja está al alcance, priorizar la interacción del beso frente a
- // muebles cercanos (por ejemplo, la cama o el sillón).
+ return items;
+}
+function nearby(){
+ const available=interactionTargets().map(o=>({...o,d:d(myPos,o)})).filter(o=>o.d<o.range);
  const kissTarget=available.find(o=>o.id==='partner'&&o.d<125);
  return kissTarget||available.sort((a,b)=>a.d-b.d)[0];
+}
+function objectsAtPoint(point){
+ return interactionTargets().map(o=>({...o,hitDistance:d(point,o),d:d(myPos,o)}))
+  .filter(o=>o.hitDistance<=(o.hitRadius||72)).sort((a,b)=>a.hitDistance-b.hitDistance);
 }
 const OUTFIT_SHIRT_COLORS=[
  {name:'Rosa',hex:'#bb688a'},{name:'Azul',hex:'#5875a3'},{name:'Lila',hex:'#8a6caf'},
@@ -4070,12 +4232,14 @@ async function saveWardrobeOutfit(){
 }
 const inventoryText=(prefix='')=>Object.entries(own()?.inventory||{}).filter(([,n])=>Number(n)>0).map(([key,n])=>`${esc(INGREDIENTS[key]||RECIPES[key.replace('dish_','')]?.name||key)} ×${n}`).join(' · ')||'Vacío';
 const actionBtn=(label,name,value)=>({label,run:()=>runAction(name,value)});
-function interact(){
+function interact(targetId=null){
  if(!playing||!visible||gamePaused)return;
  if(me?.sick){toast('La enfermedad solo termina tras tres días consecutivos de cuidados de tu pareja.');return;}
  if(['cook','shower','eat','wash','toilet','care','welcome','kiss'].includes(myPos.activity)){toast('Termina la acción actual antes de interactuar.');return;}
  if(myPos.activity==='sleep'){runAction('stand');return;}
- const o=nearby();if(!o){toast('Acércate a un mueble o una puerta para interactuar (E).');return;}
+ const o=targetId?interactionTargets().find(item=>item.id===targetId):nearby();
+ if(!o){if(targetId)bottomNotice('No se encontró ese objeto.');return;}
+ if(d(myPos,o)>o.range){bottomNotice(`Debes acercarte a ${o.label.toLowerCase()} para poder interactuar.`);return;}
  let actions=[],text='';
  const invStr=inventoryText();
  switch(o.id){
@@ -4100,6 +4264,18 @@ function interact(){
   }break;
  case 'sofa':text='Un sillón amplio para los dos.';
   actions.push(actionBtn(myPos.activity==='sofa'?'Levantarse':'Sentarse en el sillón',myPos.activity==='sofa'?'stand':'sofa'));break;
+ case 'deskChair':
+ case 'deskChairPink':{
+  const seat=o.seat||(o.id==='deskChairPink'?'pink':'left');
+  const mySeat=myPos.deskSeat||me?.desk_seat||null;
+  const sittingHere=myPos.activity==='desk'&&mySeat===seat;
+  text=sittingHere
+   ?'Ya estás sentado aquí. Puedes mover la silla con ruedas y compartir la pizarra en tiempo real.'
+   :'Esta silla es para usar el escritorio y la pizarra. Pueden sentarse los dos al mismo tiempo, uno en cada silla.';
+  if(sittingHere)actions.push(actionBtn('Levantarse','stand'));
+  else actions.push(actionBtn(seat==='pink'?'Sentarse en la silla rosada':'Sentarse en la silla','desk_sit',seat));
+  break;
+ }
  case 'tv':text='La televisión se comparte: el otro jugador verá cuándo está encendida.';
   actions.push(actionBtn(world.tv_on?'Apagar televisión':'Encender televisión','tv'));break;
  case 'partner':{
@@ -4180,7 +4356,7 @@ function interact(){
 const rects={
  main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:550,y:380,w:80,h:70}],
  bathroom:[{x:964,y:139,w:142,h:110},{x:596,y:145,w:129,h:100},{x:238,y:158,w:110,h:98}],
- bedroom:[{x:432,y:185,w:189,h:156},{x:800,y:105,w:200,h:140},{x:1120,y:166,w:94,h:90}]
+ bedroom:[{x:85,y:232,w:292,h:85},{x:432,y:185,w:189,h:156},{x:800,y:105,w:200,h:140},{x:1120,y:166,w:94,h:90}]
 };
 function blocked(x,y){
  const radius=15;if(x<63||x>1370||y<110||y>650)return true;
@@ -4193,7 +4369,7 @@ function updateMovement(dt){
   myPos.x=1390-75*fraction;myPos.activity='welcome';return;
  }
  if(myPos.activity==='welcome'){myPos.activity='idle';sync(false).catch(()=>{});}
- if(!['idle','rest'].includes(myPos.activity))return;
+ if(!['idle','rest','desk'].includes(myPos.activity))return;
  let ax=stick.x,ay=stick.y;
  if(keys.has('a')||keys.has('arrowleft'))ax-=1;
  if(keys.has('d')||keys.has('arrowright'))ax+=1;
@@ -4201,20 +4377,29 @@ function updateMovement(dt){
  if(keys.has('s')||keys.has('arrowdown'))ay+=1;
  const len=Math.hypot(ax,ay);if(len>.02){
   ax/=Math.max(1,len);ay/=Math.max(1,len);
-  const dx=ax*SPEED*dt,dy=ay*SPEED*dt;
+  if(myPos.activity==='desk') {
+   const now=performance.now();
+   if(lastRollVector&&now-lastRollVector.at<430&&(ax*lastRollVector.x+ay*lastRollVector.y)<0.15){
+    myPos.chairSpinUntil=now+650;
+    myPos.chairSpinAt=Date.now();
+   }
+   lastRollVector={x:ax,y:ay,at:now};
+  }
+  const currentSpeed=myPos.activity==='desk'?ROLL_SPEED:SPEED;
+  const dx=ax*currentSpeed*dt,dy=ay*currentSpeed*dt;
   let moved=false;
   if(!blocked(myPos.x+dx,myPos.y)){myPos.x+=dx;moved=true;}
   if(!blocked(myPos.x,myPos.y+dy)){myPos.y+=dy;moved=true;}
   if(Math.abs(ax)>Math.abs(ay))myPos.facing=ax<0?'left':'right';else myPos.facing=ay<0?'up':'down';
-  if(moved){myPos.activity='idle';pendingMove=true;}
+  if(moved){if(myPos.activity!=='desk')myPos.activity='idle';pendingMove=true;}
  }
 }
 function broadcast(force=false){
  if(!channel||!user)return;
  const t=performance.now();
- const walking=myPos.activity==='idle'&&
+ const walking=['idle','desk'].includes(myPos.activity)&&
    (Math.hypot(stick.x,stick.y)>.1||[...keys].some(k=>MOVE_KEYS.has(k)));
- const activity=walking?'walk':myPos.activity;
+ const activity=myPos.activity==='desk'?'desk':walking?'walk':myPos.activity;
  const state=[myPos.room,myPos.facing,activity].join(':');
  const changed=state!==lastBroadcastState;
  // 10 actualizaciones/segundo al caminar; en reposo, solo cambios y latidos
@@ -4224,7 +4409,7 @@ function broadcast(force=false){
  lastBroadcast=t;lastBroadcastState=state;
  channel.send({type:'broadcast',event:'move',payload:{id:user.id,
   x:Math.round(myPos.x),y:Math.round(myPos.y),room:myPos.room,
-  facing:myPos.facing,activity,sentAt:Date.now(),seq:++moveSequence}}).catch(()=>{});
+  facing:myPos.facing,activity,deskSeat:myPos.deskSeat||null,chairSpinAt:Number(myPos.chairSpinAt||0),sentAt:Date.now(),seq:++moveSequence}}).catch(()=>{});
 }
 function resize(){
  const pixelRatio=Math.min(2,window.devicePixelRatio||1);const w=screen.clientWidth,h=screen.clientHeight;
@@ -4254,6 +4439,48 @@ function drawRoom(time){
  if(myPos.room==='main')drawMain(time);
  else if(myPos.room==='bathroom')drawBathroom(time);
  else drawBedroom(time);
+}
+function drawOfficeChair(x,y,t,spinUntil=0,seat='left'){
+ const now=performance.now(),remaining=Math.max(0,Number(spinUntil||0)-now);
+ const angle=remaining>0?(1-remaining/650)*Math.PI*2:0;
+ const pink=seat==='pink';
+ const frame=pink?'#a65381':'#514257',back=pink?'#d77ba5':'#87667b',cushion=pink?'#f5b3cf':'#b28b9a',arms=pink?'#bd7198':'#70556e';
+ ctx.save();ctx.translate(x,y+5);ctx.rotate(angle);
+ // Base de cinco puntas y ruedas.
+ r(-12,23,24,4,'#514257');r(-20,25,8,5,'#373342');r(12,25,8,5,'#373342');
+ r(-3,5,6,19,'#777584');r(-17,17,34,4,'#6a5268');
+ // Respaldo y asiento quedan a la altura de la cadera, no debajo de los pies.
+ r(-17,-23,34,20,frame);r(-13,-20,26,13,back);
+ r(-18,-8,36,9,frame);r(-14,-8,28,6,cushion);r(-17,-2,34,4,back);
+ r(-21,-8,6,14,arms);r(15,-8,6,14,arms);
+ r(-14,-18,4,3,pink?'#ffd9e7':'#d9b7c4');r(10,-18,4,3,pink?'#ffd9e7':'#d9b7c4');
+ ctx.restore();
+}
+function drawDeskSetup(t){
+ // Escritorio de madera, monitor gamer, torre RGB, teclado y cuadernos.
+ // Se ubica en la esquina izquierda del dormitorio.
+ const dx=-110,rr=(x,y,w,h,color)=>r(x+dx,y,w,h,color);
+ rr(195,221,292,112,'#4b3544');rr(203,226,278,98,'#8b5c62');rr(209,232,266,83,'#c18c79');
+ rr(219,239,78,58,'#392f46');rr(224,244,68,46,'#182432');
+ rr(228,248,60,38,'#284a65');rr(231,251,54,30,'#396b85');
+ for(let i=0;i<7;i++)rr(232+i*7,252+(i%2)*2,3,2,['#ee7587','#6ed7c8','#b39bff'][i%3]);
+ rr(252,291,12,7,'#514257');rr(245,297,27,4,'#504252');
+ rr(395,238,55,72,'#242331');rr(400,243,45,61,'#3a3446');rr(405,248,35,51,'#181d2b');
+ rr(410,252,25,4,'#b24f77');rr(410,261,25,4,'#4caeaa');rr(410,270,25,4,'#667fda');
+ rr(417,280,11,11,'#c15a91');rr(417,283,6,6,'#76d8ce');
+ rr(306,247,76,7,'#5b4657');rr(310,250,68,4,'#d5b7a0');
+ for(let i=0;i<4;i++)rr(318+i*13,252,8,2,'#4b4354');
+ rr(322,277,40,24,'#d7c9b2');rr(325,280,34,18,'#f4e9d5');rr(328,284,27,2,'#aa9b8a');rr(328,289,24,2,'#aa9b8a');
+ rr(365,284,23,17,'#bb785e');rr(368,281,20,17,'#e8cfae');rr(371,285,14,2,'#ab8f81');rr(371,289,14,2,'#ab8f81');
+ rr(203,324,278,7,'#714e59');
+ const occupiedSeats=new Set(people.filter(p=>p.room==='bedroom'&&p.activity==='desk'&&p.desk_seat).map(p=>p.desk_seat));
+ for(const state of remote.values()){
+  const latest=state.samples[state.samples.length-1];
+  if(latest?.room==='bedroom'&&latest.activity==='desk'&&latest.deskSeat)occupiedSeats.add(latest.deskSeat);
+ }
+ if(myPos.activity==='desk'&&myPos.deskSeat)occupiedSeats.add(myPos.deskSeat);
+ if(!occupiedSeats.has('left'))drawOfficeChair(DESK_SEATS.left.x,DESK_SEATS.left.y,t,0,'left');
+ if(!occupiedSeats.has('pink'))drawOfficeChair(DESK_SEATS.pink.x,DESK_SEATS.pink.y,t,0,'pink');
 }
 function drawMain(t){
  // Ventanas, cuadros y flores en el pasillo central.
@@ -4303,11 +4530,13 @@ function drawBathroom(t){
 }
 function drawBedroom(t){
  label('NUESTRO DORMITORIO ♥',700,80,22);
+ // Escritorio y pizarra compartida en la esquina izquierda.
+ drawWhiteboard();drawDeskSetup(t);
  r(380,172,290,251,'#8b6079');r(393,184,266,228,'#e0b59e');
  furniture(432,185,189,156,'#845768','#daaa9e');
  r(440,210,173,33,'#eee3d6');r(445,214,80,29,'#fcf0e3');r(530,214,79,29,'#fcf0e3');
  r(441,245,171,86,'#b67d93');r(446,249,161,69,'#d1a0ad');r(450,282,152,5,'#f0c0a1');
- // Armario interactivo: dos puertas, molduras y tiradores.
+ // Armario restaurado a su separación original respecto de la cama.
  r(800,105,200,140,'#493346');r(808,112,184,125,'#8b6175');r(815,119,170,111,'#c18f7d');
  r(819,123,80,101,'#dfb59a');r(902,123,79,101,'#d5a58d');
  r(899,119,4,111,'#785066');r(825,129,68,5,'#f3d5b3');r(908,129,66,5,'#f3d5b3');
@@ -4337,7 +4566,8 @@ function drawPixelPerson(c,x,y,avatar,facing,activity,t,scale=3,shirtColor=null,
  const rightStep=-leftStep;
  const shirt=shirtColor|| (girl?'#bb688a':'#5875a3'),trouser=pantsColor|| (girl?'#614d79':'#393953');
  const pixel=(px,py,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x+(px-8)*scale),Math.round(y+(py-24)*scale+bodyBob),Math.round(w*scale),Math.round(h*scale));};
- const resting=['rest','sofa','table','eat','care','toilet','sleep','sick','kiss'].includes(activity);
+ const resting=['rest','sofa','table','eat','care','toilet','sleep','sick','kiss','desk'].includes(activity);
+ const seatedDesk=activity==='desk';
  const move=activity==='idle'?Math.round(Math.sin(t/145)):0;
  c.save();
  // El tono oscuro del contorno no debe simular una camiseta al ducharse.
@@ -4351,10 +4581,20 @@ function drawPixelPerson(c,x,y,avatar,facing,activity,t,scale=3,shirtColor=null,
  pixel(9,9,3,2,eyes);
  pixel(7,12,2,1,'#a76665');
  pixel(4,14,8,7,bathing?skin:shirt);
- // Los brazos acompañan el balanceo de las piernas al caminar.
- pixel(2,15+(walking&&walkPhase?1:0),2,6,skin);
- pixel(12,15+(walking&&!walkPhase?1:0),2,6,skin);
- if(resting||activity==='kiss'){
+ // En la silla los brazos se adelantan hacia el escritorio y las piernas
+ // quedan flexionadas sobre el asiento, como en las poses de sillón y mesa.
+ if(seatedDesk){
+  pixel(2,14,2,5,skin);pixel(0,12,4,2,skin);
+  pixel(12,14,2,5,skin);pixel(12,12,4,2,skin);
+  pixel(2,19,12,3,trouser);pixel(3,22,4,2,trouser);pixel(10,22,4,2,trouser);
+  pixel(1,24,5,2,'#3e3043');pixel(10,24,5,2,'#3e3043');
+ }else{
+  pixel(2,15+(walking&&walkPhase?1:0),2,6,skin);
+  pixel(12,15+(walking&&!walkPhase?1:0),2,6,skin);
+ }
+ if(seatedDesk){
+  // Ya se dibujaron las piernas dobladas en el bloque anterior.
+ }else if(resting||activity==='kiss'){
   pixel(4,20,9,3,trouser);pixel(3,22,4,2,'#352a41');pixel(10,22,4,2,'#352a41');
  }else if(bathing){
   pixel(4,21,4,4,skin);pixel(9,21,4,4,skin);
@@ -4742,6 +4982,7 @@ function drawPerson(p,isMe,t){
   x=1035;y=236;
  }
  r(x-19,y+3,38,9,'#4f3947a0');
+ if(activity==='desk')drawOfficeChair(x,y,t,isMe?myPos.chairSpinUntil:interpolated?.chairSpinUntil,isMe?(myPos.deskSeat||'left'):(interpolated?.deskSeat||p.desk_seat||'left'));
  if(isMe&&activity==='idle'&&(Math.hypot(stick.x,stick.y)>.1||[...keys].some(k=>MOVE_KEYS.has(k)))) activity='walk';
  drawPixelPerson(ctx,x,y,p.avatar,facing,activity,t,3,p.shirt_color,p.pants_color);
  if(activity==='kiss'){
@@ -4779,9 +5020,8 @@ function frame(t){
  if(t-lastPersist>2400){lastPersist=t;persist().catch(()=>{});}
  if(t-lastSync>10000){lastSync=t;sync().catch(e=>toast('Sincronización: '+friendly(e)));}
  if(t>noticeUntil)toastEl.hidden=true;
- if(!gamePaused){
-  const near=nearby();hint.textContent=me?.sick?'Necesitas comida y compañía cada día; el día se marca al recibir ambas acciones (cambio diario a las 00:00, Chile)':myPos.activity==='sleep'?'Pulsa E para levantarte':near?`E · ${near.id==='partner'?'Besar a tu pareja 💋':near.label}   ·   WASD / Flechas para caminar`:'WASD / Flechas · E para interactuar';
- }
+ if(t>hintUntil){hint.classList.remove('visible');hint.textContent='';}
+ refreshBoardTools();
  setBars();
  const p=own();const timer=p?.pending_recipe?Math.max(0,(Date.parse(p.cook_ready_at)-timeNow())/1000):0;
  if(timer>0){progressBox.hidden=false;$('house-progress-label').textContent='Cocinando '+(RECIPES[p.pending_recipe]?.name||'comida');$('house-progress-fill').style.width=(100-clamp(timer/(RECIPES[p.pending_recipe]?.seconds||10)*100,0,100))+'%';}
@@ -4794,7 +5034,7 @@ const MOVE_KEYS=new Set(['w','a','s','d','arrowleft','arrowup','arrowright','arr
 document.addEventListener('keydown',e=>{
  if(!visible||!playing||e.target.closest('input,textarea'))return;
  const k=e.key.toLowerCase();if(MOVE_KEYS.has(k)){e.preventDefault();if(!gamePaused)keys.add(k);}
- if(k==='e'){e.preventDefault();interact();}
+ if(k==='e'&&e.pointerType!=='touch'){e.preventDefault();interact();}
  if(k==='escape'){e.preventDefault();if(!modal.hidden&&$('house-dialog-x').style.display!=='none')hideModal();else closeHouse();}
 });
 document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
@@ -4808,7 +5048,6 @@ joy.addEventListener('pointerdown',e=>{joy.setPointerCapture(e.pointerId);joysti
 joy.addEventListener('pointermove',e=>{if(joy.hasPointerCapture(e.pointerId))joystickEvent(e);});
 function joyRelease(){stick={x:0,y:0};knob.style.transform='';}
 joy.addEventListener('pointerup',joyRelease);joy.addEventListener('pointercancel',joyRelease);
-touchE.addEventListener('click',interact);
 launch.addEventListener('click',openHouse);closeBtn.addEventListener('click',closeHouse);
 $('house-dialog-x').addEventListener('click',hideModal);
 window.addEventListener('resize',()=>{if(visible)resize();});
