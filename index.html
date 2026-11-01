@@ -454,6 +454,11 @@
 .house-dialog p{font-size:13px;line-height:1.55;color:#e0cfca;margin:8px 0 14px}
 .house-dialog label{display:block;font-size:12px;margin:10px 0 6px}
 .house-dialog input{width:100%;padding:10px;background:#1b1425;border:2px solid #93748b;border-radius:0;color:white;font-size:15px}
+.house-dialog select{width:100%;padding:11px 12px;background:#1b1425;border:2px solid #93748b;border-radius:0;color:#fff1db;font-size:14px;margin:5px 0 10px}
+.house-clothes-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.house-clothes-preview{display:flex;align-items:center;gap:10px;background:#2d2037;border:2px solid #785d78;padding:9px;margin:8px 0}
+.house-color-dot{width:22px;height:22px;border:2px solid #fff0d5;display:inline-block;box-shadow:2px 2px #130e1b;flex:0 0 auto}
+@media(max-width:420px){.house-clothes-grid{grid-template-columns:1fr}}
 .house-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .house-action{border:2px solid #ffe0ab;background:#7b4f72;color:#fff8ec;padding:10px 12px;font-size:12px;line-height:1.3;box-shadow:3px 3px 0 #241626;flex:1 1 125px;min-height:44px}
 .house-action.primary{background:#a65b61}
@@ -3826,6 +3831,12 @@ async function connect(){
      }
    }).catch(e=>console.warn('No se pudo sincronizar el beso:',e));
  });
+ channel.on('broadcast',{event:'outfit'},({payload})=>{
+   if(!payload||!people.some(p=>p.user_id===payload.id))return;
+   people=people.map(p=>p.user_id===payload.id
+     ? {...p,shirt_color:payload.shirt_color,pants_color:payload.pants_color} : p);
+   me=own();
+ });
  channel.on('presence',{event:'sync'},()=>{
   const state=channel.presenceState();online=new Set(Object.keys(state));
   updateOnline();
@@ -3998,6 +4009,7 @@ const objects={
  ],
  bedroom:[
   {id:'bed',label:'Cama de dos plazas',x:520,y:300,range:215},
+  {id:'wardrobe',label:'Armario',x:910,y:260,range:155},
   {id:'dogBowl',label:'Plato del perrito',x:1020,y:515,range:150},
   {id:'dogBed',label:'Camita del perrito',x:860,y:505,range:142},
   {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155}
@@ -4031,6 +4043,30 @@ function nearby(){
  // muebles cercanos (por ejemplo, la cama o el sillón).
  const kissTarget=available.find(o=>o.id==='partner'&&o.d<125);
  return kissTarget||available.sort((a,b)=>a.d-b.d)[0];
+}
+const OUTFIT_SHIRT_COLORS=[
+ {name:'Rosa',hex:'#bb688a'},{name:'Azul',hex:'#5875a3'},{name:'Lila',hex:'#8a6caf'},
+ {name:'Coral',hex:'#cc705f'},{name:'Menta',hex:'#5b927c'},{name:'Mostaza',hex:'#c69a45'},
+ {name:'Negro',hex:'#292b37'},{name:'Crema',hex:'#e5c9a7'}
+];
+const OUTFIT_PANTS_COLORS=[
+ {name:'Morado',hex:'#614d79'},{name:'Azul noche',hex:'#393953'},{name:'Verde',hex:'#3f6b62'},
+ {name:'Vino',hex:'#995d6e'},{name:'Café',hex:'#6a5742'},{name:'Marino',hex:'#293b54'},
+ {name:'Gris',hex:'#656573'},{name:'Negro',hex:'#27252d'}
+];
+function outfitOptions(colors,current){
+ const selected=String(current||'').toLowerCase();
+ return colors.map(c=>`<option value="${c.hex}" ${selected===c.hex?'selected':''}>${c.name}</option>`).join('');
+}
+async function saveWardrobeOutfit(){
+ const shirt=$('house-shirt-color')?.value;
+ const pants=$('house-pants-color')?.value;
+ if(!shirt||!pants)throw new Error('Selecciona el color de ambas prendas.');
+ if(pendingMove||positionSavePromise)await persist(true);
+ await safeCall('house_set_outfit',{p_shirt_color:shirt,p_pants_color:pants});
+ await sync(false);
+ if(channel)channel.send({type:'broadcast',event:'outfit',payload:{id:user.id,shirt_color:shirt,pants_color:pants}}).catch(()=>{});
+ hideModal();toast('👕 ¡Nuevo conjunto guardado! Tu pareja también puede verlo.',4200);
 }
 const inventoryText=(prefix='')=>Object.entries(own()?.inventory||{}).filter(([,n])=>Number(n)>0).map(([key,n])=>`${esc(INGREDIENTS[key]||RECIPES[key.replace('dish_','')]?.name||key)} ×${n}`).join(' · ')||'Vacío';
 const actionBtn=(label,name,value)=>({label,run:()=>runAction(name,value)});
@@ -4076,9 +4112,9 @@ function interact(){
  }
  case 'dog':{
    const h=Math.round(dogFoodValue());
-   text=`${world?.pet_name||'Pompón'} está de paseo por la casa. Hambre: ${h}/100. A veces los seguirá y, al servir comida, irá corriendo a su plato del dormitorio.`;
+   text=`${world?.pet_name||'Papoi'} está de paseo por la casa. Hambre: ${h}/100. A veces los seguirá y, al servir comida, irá corriendo a su plato del dormitorio.`;
    actions.push({label:'Acariciar al perrito',run:()=>{
-     hideModal();toast('🐶 ¡'+(world?.pet_name||'Pompón')+' mueve su colita!');
+     hideModal();toast('🐶 ¡'+(world?.pet_name||'Papoi')+' mueve su colita!');
      petPatSignal(user.id);
      if(channel)channel.send({type:'broadcast',event:'dog_pat',payload:{id:user.id}}).catch(()=>{});
    }});
@@ -4086,7 +4122,7 @@ function interact(){
  }
  case 'dogBowl':{
    const food=inv('dog_food');
-   text=`Este es el plato de ${world?.pet_name||'Pompón'}. Está en el dormitorio, junto a su camita. Tienes ${food} ración(es) de comida para perrito. Al servirla, vendrá corriendo a comer, aunque estuviera paseando por otra habitación.`;
+   text=`Este es el plato de ${world?.pet_name||'Papoi'}. Está en el dormitorio, junto a su camita. Tienes ${food} ración(es) de comida para perrito. Al servirla, vendrá corriendo a comer, aunque estuviera paseando por otra habitación.`;
    actions.push({label:'Servir comida al perrito',disabled:food<1,run:()=>runAction('feed_dog')});
    if(!food)text+='\nSaca primero comida para perrito del refrigerador.';
    break;
@@ -4094,6 +4130,23 @@ function interact(){
  case 'dogBed':{
    text='La camita del perrito está al lado de su plato. Cuando ambos estén acostados, vendrá a dormir aquí con ustedes.';
    break;
+ }
+ case 'wardrobe':{
+   const p=own()||{};
+   const shirt=p.shirt_color|| (p.avatar==='girl'?'#bb688a':'#5875a3');
+   const pants=p.pants_color|| (p.avatar==='girl'?'#614d79':'#393953');
+   text='Elige los colores de tu polera y pantalón. Los cambios se guardan en tu personaje y tu pareja los verá en la casa.';
+   const wardrobeHtml=`<p>${esc(text)}</p>
+    <div class="house-clothes-preview"><span id="house-shirt-preview" class="house-color-dot" style="background:${shirt}"></span><span>Tu conjunto actual</span><span id="house-pants-preview" class="house-color-dot" style="background:${pants}"></span></div>
+    <div class="house-clothes-grid">
+     <div><label for="house-shirt-color">Polera</label><select id="house-shirt-color">${outfitOptions(OUTFIT_SHIRT_COLORS,shirt)}</select></div>
+     <div><label for="house-pants-color">Pantalón</label><select id="house-pants-color">${outfitOptions(OUTFIT_PANTS_COLORS,pants)}</select></div>
+    </div>`;
+   actions.push({label:'Guardar conjunto',primary:true,run:saveWardrobeOutfit});
+   dialog(o.label,wardrobeHtml,actions);
+   $('house-shirt-color')?.addEventListener('change',e=>{const swatch=$('house-shirt-preview');if(swatch)swatch.style.background=e.target.value;});
+   $('house-pants-color')?.addEventListener('change',e=>{const swatch=$('house-pants-preview');if(swatch)swatch.style.background=e.target.value;});
+   return;
  }
  case 'bathDoor':text='Puerta independiente del baño.';
   actions.push(actionBtn(world.bath_door_open?'Cerrar puerta':'Abrir puerta','bath_door'));
@@ -4127,7 +4180,7 @@ function interact(){
 const rects={
  main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:550,y:380,w:80,h:70}],
  bathroom:[{x:964,y:139,w:142,h:110},{x:596,y:145,w:129,h:100},{x:238,y:158,w:110,h:98}],
- bedroom:[{x:432,y:185,w:189,h:156},{x:790,y:115,w:210,h:74},{x:1120,y:166,w:94,h:90}]
+ bedroom:[{x:432,y:185,w:189,h:156},{x:800,y:105,w:200,h:140},{x:1120,y:166,w:94,h:90}]
 };
 function blocked(x,y){
  const radius=15;if(x<63||x>1370||y<110||y>650)return true;
@@ -4210,10 +4263,9 @@ function drawMain(t){
  furniture(941,90,60,80,'#e7d4c2','#b5dbe0');
  r(970,105,4,25,'#70596a');r(950,142,43,4,'#798e94');
  if(world?.fridge_open){r(999,89,43,88,'#c7f0ef');r(1003,100,30,65,'#6b9da4');}
- label('FRÍO',975,197,13);
  furniture(1020,93,142,85,'#644458','#ddaf87');
  for(let i=0;i<2;i++){r(1045+i*58,112,36,29,'#3c3248');r(1051+i*58,118,24,17,t%500<280&&own()?.activity==='cook'?'#ffba63':'#77718c');}
- r(1045,148,95,9,'#f4cbac');label('COCINA',1090,198,13);
+ r(1045,148,95,9,'#f4cbac');
  furniture(1190,93,95,82,'#60475b','#e1b08d');for(let i=0;i<3;i++)r(1205+i*25,101,18,16,'#b58786');
  // Alfombra de comedor y mesa.
  r(740,280,250,219,'#805d6c');r(751,289,226,201,'#d9a081');r(766,304,196,170,'#efbd9a');
@@ -4247,7 +4299,7 @@ function drawBathroom(t){
  r(1048,120,12,26,'#f7dfc1');
  for(let i=0;i<6;i++)r(978+i*20,195+((t/110+i*9)%45),5,11,'#e1fbff');
  r(1160,494,91,67,'#b77d70');r(1172,501,68,46,'#3c334b');label('SALIR',1211,475,17);
- r(500,398,380,125,'#8c7082');r(513,411,353,97,'#d8b0a7');label('Alfombrita',689,475,17);
+ r(500,398,380,125,'#8c7082');r(513,411,353,97,'#d8b0a7');
 }
 function drawBedroom(t){
  label('NUESTRO DORMITORIO ♥',700,80,22);
@@ -4255,7 +4307,12 @@ function drawBedroom(t){
  furniture(432,185,189,156,'#845768','#daaa9e');
  r(440,210,173,33,'#eee3d6');r(445,214,80,29,'#fcf0e3');r(530,214,79,29,'#fcf0e3');
  r(441,245,171,86,'#b67d93');r(446,249,161,69,'#d1a0ad');r(450,282,152,5,'#f0c0a1');
- furniture(790,115,210,74,'#704c62','#ce9e80');for(let i=0;i<5;i++)r(807+i*36,123,20,24,'#e5b99f');
+ // Armario interactivo: dos puertas, molduras y tiradores.
+ r(800,105,200,140,'#493346');r(808,112,184,125,'#8b6175');r(815,119,170,111,'#c18f7d');
+ r(819,123,80,101,'#dfb59a');r(902,123,79,101,'#d5a58d');
+ r(899,119,4,111,'#785066');r(825,129,68,5,'#f3d5b3');r(908,129,66,5,'#f3d5b3');
+ r(887,165,5,13,'#f5d69e');r(913,165,5,13,'#f5d69e');
+ r(804,107,192,7,'#e9bf9c');r(812,233,176,7,'#765066');
  furniture(1120,166,94,90,'#695167','#e3b8a5');r(1140,182,55,43,'#f2d8bb');
  r(800,378,230,190,'#977487');r(814,392,201,163,'#e7bcaa');label('Te amo',914,476,26,'#bc6179');
  // Mascota: cama acolchada y plato dentro del dormitorio, no en el living.
@@ -4270,15 +4327,15 @@ function drawBedroom(t){
 // Los ojos siempre se dibujan de frente, independientemente de la dirección de movimiento.
 // En la cama la cabeza se alinea con las almohadas (parte superior, eje vertical).
 // En la ducha se muestra solamente la parte superior, detrás de un vidrio esmerilado.
-function drawPixelPerson(c,x,y,avatar,facing,activity,t,scale=3){
- const girl=avatar==='girl',hair=girl?'#171826':'#36231f',skin='#efb78e',eyes=girl?'#397a59':'#49312c';
+function drawPixelPerson(c,x,y,avatar,facing,activity,t,scale=3,shirtColor=null,pantsColor=null){
+ const girl=avatar==='girl',hair=girl?'#171826':'#08090d',skin='#efb78e',eyes=girl?'#397a59':'#49312c';
  const bathing=activity==='shower';
  const walking=['walk','run'].includes(activity);
  const walkPhase=walking?Math.floor(t/(activity==='run'?96:155))%2:0;
  const bodyBob=walking?Math.round(Math.sin(t/(activity==='run'?78:132))*1.1*scale):0;
  const leftStep=walking?(walkPhase===0?-1.5:1.5):0;
  const rightStep=-leftStep;
- const shirt=girl?'#bb688a':'#5875a3',trouser=girl?'#614d79':'#393953';
+ const shirt=shirtColor|| (girl?'#bb688a':'#5875a3'),trouser=pantsColor|| (girl?'#614d79':'#393953');
  const pixel=(px,py,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x+(px-8)*scale),Math.round(y+(py-24)*scale+bodyBob),Math.round(w*scale),Math.round(h*scale));};
  const resting=['rest','sofa','table','eat','care','toilet','sleep','sick','kiss'].includes(activity);
  const move=activity==='idle'?Math.round(Math.sin(t/145)):0;
@@ -4609,7 +4666,7 @@ function drawHouseDog(p,t){
   if(pace)fill(3,12,4,3,'#fbe5b5');
  }
  if(p.mode==='happy'){fill(13,-24,5,5,'#f5c6b5');}
- label(world?.pet_name||'Pompón',x,y-33,11,'#ffe6be');
+ label(world?.pet_name||'Papoi',x,y-33,11,'#ffe6be');
 }
 // Recupera una posición interpolada desde el historial de paquetes del otro jugador.
 // Retardo visual pequeño e intencionado (160 ms), sin bloquear los controles propios.
@@ -4686,7 +4743,7 @@ function drawPerson(p,isMe,t){
  }
  r(x-19,y+3,38,9,'#4f3947a0');
  if(isMe&&activity==='idle'&&(Math.hypot(stick.x,stick.y)>.1||[...keys].some(k=>MOVE_KEYS.has(k)))) activity='walk';
- drawPixelPerson(ctx,x,y,p.avatar,facing,activity,t,3);
+ drawPixelPerson(ctx,x,y,p.avatar,facing,activity,t,3,p.shirt_color,p.pants_color);
  if(activity==='kiss'){
    const heartY=y-47-Math.round(Math.sin(t/115)*3);
    label('♥',x,heartY,18,'#f47b9a');
