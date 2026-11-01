@@ -443,7 +443,7 @@
 .house-meter{display:grid;grid-template-columns:57px 1fr;gap:6px;align-items:center}
 .house-track{height:12px;background:#4e3447;border:2px solid #b59090}
 .house-fill{height:100%;transition:width .4s linear}
-.house-fill.hungry{background:#f7ab5c}.house-fill.sleepy{background:#86a2eb}.house-fill.dirty{background:#85bd93}
+.house-fill.hungry{background:#f7ab5c}.house-fill.sleepy{background:#86a2eb}.house-fill.dirty{background:#85bd93}.house-fill.pet{background:#f5b66a}
 .house-help{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);text-align:center;background:#22182ddb;color:#ffe6c0;border:2px solid #72526f;padding:8px 14px;font-size:12px;max-width:90vw;white-space:normal;line-height:1.4;pointer-events:none}
 .house-toast{position:absolute;top:18%;left:50%;transform:translateX(-50%);background:#312035ed;border:3px solid #eda96e;padding:10px 16px;max-width:80vw;text-align:center;font-size:13px;z-index:7;pointer-events:none}
 .house-toast[hidden]{display:none!important}
@@ -762,10 +762,11 @@
     <button class="house-close" type="button" id="house-close" aria-label="Cerrar casa y volver a la página principal">×</button>
   </div>
   <div class="house-online" id="house-online">♡ Conectando…</div>
-  <div class="house-bars" aria-label="Necesidades del personaje">
+  <div class="house-bars" aria-label="Necesidades de la casa y el perrito">
     <div class="house-meter"><span>🍞 Hambre</span><div class="house-track"><div class="house-fill hungry" id="house-hunger-fill"></div></div><span class="visually-hidden" id="house-hunger-value">85</span></div>
     <div class="house-meter"><span>🌙 Sueño</span><div class="house-track"><div class="house-fill sleepy" id="house-sleep-fill"></div></div><span class="visually-hidden" id="house-sleep-value">85</span></div>
     <div class="house-meter"><span>🫧 Limpieza</span><div class="house-track"><div class="house-fill dirty" id="house-dirt-fill"></div></div><span class="visually-hidden" id="house-dirt-value">85</span></div>
+    <div class="house-meter"><span>🐶 Perrito</span><div class="house-track"><div class="house-fill pet" id="house-pet-fill"></div></div><span class="visually-hidden" id="house-pet-value">78</span></div>
   </div>
   <div class="house-progress" id="house-progress" hidden><span id="house-progress-label"></span><div class="house-progress-bar"><div id="house-progress-fill"></div></div></div>
   <div class="house-toast" id="house-toast" hidden role="status"></div>
@@ -3637,7 +3638,7 @@ const roomLabel=$('house-subtitle'),hint=$('house-help'),onlineLabel=$('house-on
 const joy=$('house-joystick'),knob=$('house-knob'),touchE=$('house-touch-e');
 const W=1440,H=720,SPEED=148;
 const RECIPES={eggs:{name:'Huevos',ingredients:{egg:2},seconds:8,heal:22},rice:{name:'Arroz',ingredients:{rice:1,tomato:1},seconds:13,heal:30},pasta:{name:'Pasta',ingredients:{pasta:1,cheese:1},seconds:16,heal:34},sandwich:{name:'Sándwich',ingredients:{bread:1,cheese:1},seconds:7,heal:20}};
-const INGREDIENTS={egg:'Huevos',rice:'Arroz',pasta:'Pasta',bread:'Pan',cheese:'Queso',tomato:'Tomate'};
+const INGREDIENTS={egg:'Huevos',rice:'Arroz',pasta:'Pasta',bread:'Pan',cheese:'Queso',tomato:'Tomate',dog_food:'Comida para perrito'};
 const ROOMS={main:'Sala principal',bathroom:'Baño',bedroom:'Dormitorio'};
 let me=null,people=[],world=null,user=null,channel=null,visible=false,playing=false,choiceBusy=false;
 let myPos={x:1315,y:525,room:'main',facing:'left',activity:'idle'},keys=new Set(),stick={x:0,y:0},remote=new Map(),online=new Set();
@@ -3646,7 +3647,13 @@ let lastFrame=0,lastBroadcast=0,lastPersist=0,lastSync=0,frameId=0,pendingMove=f
 // ordenados, mientras que las posiciones remotas viajan por Realtime.
 let positionSavePromise=null,positionRetryAt=0,lastBroadcastState='',moveSequence=0;
 const REMOTE_BUFFER_MS=160,REMOTE_EXTRAPOLATE_MS=90;
-let serverOffset=0,careToday=null,nextCareMidnight=0,noticeUntil=0,notifyText='',busyUntil=0,introUntil=0,introStartedAt=0,gamePaused=false;
+let serverOffset=0,careToday=null,nextCareMidnight=0,noticeUntil=0,notifyText='',busyUntil=0,introUntil=0,introStartedAt=0,gamePaused=false,lastRoomStockDay=null;
+let localKissUntil=0,kissFinishBusy=false;
+// Mascota compartida: sólo el jugador activo elegido como líder calcula
+// la IA; los demás interpolan sus paquetes (como con los personajes).
+const dog={room:'main',x:675,y:550,mode:'wander',face:'right',goal:null,route:[],routeAt:0,task:'wander',nextThink:0,taskUntil:0,
+           lastMealAt:0,mealUntil:0,eatUntil:0,followId:null,patTarget:null,patUntil:0,seq:0};
+let remoteDog=null,wasDogLeader=false,lastDogBroadcast=0,petRoomLast='main';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const d=(a,b)=>Math.hypot((a?.x||0)-(b?.x||0),(a?.y||0)-(b?.y||0));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -3742,8 +3749,11 @@ async function sync(first=false){
  if(!first&&previouslyBothSick&&people.length===2&&people.every(p=>!p.sick)){
    toast('♥ ¡Se han recuperado juntos! Pueden volver a caminar y cuidarse.',4600);
  }
+ const previousStockDay=lastRoomStockDay;
  world=data.room||{};serverOffset=Number(data.server_time||Date.now())-Date.now();
+ lastRoomStockDay=Number(world.stock_day??previousStockDay);
  careToday=Number(data.care_day);nextCareMidnight=Number(data.next_care_midnight||0);
+ if(!first&&previousStockDay!==null&&lastRoomStockDay!==previousStockDay){toast('🧺 A las 00:00 se rellenó el refrigerador compartido.',4600);}
  me=own();if(!me)throw Error('La cuenta ya no pertenece a esta casa');
  if(first){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:me.activity};}
  else if(me.sick){myPos={x:Number(me.x),y:Number(me.y),room:me.room,facing:me.facing,activity:'sick'};}
@@ -3751,7 +3761,7 @@ async function sync(first=false){
    const previousActivity=myPos.activity;myPos.activity=me.activity;
    // Una animación larga puede terminar mientras el cliente está conectado.
    // Tomar también la nueva posición segura que fijó el servidor.
-   if(previousActivity!==me.activity&&['shower','wash','sleep','sick','toilet','care','welcome'].includes(previousActivity)){
+   if(previousActivity!==me.activity&&['shower','wash','sleep','sick','toilet','care','welcome','kiss'].includes(previousActivity)){
      myPos.x=Number(me.x);myPos.y=Number(me.y);myPos.room=me.room;
    }
  }
@@ -3781,6 +3791,40 @@ async function connect(){
   if(samples.length>18)samples.splice(0,samples.length-18);
   remote.set(payload.id,{samples,room,lastPacketAt:time,
     lastSentAt:sentAt||prior?.lastSentAt||0});
+ });
+ channel.on('broadcast',{event:'dog_move'},({payload})=>{
+  if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+  if(!ROOMS[payload.room])return;
+  const x=Number(payload.x),y=Number(payload.y),at=Number(payload.at||0);
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x<35||x>1400||y<85||y>660)return;
+  const t=performance.now(),prior=remoteDog;
+  if(prior && at && prior.at && at<=prior.at)return;
+  const item={x,y,room:payload.room,mode:payload.mode||'wander',face:payload.face||'right',at:t};
+  const samples=prior?.room===item.room?prior.samples.filter(s=>t-s.at<1200):[];
+  if(samples.length&&d(samples[samples.length-1],item)>175)samples.length=0;
+  samples.push(item);if(samples.length>18)samples.shift();
+  remoteDog={samples,room:item.room,at:at||0,lastPacketAt:t};
+ });
+ channel.on('broadcast',{event:'dog_feed'},({payload})=>{
+   if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+   // Confirma la ración en el servidor antes de hacer correr al perrito.
+   sync(false).catch(()=>{});
+ });
+ channel.on('broadcast',{event:'dog_pat'},({payload})=>{
+   if(!payload||!people.some(p=>p.user_id===payload.id))return;
+   petPatSignal(payload.id);
+ });
+ channel.on('broadcast',{event:'kiss'},({payload})=>{
+   if(!payload||payload.to!==user?.id||payload.room!==myPos.room)return;
+   sync(false).then(()=>{
+     if(me?.activity==='kiss'){
+       myPos.activity='kiss';
+       localKissUntil=performance.now()+clamp(Number(payload.duration_ms)||2600,1200,3500);
+       kissFinishBusy=false;
+       broadcast(true);
+       toast('💋 ¡Tu pareja te dio un beso!',2600);
+     }
+   }).catch(e=>console.warn('No se pudo sincronizar el beso:',e));
  });
  channel.on('presence',{event:'sync'},()=>{
   const state=channel.presenceState();online=new Set(Object.keys(state));
@@ -3812,12 +3856,21 @@ function careCompletedToday(p){
 }
 function setBars(){
  const p=own();if(!p)return;
- const elapsed=Math.max(0,(timeNow()-Date.parse(p.last_tick||Date.now()))/60000);
- const hungry=clamp(Number(p.hunger)-(p.sick?0:elapsed*.8),0,100);
- const sleepy=clamp(Number(p.sleep)+(p.sick?0:p.activity==='sleep'?elapsed*4:-elapsed*.65),0,100);
- const cleanliness=100-clamp(Number(p.dirt)+(p.sick?0:elapsed*.7),0,100);
- for(const [id,num] of [['hunger',hungry],['sleep',sleepy],['dirt',cleanliness]]){
-  $("house-"+id+'-fill').style.width=Math.round(num)+'%';$('house-'+id+'-value').textContent=Math.round(num);
+ const now=timeNow();
+ const percentageSince=(stamp,duration,fallback)=>{
+  const at=Date.parse(stamp||'');
+  if(!Number.isFinite(at))return clamp(Number(fallback)||0,0,100);
+  return clamp(100-Math.max(0,now-at)/duration*100,0,100);
+ };
+ // Cada necesidad tiene un reloj propio que solo reinicia su acción correspondiente.
+ const hungry=p.sick?clamp(Number(p.hunger)||0,0,100):percentageSince(p.last_meal_at,12*60*60*1000,p.hunger);
+ const sleepy=p.sick?clamp(Number(p.sleep)||0,0,100):(p.activity==='sleep'?100:percentageSince(p.last_sleep_at,24*60*60*1000,p.sleep));
+ const cleanliness=p.sick?clamp(100-Number(p.dirt||0),0,100):percentageSince(p.last_shower_at,48*60*60*1000,100-Number(p.dirt||0));
+ const petHungry=percentageSince(world?.pet_meal_at,24*60*60*1000,world?.pet_hunger??78);
+ for(const [id,num] of [['hunger',hungry],['sleep',sleepy],['dirt',cleanliness],['pet',petHungry]]){
+  const fill=$("house-"+id+'-fill'),value=$('house-'+id+'-value');
+  if(fill)fill.style.width=Math.round(num)+'%';
+  if(value)value.textContent=Math.round(num);
  }
 }
 async function persist(force=false){
@@ -3872,6 +3925,21 @@ async function runAction(name,value){
   if(name==='stand'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),activity:'idle'};}
   if(name==='stand')await rescueSofaPosition();
   broadcast(true);hideModal();
+  if(name==='feed_dog'){
+    // El mensaje avisa al líder de la animación inmediatamente, sin esperar
+    // a los siguientes 10 segundos de sincronización periódica.
+    if(channel)channel.send({type:'broadcast',event:'dog_feed',payload:{id:user.id,at:Date.now()}}).catch(()=>{});
+    toast('🐶 ¡Le serviste comida! El perrito va corriendo hacia su plato.',4600);
+  }
+  if(name==='kiss'){
+    const companion=partner();
+    myPos.activity='kiss';
+    localKissUntil=performance.now()+2600;
+    kissFinishBusy=false;
+    broadcast(true);
+    if(channel&&companion)channel.send({type:'broadcast',event:'kiss',payload:{from:user.id,to:companion.user_id,room:myPos.room,duration_ms:2600,at:Date.now()}}).catch(()=>{});
+    toast('💋 ¡Un besito para tu amor!',3000);
+  }
   if(['care_feed','care_company'].includes(name)){
    const cared=partner();
    if(cared&&!cared.sick){
@@ -3930,19 +3998,46 @@ const objects={
  ],
  bedroom:[
   {id:'bed',label:'Cama de dos plazas',x:520,y:300,range:215},
+  {id:'dogBowl',label:'Plato del perrito',x:1020,y:515,range:150},
+  {id:'dogBed',label:'Camita del perrito',x:860,y:505,range:142},
   {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155}
  ]
 };
+function partnerDisplay(){
+ const p=partner();
+ if(!p||!online.has(p.user_id))return null;
+ const remoteState=remote.get(p.user_id);
+ const fresh=remoteState&&performance.now()-remoteState.lastPacketAt<2600;
+ const snap=fresh?interpolatedRemote(remoteState,performance.now()):null;
+ return {id:p.user_id,x:Number(snap?.x??p.x),y:Number(snap?.y??p.y),
+   room:snap?.room||p.room,activity:snap?.activity||p.activity||'idle',sick:!!p.sick};
+}
 function nearby(){
- const items=objects[myPos.room]||[];
- return items.map(o=>({...o,d:d(myPos,o)})).filter(o=>o.d<o.range).sort((a,b)=>a.d-b.d)[0];
+ const items=[...(objects[myPos.room]||[])];
+ // El perrito es móvil: nunca se interactúa con una posición fija antigua.
+ const pet=getDogDisplay(performance.now());
+ if(pet && pet.room===myPos.room){
+   items.push({id:'dog',label:'Perrito',x:pet.x,y:pet.y,range:94});
+ }
+ // La opción de beso sólo aparece si la pareja está conectada, despierta
+ // y suficientemente cerca dentro de la misma habitación.
+ const companion=partnerDisplay();
+ if(companion&&companion.room===myPos.room&&!companion.sick&&
+    ['idle','rest','walk','sofa','table'].includes(companion.activity)){
+   items.push({id:'partner',label:'Tu pareja',x:companion.x,y:companion.y,range:135,partnerId:companion.id});
+ }
+ const available=items.map(o=>({...o,d:d(myPos,o)})).filter(o=>o.d<o.range);
+ // Si la pareja está al alcance, priorizar la interacción del beso frente a
+ // muebles cercanos (por ejemplo, la cama o el sillón).
+ const kissTarget=available.find(o=>o.id==='partner'&&o.d<125);
+ return kissTarget||available.sort((a,b)=>a.d-b.d)[0];
 }
 const inventoryText=(prefix='')=>Object.entries(own()?.inventory||{}).filter(([,n])=>Number(n)>0).map(([key,n])=>`${esc(INGREDIENTS[key]||RECIPES[key.replace('dish_','')]?.name||key)} ×${n}`).join(' · ')||'Vacío';
 const actionBtn=(label,name,value)=>({label,run:()=>runAction(name,value)});
 function interact(){
  if(!playing||!visible||gamePaused)return;
  if(me?.sick){toast('La enfermedad solo termina tras tres días consecutivos de cuidados de tu pareja.');return;}
- if(['cook','shower','eat','wash','toilet','care','welcome'].includes(myPos.activity)){toast('Termina la acción actual antes de interactuar.');return;}
+ if(['cook','shower','eat','wash','toilet','care','welcome','kiss'].includes(myPos.activity)){toast('Termina la acción actual antes de interactuar.');return;}
  if(myPos.activity==='sleep'){runAction('stand');return;}
  const o=nearby();if(!o){toast('Acércate a un mueble o una puerta para interactuar (E).');return;}
  let actions=[],text='';
@@ -3959,18 +4054,47 @@ function interact(){
    actions.push({label:'Recoger plato listo',disabled:secs>0,run:()=>runAction('collect')});
   }else for(const [key,r]of Object.entries(RECIPES)){
    const ok=Object.entries(r.ingredients).every(([k,n])=>inv(k)>=n);
-   actions.push({label:`${r.name} · ${r.seconds}s · +${r.heal} hambre`,disabled:!ok,run:()=>runAction('cook',key)});
+   actions.push({label:`${r.name} · ${r.seconds}s · llena el hambre`,disabled:!ok,run:()=>runAction('cook',key)});
   }break;
  case 'table':text='Aquí pueden sentarse los dos. Solo se puede comer un plato que hayas cocinado y recogido.';
   if(myPos.activity!=='table')actions.push(actionBtn('Sentarse a la mesa','table'));
   if(myPos.activity==='table'){
-   for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Comer '+r.name+' (+ '+r.heal+')','eat',key));
+   for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Comer '+r.name+' (hambre al 100%)','eat',key));
    actions.push(actionBtn('Levantarse','stand'));
   }break;
  case 'sofa':text='Un sillón amplio para los dos.';
   actions.push(actionBtn(myPos.activity==='sofa'?'Levantarse':'Sentarse en el sillón',myPos.activity==='sofa'?'stand':'sofa'));break;
  case 'tv':text='La televisión se comparte: el otro jugador verá cuándo está encendida.';
   actions.push(actionBtn(world.tv_on?'Apagar televisión':'Encender televisión','tv'));break;
+ case 'partner':{
+   const companion=partnerDisplay();
+   text='Están juntitos. Puedes acercarte y darle un beso; ambos verán la animación.';
+   if(companion&&companion.room===myPos.room&&d(myPos,companion)<=145){
+     actions.push({label:'Dar un beso 💋',primary:true,run:()=>runAction('kiss')});
+   }
+   break;
+ }
+ case 'dog':{
+   const h=Math.round(dogFoodValue());
+   text=`${world?.pet_name||'Pompón'} está de paseo por la casa. Hambre: ${h}/100. A veces los seguirá y, al servir comida, irá corriendo a su plato del dormitorio.`;
+   actions.push({label:'Acariciar al perrito',run:()=>{
+     hideModal();toast('🐶 ¡'+(world?.pet_name||'Pompón')+' mueve su colita!');
+     petPatSignal(user.id);
+     if(channel)channel.send({type:'broadcast',event:'dog_pat',payload:{id:user.id}}).catch(()=>{});
+   }});
+   break;
+ }
+ case 'dogBowl':{
+   const food=inv('dog_food');
+   text=`Este es el plato de ${world?.pet_name||'Pompón'}. Está en el dormitorio, junto a su camita. Tienes ${food} ración(es) de comida para perrito. Al servirla, vendrá corriendo a comer, aunque estuviera paseando por otra habitación.`;
+   actions.push({label:'Servir comida al perrito',disabled:food<1,run:()=>runAction('feed_dog')});
+   if(!food)text+='\nSaca primero comida para perrito del refrigerador.';
+   break;
+ }
+ case 'dogBed':{
+   text='La camita del perrito está al lado de su plato. Cuando ambos estén acostados, vendrá a dormir aquí con ustedes.';
+   break;
+ }
  case 'bathDoor':text='Puerta independiente del baño.';
   actions.push(actionBtn(world.bath_door_open?'Cerrar puerta':'Abrir puerta','bath_door'));
   if(world.bath_door_open)actions.push({label:'Entrar al baño',primary:true,run:()=>transition('bathroom')});break;
@@ -3998,7 +4122,7 @@ function interact(){
  }
  case 'back':text='Regresa al pasillo y conserva tu estado.';actions.push({label:'Salir de la habitación',primary:true,run:()=>transition('main')});break;
  }
- dialog(o.label,`<p>${esc(text).replace(/\n/g,'<br>')}</p>${o.id==='stove'?'<p>Ingredientes necesarios: huevos (2 huevos), arroz (arroz + tomate), pasta (pasta + queso), sándwich (pan + queso).</p>':''}`,actions);
+ dialog(o.label,`<p>${esc(text).replace(/\n/g,'<br>')}</p>${o.id==='stove'?'<p>Ingredientes necesarios: huevos (2 huevos), arroz (arroz + tomate), pasta (pasta + queso), sándwich (pan + queso). Además puedes sacar <strong>comida para perrito</strong> desde el refrigerador.</p>':''}`,actions);
 }
 const rects={
  main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:550,y:380,w:80,h:70}],
@@ -4134,6 +4258,12 @@ function drawBedroom(t){
  furniture(790,115,210,74,'#704c62','#ce9e80');for(let i=0;i<5;i++)r(807+i*36,123,20,24,'#e5b99f');
  furniture(1120,166,94,90,'#695167','#e3b8a5');r(1140,182,55,43,'#f2d8bb');
  r(800,378,230,190,'#977487');r(814,392,201,163,'#e7bcaa');label('Te amo',914,476,26,'#bc6179');
+ // Mascota: cama acolchada y plato dentro del dormitorio, no en el living.
+ r(812,473,101,73,'#5f4259');r(819,479,87,57,'#aa748c');r(830,486,65,39,'#edbac6');
+ r(839,489,41,14,'#f5d7bf');r(843,493,33,6,'#fff0da');
+ label('♡',863,521,16,'#b96986');
+ r(999,500,47,22,'#4b4151');r(1003,502,39,16,'#d5a7a3');
+ r(1007,506,31,10,'#f7d5a0');r(1012,509,20,3,'#b98152');
  r(1160,494,91,67,'#b77d70');r(1172,501,68,46,'#3c334b');label('SALIR',1211,475,17);
 }
 // Sprite original construido a partir de píxeles (sin depender de archivos de KFC externos).
@@ -4143,9 +4273,14 @@ function drawBedroom(t){
 function drawPixelPerson(c,x,y,avatar,facing,activity,t,scale=3){
  const girl=avatar==='girl',hair=girl?'#171826':'#36231f',skin='#efb78e',eyes=girl?'#397a59':'#49312c';
  const bathing=activity==='shower';
+ const walking=['walk','run'].includes(activity);
+ const walkPhase=walking?Math.floor(t/(activity==='run'?96:155))%2:0;
+ const bodyBob=walking?Math.round(Math.sin(t/(activity==='run'?78:132))*1.1*scale):0;
+ const leftStep=walking?(walkPhase===0?-1.5:1.5):0;
+ const rightStep=-leftStep;
  const shirt=girl?'#bb688a':'#5875a3',trouser=girl?'#614d79':'#393953';
- const pixel=(px,py,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x+(px-8)*scale),Math.round(y+(py-24)*scale),Math.round(w*scale),Math.round(h*scale));};
- const resting=['rest','sofa','table','eat','care','toilet','sleep','sick'].includes(activity);
+ const pixel=(px,py,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x+(px-8)*scale),Math.round(y+(py-24)*scale+bodyBob),Math.round(w*scale),Math.round(h*scale));};
+ const resting=['rest','sofa','table','eat','care','toilet','sleep','sick','kiss'].includes(activity);
  const move=activity==='idle'?Math.round(Math.sin(t/145)):0;
  c.save();
  // El tono oscuro del contorno no debe simular una camiseta al ducharse.
@@ -4159,15 +4294,20 @@ function drawPixelPerson(c,x,y,avatar,facing,activity,t,scale=3){
  pixel(9,9,3,2,eyes);
  pixel(7,12,2,1,'#a76665');
  pixel(4,14,8,7,bathing?skin:shirt);
- pixel(2,15,2,6,skin);
- pixel(12,15,2,6,skin);
- const legAnim=resting?0:activity==='idle'?move:Math.round(Math.sin(t/120)*2);
- if(['rest','sofa','table','eat','care','toilet'].includes(activity)){
+ // Los brazos acompañan el balanceo de las piernas al caminar.
+ pixel(2,15+(walking&&walkPhase?1:0),2,6,skin);
+ pixel(12,15+(walking&&!walkPhase?1:0),2,6,skin);
+ if(resting||activity==='kiss'){
   pixel(4,20,9,3,trouser);pixel(3,22,4,2,'#352a41');pixel(10,22,4,2,'#352a41');
+ }else if(bathing){
+  pixel(4,21,4,4,skin);pixel(9,21,4,4,skin);
  }else{
-  pixel(4,21,4,3+Math.max(0,legAnim),bathing?skin:trouser);
-  pixel(9,21,4,3+Math.max(0,-legAnim),bathing?skin:trouser);
-  if(!bathing){pixel(4,24,4,2,'#3e3043');pixel(9,24,4,2,'#3e3043');}
+  // Zancada alternada: un pie avanza mientras el otro queda atrás,
+  // con el mismo ritmo de patitas que usa la animación del perrito.
+  pixel(4,20+leftStep,4,4,trouser);
+  pixel(9,20+rightStep,4,4,trouser);
+  pixel(3,24+leftStep,5,2,'#3e3043');
+  pixel(9,24+rightStep,5,2,'#3e3043');
  }
  if(activity==='cook'){pixel(12,13,5,2,'#efe8dc');pixel(15,11,2,4,'#f3c56b');}
  if(activity==='eat'||activity==='care'){pixel(12,15,4,2,'#f2eee4');pixel(15,11,2,5,'#cac9d0');}
@@ -4200,6 +4340,277 @@ function drawBedBlanket(x,activity){
  r(left+7,297,42,3,'#f1d5d9');
  r(x-3,274,7,5,'#bd657f');r(x-8,270,5,5,'#bd657f');r(x+3,270,5,5,'#bd657f');
 }
+// La IA del perrito usa el movimiento suave del cliente elegido como líder.
+// La red sólo transmite posiciones. Los demás reciben un historial interpolado.
+const DOG_BED={x:860,y:507}, DOG_BOWL={x:1020,y:515};
+const DOG_ROAM={
+ main:[[280,570],[725,565],[1050,560],[1175,410],[695,360],[255,320],[610,270],[1090,280],[205,520],[775,535]],
+ bedroom:[[285,540],[700,535],[1060,340],[1190,420],[720,360],[950,345],[400,555],[860,540]],
+ bathroom:[[250,540],[620,540],[1040,540],[830,365],[400,370]]
+};
+function dogFoodValue(){
+ const elapsed=Math.max(0,(timeNow()-Date.parse(world?.pet_last_tick||Date.now()))/60000);
+ return clamp(Number(world?.pet_hunger??78)-elapsed*.55,0,100);
+}
+function dogVisiblePeople(){
+ const list=[];
+ for(const p of people){
+  const mine=p.user_id===user?.id;
+  const snap=mine?myPos:(remote.get(p.user_id)?.samples?.slice(-1)[0]||p);
+  if(!snap||!ROOMS[snap.room])continue;
+  const activity=mine?myPos.activity:(p.sick?'sick':snap.activity||p.activity);
+  list.push({id:p.user_id,x:Number(snap.x),y:Number(snap.y),room:snap.room,activity});
+ }
+ return list;
+}
+function dogLeaderId(){
+ const state=channel?.presenceState?.()||{},active=[];
+ for(const p of people){
+   const sessions=state[p.user_id]||[];
+   if(sessions.some(q=>q.visible===true))active.push(p.user_id);
+ }
+ // La sesión local puede entrar antes de que Presence anuncie los jugadores.
+ if(visible&&user&&!active.includes(user.id))active.push(user.id);
+ return active.sort()[0]||user?.id;
+}
+function dogIsLeader(){return !!user && dogLeaderId()===user.id;}
+function getDogDisplay(now){
+ if(!dogIsLeader()&&remoteDog){
+   const snap=now-remoteDog.lastPacketAt<2300
+     ? interpolatedRemote(remoteDog,now)
+     : remoteDog.samples[remoteDog.samples.length-1];
+   if(snap)return {...snap,mode:snap.mode||'wander',face:snap.face||'right'};
+ }
+ return dog;
+}
+function petPatSignal(id){
+ dog.patTarget=id;dog.patUntil=performance.now()+6500;
+ if(dogIsLeader())dog.nextThink=0;
+}
+function petIsWalkable(room,x,y){
+ const rad=17;
+ if(x<77||x>1350||y<128||y>628)return false;
+ return !(rects[room]||[]).some(o=>x+rad>o.x&&x-rad<o.x+o.w&&y+rad>o.y&&y-rad<o.y+o.h);
+}
+function petLineFree(room,x0,y0,x1,y1){
+ const steps=Math.ceil(Math.hypot(x1-x0,y1-y0)/18);
+ for(let k=1;k<=steps;k++){
+  const f=k/Math.max(1,steps);
+  if(!petIsWalkable(room,x0+(x1-x0)*f,y0+(y1-y0)*f))return false;
+ }
+ return true;
+}
+function petSafeGoal(room,x,y){
+ if(petIsWalkable(room,x,y))return {x,y};
+ for(const radius of [32,64,96,128,180])for(let a=0;a<12;a++){
+   const theta=a*Math.PI/6,cx=x+Math.cos(theta)*radius,cy=y+Math.sin(theta)*radius;
+   if(petIsWalkable(room,cx,cy))return {x:cx,y:cy};
+ }
+ return null;
+}
+// Cuadrícula A* muy pequeña: evita atravesar el sillón, la cama o la mesa.
+function petFindRoute(room,fx,fy,tx,ty){
+ const destination=petSafeGoal(room,tx,ty);
+ if(!destination)return [];
+ if(petLineFree(room,fx,fy,destination.x,destination.y))return [destination];
+ const step=34,ox=83,oy=137,cols=38,rows=15;
+ const node=(c,r)=>({c,r,x:ox+c*step,y:oy+r*step});
+ const valid=(c,r)=>c>=0&&r>=0&&c<cols&&r<rows&&petIsWalkable(room,ox+c*step,oy+r*step);
+ const closest=(x,y)=>{
+  const cc=clamp(Math.round((x-ox)/step),0,cols-1),rr=clamp(Math.round((y-oy)/step),0,rows-1);
+  if(valid(cc,rr))return node(cc,rr);
+  for(let radius=1;radius<8;radius++)for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
+   if(valid(cc+dx,rr+dy))return node(cc+dx,rr+dy);
+  }
+  return null;
+ };
+ const start=closest(fx,fy),end=closest(destination.x,destination.y);
+ if(!start||!end)return [];
+ const idx=(c,r)=>r*cols+c,startKey=idx(start.c,start.r),endKey=idx(end.c,end.r);
+ const frontier=[{key:startKey,c:start.c,r:start.r,f:0}],score=new Map([[startKey,0]]),from=new Map(),closed=new Set();
+ let solved=false;
+ while(frontier.length){
+  frontier.sort((a,b)=>a.f-b.f);
+  const cur=frontier.shift();if(closed.has(cur.key))continue;
+  if(cur.key===endKey){solved=true;break;}
+  closed.add(cur.key);
+  for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
+   const nc=cur.c+dc,nr=cur.r+dr;
+   if(!valid(nc,nr)||(dc&&dr&&(!valid(cur.c+dc,cur.r)||!valid(cur.c,cur.r+dr))))continue;
+   const key=idx(nc,nr),newScore=score.get(cur.key)+(dc&&dr?1.4142:1);
+   if(newScore>= (score.get(key)??Infinity))continue;
+   from.set(key,cur.key);score.set(key,newScore);
+   frontier.push({key,c:nc,r:nr,f:newScore+Math.hypot(end.c-nc,end.r-nr)});
+  }
+ }
+ if(!solved)return [];
+ const cells=[];let key=endKey;
+ while(key!==startKey&&cells.length<cols*rows){const c=key%cols,r=Math.floor(key/cols);cells.push(node(c,r));key=from.get(key);if(key===undefined)return [];}
+ cells.reverse();cells.push(destination);
+ // Eliminar esquinas innecesarias: movimiento más natural que ir cuadrito a cuadrito.
+ const route=[],all=[{x:fx,y:fy},...cells],endIndex=all.length-1;
+ let i=0;
+ while(i<endIndex){
+  let next=i+1;
+  for(let j=endIndex;j>i+1;j--){if(petLineFree(room,all[i].x,all[i].y,all[j].x,all[j].y)){next=j;break;}}
+  route.push({x:all[next].x,y:all[next].y});i=next;
+ }
+ return route;
+}
+function petChooseWander(t){
+ const currentRoom=dog.room;
+ let targetRoom=currentRoom;
+ const roll=Math.random();
+ if(roll<.22){
+   const awake=dogVisiblePeople().filter(p=>!['sleep','sick'].includes(p.activity));
+   if(awake.length)targetRoom=awake[Math.floor(Math.random()*awake.length)].room;
+   else targetRoom=currentRoom==='main'?'bedroom':'main';
+ }
+ const points=DOG_ROAM[targetRoom]||DOG_ROAM.main;
+ const pt=points[Math.floor(Math.random()*points.length)];
+ dog.task='wander';dog.goal={room:targetRoom,x:pt[0],y:pt[1]};
+ dog.taskUntil=t+3300+Math.random()*4900;
+}
+function petRoomPortal(current,destination){
+ if(current==='main')return destination==='bathroom'?{x:208,y:230,next:{room:'bathroom',x:1215,y:525}}:{x:208,y:420,next:{room:'bedroom',x:1215,y:525}};
+ return {x:1215,y:525,next:{room:'main',x:210,y:current==='bathroom'?230:420}};
+}
+function petUpdateBrain(t){
+ const peopleNow=dogVisiblePeople();
+ const allSleeping=peopleNow.length===2&&peopleNow.every(p=>p.room==='bedroom'&&['sleep','sick'].includes(p.activity));
+ const mealAt=Date.parse(world?.pet_meal_at||'');
+ if(Number.isFinite(mealAt)&&mealAt>dog.lastMealAt){
+  dog.lastMealAt=mealAt;
+  // No repetir comidas antiguas al abrir la casa horas después.
+  if(Math.abs(timeNow()-mealAt)<20000){
+   dog.mealUntil=t+21000;dog.eatUntil=0;dog.task='meal';dog.route=[];
+  }
+ }
+ if(t<dog.mealUntil){
+  dog.task='meal';dog.goal={room:'bedroom',...DOG_BOWL};
+  return;
+ }
+ if(allSleeping){
+  dog.task='sleep';dog.goal={room:'bedroom',...DOG_BED};return;
+ }
+ if(dog.task==='sleep'){dog.task='wander';dog.goal=null;dog.nextThink=0;}
+ // Las caricias siempre consiguen que se acerque a su humano.
+ if(t<dog.patUntil){
+  const target=peopleNow.find(p=>p.id===dog.patTarget);
+  if(target&&!['sleep','sick'].includes(target.activity)){
+   dog.task='follow';dog.followId=target.id;
+   dog.goal={room:target.room,x:target.x-47,y:target.y+38};return;
+  }
+ }
+ if(dog.task==='follow'&&t<dog.taskUntil){
+  const player=peopleNow.find(p=>p.id===dog.followId);
+  if(player&&!['sleep','sick'].includes(player.activity)){
+   dog.goal={room:player.room,x:player.x-45,y:player.y+42};return;
+  }
+ }
+ if(t<dog.nextThink&&dog.goal&&dog.task==='wander'&&d(dog,dog.goal)>25)return;
+ dog.nextThink=t+4500+Math.random()*2800;
+ const nearbyPlayers=peopleNow.filter(p=>!['sleep','sick'].includes(p.activity)&&p.room===dog.room&&d(p,dog)<400);
+ if(nearbyPlayers.length&&Math.random()<.52){
+  const target=nearbyPlayers[Math.floor(Math.random()*nearbyPlayers.length)];
+  dog.task='follow';dog.followId=target.id;dog.taskUntil=t+4500+Math.random()*5900;
+  dog.goal={room:target.room,x:target.x-45,y:target.y+42};return;
+ }
+ petChooseWander(t);
+}
+function moveDog(dt,t){
+ if(!dogIsLeader()){
+  wasDogLeader=false;return;
+ }
+ if(!wasDogLeader && remoteDog?.samples?.length){
+  const latest=remoteDog.samples[remoteDog.samples.length-1];
+  dog.x=latest.x;dog.y=latest.y;dog.room=latest.room;dog.route=[];
+ }
+ wasDogLeader=true;
+ if(t>dog.nextThink||dog.task==='sleep'||dog.task==='meal'||dog.task==='follow')petUpdateBrain(t);
+ const goal=dog.goal;
+ if(!goal)return;
+ const portal=goal.room!==dog.room?petRoomPortal(dog.room,goal.room):null;
+ const final=portal||goal;
+ let target=petSafeGoal(dog.room,final.x,final.y);
+ if(!target)return;
+ // Cruzar por la puerta cuando ha llegado a ella.
+ if(portal&&d(dog,target)<28){
+  dog.room=portal.next.room;dog.x=portal.next.x;dog.y=portal.next.y;
+  dog.route=[];dog.routeAt=0;dog.mode='walk';petSendPose(t,true);return;
+ }
+ const distance=d(dog,target);
+ if(!portal&&distance<26){
+  dog.route=[];
+  if(dog.task==='meal'){
+   if(!dog.eatUntil)dog.eatUntil=t+3200;
+   dog.mode='eat';
+   if(t>dog.eatUntil){dog.mealUntil=0;dog.task='wander';dog.nextThink=0;dog.eatUntil=0;}
+  }else if(dog.task==='sleep'){dog.mode='sleep';}
+  else if(dog.task==='wander'){dog.mode='sniff';dog.nextThink=Math.min(dog.nextThink,t+1300);}
+  else dog.mode='happy';
+  petSendPose(t);return;
+ }
+ const routeEnd=dog.route[dog.route.length-1];
+ if(!dog.route.length||t-dog.routeAt>1400||(routeEnd&&d(routeEnd,target)>66)){
+  dog.route=petFindRoute(dog.room,dog.x,dog.y,target.x,target.y);dog.routeAt=t;
+ }
+ if(!dog.route.length){dog.mode='sniff';dog.nextThink=0;petSendPose(t);return;}
+ let aim=dog.route[0];
+ if(d(dog,aim)<22&&dog.route.length>1){dog.route.shift();aim=dog.route[0];}
+ const vx=aim.x-dog.x,vy=aim.y-dog.y,len=Math.hypot(vx,vy);
+ const speed=dog.task==='meal'?250:dog.task==='follow'?151:dog.task==='sleep'?125:87;
+ const step=Math.min(len,speed*dt);
+ const nx=dog.x+(vx/Math.max(1,len))*step,ny=dog.y+(vy/Math.max(1,len))*step;
+ if(petIsWalkable(dog.room,nx,ny)){
+  dog.x=nx;dog.y=ny;
+  dog.face=Math.abs(vx)>Math.abs(vy)?(vx<0?'left':'right'):(vy<0?'up':'down');
+  dog.mode=dog.task==='meal'?'run':'walk';
+ }else{dog.route=[];dog.routeAt=0;}
+ petSendPose(t);
+}
+function petSendPose(t,force=false){
+ if(!channel||!user)return;
+ if(!force&&t-lastDogBroadcast<(dog.mode==='sleep'||dog.mode==='eat'||dog.mode==='sniff'?850:110))return;
+ lastDogBroadcast=t;
+ channel.send({type:'broadcast',event:'dog_move',payload:{id:user.id,
+   x:Math.round(dog.x),y:Math.round(dog.y),room:dog.room,
+   mode:dog.mode,face:dog.face,at:Date.now(),seq:++dog.seq}}).catch(()=>{});
+}
+// Sprite pixel art con patitas al caminar, orejas, hocico y cola animada.
+function drawHouseDog(p,t){
+ if(!p||p.room!==myPos.room)return;
+ const x=Math.round(p.x),y=Math.round(p.y),moving=['walk','run'].includes(p.mode);
+ const pace=moving?Math.floor(t/(p.mode==='run'?96:160))%2:0;
+ const bob=moving?Math.sin(t/(p.mode==='run'?90:165))*2:0;
+ const sleepMode=p.mode==='sleep';
+ const fill=(px,py,w,h,color)=>r(x+px,y+py+Math.round(bob),w,h,color);
+ r(x-24,y+15,48,9,'#49364077');
+ if(sleepMode){
+  fill(-17,-5,34,23,'#866246');fill(-15,-7,26,20,'#a67e5e');
+  fill(7,-5,15,15,'#c49b78');fill(10,-12,8,9,'#78563f');
+  fill(13,-1,5,2,'#45312d');
+  if(Math.floor(t/950)%2===0)label('z',x+30,y-22,12,'#ffe0c4');
+  return;
+ }
+ // Cola de un lado, alternando la posición al caminar.
+ fill(-24,-9+(pace?2:-2),13,6,'#735039');fill(-26,-14+(pace?2:-2),6,10,'#aa805c');
+ fill(-17,-9,32,26,'#845c45');fill(-15,-12,29,24,'#b18862');
+ fill(-10,-8,17,13,'#d5aa7a');
+ // Patas con zancadas independientes y vientre claro.
+ fill(-13,12+(pace?2:0),8,12,'#805940');fill(7,12+(pace?0:2),8,12,'#805940');
+ fill(-16,-5+(pace?0:2),7,13,'#a57954');fill(10,-5+(pace?2:0),7,13,'#a57954');
+ fill(-11,-22,26,23,'#b38a65');fill(-14,-23,9,16,'#634633');fill(9,-24,10,17,'#6c4b34');
+ fill(-7,-9,7,5,'#352623');fill(8,-9,7,5,'#352623');
+ fill(0,-3,9,7,'#e9c9a2');fill(3,0,4,3,'#33272a');
+ fill(-4,9,11,4,'#b84b69');fill(0,11,5,2,'#f4c6a0');
+ if(p.mode==='eat'){
+  fill(4,16,7,3,'#fbe5b5');
+  if(pace)fill(3,12,4,3,'#fbe5b5');
+ }
+ if(p.mode==='happy'){fill(13,-24,5,5,'#f5c6b5');}
+ label(world?.pet_name||'Pompón',x,y-33,11,'#ffe6be');
+}
 // Recupera una posición interpolada desde el historial de paquetes del otro jugador.
 // Retardo visual pequeño e intencionado (160 ms), sin bloquear los controles propios.
 function interpolatedRemote(data,now){
@@ -4224,6 +4635,30 @@ function interpolatedRemote(data,now){
  const vy=clamp((last.y-prev.y)/delta,-.19,.19);
  const ahead=clamp(target-last.at,0,REMOTE_EXTRAPOLATE_MS);
  return {...last,x:last.x+vx*ahead,y:last.y+vy*ahead};
+}
+function drawStink(x,y,t){
+ // Efecto retro de olor: pequeñas ondas verde-menta flotan alrededor del personaje.
+ const pulse=Math.sin(t/260);
+ ctx.save();ctx.globalAlpha=.78;
+ ctx.strokeStyle='#9ec56c';ctx.lineWidth=3;ctx.lineCap='square';ctx.lineJoin='miter';
+ for(let i=0;i<3;i++){
+  const sx=x-15+i*14, sy=y-34-(i%2)*7;
+  ctx.beginPath();ctx.moveTo(sx,sy+8);
+  ctx.lineTo(sx-2,sy+4+pulse*1.5);
+  ctx.lineTo(sx+2,sy+pulse*1.5);
+  ctx.lineTo(sx,sy-5);
+  ctx.stroke();
+ }
+ ctx.globalAlpha=.88;
+ r(x-22,y-22,4,4,'#c4d98c');r(x+18,y-39,4,4,'#c4d98c');
+ ctx.restore();
+}
+function projectedCleanliness(p){
+ if(!p)return 100;
+ if(p.sick)return clamp(100-Number(p.dirt||0),0,100);
+ const at=Date.parse(p.last_shower_at||'');
+ if(Number.isFinite(at))return clamp(100-Math.max(0,timeNow()-at)/(48*60*60*1000)*100,0,100);
+ return clamp(100-Number(p.dirt||0),0,100);
 }
 function drawPerson(p,isMe,t){
  if(!p)return;
@@ -4252,8 +4687,13 @@ function drawPerson(p,isMe,t){
  r(x-19,y+3,38,9,'#4f3947a0');
  if(isMe&&activity==='idle'&&(Math.hypot(stick.x,stick.y)>.1||[...keys].some(k=>MOVE_KEYS.has(k)))) activity='walk';
  drawPixelPerson(ctx,x,y,p.avatar,facing,activity,t,3);
+ if(activity==='kiss'){
+   const heartY=y-47-Math.round(Math.sin(t/115)*3);
+   label('♥',x,heartY,18,'#f47b9a');
+ }
  if(inBed)drawBedBlanket(x,activity);
  if(inShower)drawShowerForeground(t);
+ if(!inShower&&projectedCleanliness(p)<=0.5)drawStink(x,y,t);
  label(isMe?'TÚ':present?'♥ PAREJA':'☾ AUSENTE',x,y-82,12,isMe?'#fff1ce':'#e8c0e0');
  if(p.sick){label('ENFERMO · '+p.care_streak+'/3',x,y-97,12,'#f1c37a');}
 }
@@ -4264,6 +4704,7 @@ function draw(t){
  r(0,0,screen.clientWidth,screen.clientHeight,'#3a2b42');
  const {scale,camX,camY,padX,padY}=camera();ctx.translate(padX,padY);ctx.scale(scale,scale);ctx.translate(-camX,-camY);
  drawRoom(t);
+ drawHouseDog(getDogDisplay(t),t);
  const drawList=people.filter(p=>(p.user_id!==user?.id)).concat(me?[me]:[]);
  drawList.forEach(p=>drawPerson(p,p.user_id===user?.id,t));
 }
@@ -4271,12 +4712,18 @@ function frame(t){
  if(!playing||!visible){frameId=0;return;}
  const dt=Math.min(.05,Math.max(0,(t-lastFrame)/1000));lastFrame=t;
  updateMovement(dt);
+ moveDog(dt,t);
+ if(myPos.activity==='kiss'&&localKissUntil&&t>=localKissUntil&&!kissFinishBusy){
+   localKissUntil=0;kissFinishBusy=true;myPos.activity='idle';broadcast(true);
+   action('stand').then(()=>sync(false)).catch(e=>console.warn('No se pudo cerrar la animación del beso:',e))
+     .finally(()=>{kissFinishBusy=false;});
+ }
  if(t-lastBroadcast>115)broadcast();
  if(t-lastPersist>2400){lastPersist=t;persist().catch(()=>{});}
  if(t-lastSync>10000){lastSync=t;sync().catch(e=>toast('Sincronización: '+friendly(e)));}
  if(t>noticeUntil)toastEl.hidden=true;
  if(!gamePaused){
-  const near=nearby();hint.textContent=me?.sick?'Necesitas comida y compañía cada día; el día se marca al recibir ambas acciones (cambio diario a las 00:00, Chile)':myPos.activity==='sleep'?'Pulsa E para levantarte':near?`E · ${near.label}   ·   WASD / Flechas para caminar`:'WASD / Flechas · E para interactuar';
+  const near=nearby();hint.textContent=me?.sick?'Necesitas comida y compañía cada día; el día se marca al recibir ambas acciones (cambio diario a las 00:00, Chile)':myPos.activity==='sleep'?'Pulsa E para levantarte':near?`E · ${near.id==='partner'?'Besar a tu pareja 💋':near.label}   ·   WASD / Flechas para caminar`:'WASD / Flechas · E para interactuar';
  }
  setBars();
  const p=own();const timer=p?.pending_recipe?Math.max(0,(Date.parse(p.cook_ready_at)-timeNow())/1000):0;
