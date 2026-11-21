@@ -238,6 +238,8 @@
     opacity:0; visibility:hidden; transition:opacity .4s var(--ease), visibility .4s var(--ease);
   }
   .modal-backdrop.open{opacity:1; visibility:visible;}
+  body.house-games-open .modal-backdrop{z-index:300;}
+  body.house-games-open .modal{z-index:310;}
 
   .modal{
     position:fixed; top:50%; left:50%; z-index:60;
@@ -499,10 +501,128 @@
 .house-tv-stage{position:relative;display:flex;align-items:center;justify-content:center;flex:1;min-height:0;background:#000;overflow:hidden}
 .house-tv-stage iframe{display:block;width:100%;height:100%;border:0;background:#000}
 .house-tv-stage video{display:block;width:100%;height:100%;max-height:100%;background:#000;object-fit:contain}
+
 .house-tv-stage [hidden]{display:none!important}
+.house-tv-unavailable{display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;max-width:620px;padding:24px;text-align:center;color:#fff0df;background:linear-gradient(145deg,#211827,#100d16);border:2px solid #806079;box-shadow:6px 6px #09070d;font-size:clamp(13px,2vw,17px);line-height:1.6}
+.house-tv-unavailable strong{color:#ffe0ae;font-size:clamp(16px,2.5vw,23px)}
+.house-tv-unavailable p{margin:0;color:#e8cbd0}
+.house-tv-stage .house-tv-unavailable[hidden]{display:none!important}
 .house-tv-start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;border:2px solid #ffe0b0;background:#8f526c;color:white;padding:13px 20px;font-size:15px;font-weight:800;box-shadow:4px 4px #1c101b}
 .house-tv-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:42px;padding:7px 13px;background:#1b1423;border-top:2px solid #6e4d6c;font-size:11px;color:#e8cbd0}
-.house-tv-footer a{color:#ffd49f;text-decoration:underline;font-weight:800}
+.house-pc-overlay{position:absolute;inset:0;z-index:25;display:grid;place-items:center;padding:clamp(8px,2vw,24px);background:#08070de8;backdrop-filter:blur(5px);touch-action:auto;image-rendering:auto}
+.house-pc-overlay[hidden]{display:none!important}
+.house-pc-case{width:min(1250px,97vw);height:min(790px,94vh);display:flex;flex-direction:column;overflow:hidden;border:6px solid #71586d;background:#110f19;box-shadow:0 0 0 4px #211526,8px 8px 0 #07060b;color:#fff2de}
+.house-pc-case-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:43px;padding:6px 12px;background:linear-gradient(90deg,#362640,#1a1c30);border-bottom:3px solid #9d7188;font-size:12px;font-weight:900;letter-spacing:.08em}
+.house-pc-case-head button{min-width:38px;min-height:31px;border:2px solid #f1b1ab;background:#9d354b;color:#fff;font-size:19px;line-height:1}
+.house-pc-screen{position:relative;flex:1;min-height:0;overflow:hidden;background:#111827}
+.house-pc-lock,.house-pc-desktop{position:absolute;inset:0}
+.house-pc-lock{display:grid;place-items:center;overflow:auto;padding:22px;background:radial-gradient(ellipse at 15% 12%,#eaa35e88,transparent 27%),radial-gradient(ellipse at 85% 78%,#cb4b7a88,transparent 28%),linear-gradient(135deg,#12263e,#312040 56%,#111526)}
+.house-pc-lock:before,.house-pc-desktop:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 38px,#ffffff08 39px 40px),repeating-linear-gradient(90deg,transparent 0 38px,#ffffff08 39px 40px)}
+.house-pc-lock-card{position:relative;z-index:1;width:min(410px,94%);padding:clamp(22px,4vw,38px);text-align:center;border:3px solid #f3c58f;background:#171522de;box-shadow:7px 7px 0 #100d18}
+.house-pc-lock-logo{display:grid;place-items:center;width:74px;height:74px;margin:0 auto 12px;border:3px solid #ffe0aa;border-radius:18px;background:linear-gradient(145deg,#d95d77,#724677);font-size:36px;box-shadow:4px 4px 0 #110d17}
+.house-pc-lock-card h2{margin:4px 0 6px;color:#ffe1a8;font-size:clamp(22px,4vw,31px)}
+.house-pc-lock-card p{margin:8px 0 18px;color:#e7d7d9;font-size:13px;line-height:1.5}
+.house-pc-lock-form{display:flex;gap:8px;flex-wrap:wrap}
+.house-pc-lock-form input{flex:1 1 180px;min-width:0;padding:12px;border:2px solid #b996ad;background:#0e1020;color:#fff;font-size:16px;outline:none}
+.house-pc-lock-form input:focus{border-color:#ffe0a6;box-shadow:0 0 0 2px #e6a86c55}
+.house-pc-lock-form button,.house-pc-button{border:2px solid #ffe1aa;background:#80546f;color:#fff6e9;padding:10px 13px;font-weight:900;box-shadow:3px 3px 0 #120e18}
+.house-pc-error{min-height:20px;margin-top:10px;color:#ff9ea4;font-size:12px}
+.house-pc-desktop{overflow:hidden;background:radial-gradient(ellipse at 20% 15%,#4c91ae55,transparent 28%),radial-gradient(ellipse at 83% 73%,#df659355,transparent 31%),linear-gradient(135deg,#152c48 0%,#342444 55%,#11182c 100%)}
+.house-pc-desktop[hidden],.house-pc-lock[hidden]{display:none!important}
+.house-pc-desktop:after{content:"♥  ARCADE  ♥";position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:clamp(30px,7vw,94px);font-weight:1000;letter-spacing:.12em;color:#fff2de17;text-shadow:4px 4px #120e1c18;pointer-events:none;white-space:nowrap}
+.house-pc-icons{position:absolute;inset:16px 12px 55px;z-index:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,100px));grid-auto-rows:104px;align-content:start;gap:7px;overflow:auto;padding:2px}
+.house-pc-icon{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;min-width:0;padding:8px 5px;border:1px solid transparent;background:transparent;color:#fff;text-shadow:1px 2px #15101e;font-size:11px;overflow-wrap:anywhere}
+.house-pc-icon:hover,.house-pc-icon:focus-visible{border-color:#f3d9ff99;background:#ffffff1c;outline:none}
+.house-pc-icon-art{display:grid;place-items:center;width:54px;height:54px;font-size:32px;filter:drop-shadow(2px 3px 1px #120e18)}
+.house-pc-chrome-mark{position:relative;width:48px;height:48px;border:3px solid #fff;border-radius:50%;background:conic-gradient(#e84437 0deg 118deg,#f6c844 118deg 238deg,#22a46b 238deg 360deg);box-shadow:2px 3px 2px #130f1a}
+.house-pc-chrome-mark:after{content:"";position:absolute;inset:13px;border:3px solid #fff;border-radius:50%;background:#458bd1}
+.house-pc-game-icon .house-pc-icon-art{font-size:29px}
+.house-pc-taskbar{position:absolute;z-index:2;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;min-height:43px;padding:5px 9px;background:#171421df;border-top:2px solid #c28ca766;backdrop-filter:blur(10px);font-size:11px}
+.house-pc-taskbar button{border:1px solid #957891;background:#392a45;color:#fff2de;padding:6px 10px}
+.house-pc-taskbar-spacer{flex:1}
+.house-pc-clock{font-variant-numeric:tabular-nums;color:#ffe0a9;padding:0 5px}
+.house-pc-app-window{position:absolute;z-index:5;top:5%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;width:min(850px,88%);height:min(570px,84%);min-height:230px;border:3px solid #b28aa7;background:#1b1b29;box-shadow:8px 8px 0 #100d18;color:#fff}
+.house-pc-app-window[hidden]{display:none!important}
+.house-pc-app-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:39px;padding:5px 8px 5px 12px;background:linear-gradient(90deg,#563b60,#292740);font-weight:900;font-size:12px}
+.house-pc-app-head button{width:30px;height:28px;border:1px solid #f2b1b1;background:#a83d4c;color:#fff;font-size:17px}
+.house-pc-app-content{display:flex;flex:1;min-height:0;flex-direction:column}
+.house-pc-notepad-tools,.house-pc-browser-tools{display:flex;align-items:center;gap:7px;padding:7px;background:#282637;border-bottom:1px solid #55485f}
+.house-pc-notepad-tools span{flex:1;color:#c9e4bf;font-size:11px}
+.house-pc-notepad{flex:1;min-height:0;width:100%;resize:none;border:0;outline:0;padding:14px;background:#fffdf5;color:#24212a;font:15px/1.55 'Consolas','Courier New',monospace}
+.house-pc-browser-tools input{flex:1;min-width:0;padding:8px;border:1px solid #796987;background:#171722;color:#fff;font-size:12px}
+.house-pc-google-frame{flex:1;min-height:0;width:100%;border:0;background:#fff}
+.house-pc-browser-hint{margin:0;padding:5px 8px;background:#211d2b;color:#dfc9d4;font-size:10px}
+.house-pc-empty-games{grid-column:1/-1;max-width:400px;margin:12px;padding:12px;background:#171421b8;border:1px solid #d0a2a266;color:#f5dcbf;font-size:12px;line-height:1.5}
+.house-pc-progress-panel{flex:1;min-height:0;overflow:auto;padding:14px;background:#111523;color:#f4efff}
+.house-pc-progress-panel h3{margin:0 0 10px;color:#ffe0ae;font-size:14px}
+.house-pc-progress-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.house-pc-progress-summary span{padding:7px 9px;border:1px solid #6a7893;background:#20263a;color:#e6eafa;font-size:11px}
+.house-pc-progress-panel .house-ps5-list{gap:6px}
+.house-pc-progress-panel .house-ps5-list li{font-size:12px}
+.house-pc-progress-empty{padding:12px;border:1px dashed #68758e;color:#bec9df;font-size:12px}
+.house-pc-screen [hidden]{display:none!important}
+.house-ps5-overlay{position:absolute;inset:0;z-index:28;display:flex;flex-direction:column;overflow:hidden;color:#f6f5ff;background:radial-gradient(ellipse at 82% 8%,#2360a655,transparent 33%),radial-gradient(ellipse at 8% 90%,#713d8d55,transparent 34%),linear-gradient(135deg,#090d1c,#11162b 55%,#090b16);font-family:'Trebuchet MS',Verdana,sans-serif;touch-action:auto;image-rendering:auto}
+.house-ps5-overlay[hidden]{display:none!important}
+.house-ps5-overlay:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.28;background:repeating-linear-gradient(0deg,transparent 0 47px,#7fb9ff17 48px 49px),repeating-linear-gradient(90deg,transparent 0 47px,#7fb9ff12 48px 49px)}
+.house-ps5-head,.house-ps5-main{position:relative;z-index:1}
+.house-ps5-head{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:66px;padding:9px clamp(12px,3vw,34px);background:#080b16d9;border-bottom:1px solid #7283a755}
+.house-ps5-brand{display:flex;align-items:center;gap:12px;font-size:12px;letter-spacing:.15em;color:#dce8ff;font-weight:900}
+.house-ps5-logo{display:grid;place-items:center;width:42px;height:42px;border:1px solid #b0c5f4;background:linear-gradient(145deg,#354d78,#161d38);box-shadow:0 0 18px #5584e833;font-size:23px;color:#fff}
+.house-ps5-head-right{display:flex;align-items:center;gap:14px;color:#c8d4f2;font-size:12px}
+.house-ps5-clock{font-variant-numeric:tabular-nums;letter-spacing:.07em}
+.house-ps5-close{width:40px;height:38px;border:1px solid #e09bab;background:#852c49;color:#fff;font-size:22px;line-height:1}
+.house-ps5-main{width:min(1440px,100%);margin:0 auto;padding:clamp(12px,2.5vw,30px) clamp(12px,3vw,36px) 28px;overflow:auto;scrollbar-color:#61749d #11172a}
+.house-ps5-section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 0 10px}
+.house-ps5-section-head h2{margin:0;color:#fff;font-size:clamp(20px,3vw,31px);letter-spacing:.02em}
+.house-ps5-section-head span,.house-ps5-eyebrow{color:#9db6e9;font-size:10px;font-weight:900;letter-spacing:.15em;text-transform:uppercase}
+.house-ps5-games{display:flex;gap:12px;overflow-x:auto;padding:4px 4px 17px;scroll-snap-type:x mandatory;scrollbar-color:#61749d #11172a}
+.house-ps5-game-card{position:relative;display:flex;flex:0 0 clamp(128px,15vw,184px);height:clamp(146px,17vw,202px);flex-direction:column;justify-content:space-between;overflow:hidden;padding:13px;text-align:left;scroll-snap-align:start;border:1px solid #8194bd88;background:linear-gradient(145deg,hsl(var(--game-hue,220) 54% 32%),#101322 78%);color:white;box-shadow:0 7px 22px #02040c88;transition:transform .15s,border-color .15s,box-shadow .15s}
+.house-ps5-game-card:before{content:"";position:absolute;inset:auto -22px -48px auto;width:128px;height:128px;border:1px solid #d5e4ff55;transform:rotate(45deg);box-shadow:0 0 0 14px #ffffff08,0 0 0 30px #ffffff06}
+.house-ps5-game-card:hover,.house-ps5-game-card:focus-visible{transform:translateY(-3px);border-color:#d3e6ff;box-shadow:0 0 0 2px #71a7ee66,0 12px 26px #02040c}
+.house-ps5-game-card.selected{border:2px solid #e1c68e;box-shadow:0 0 0 2px #e1c68e44,0 0 24px #e5b86b33}
+.house-ps5-game-mark{position:relative;display:grid;place-items:center;width:54px;height:54px;border:1px solid #ffffff85;background:#080b1b88;font-size:25px;font-weight:1000;letter-spacing:-.05em;text-shadow:0 2px 7px #000}
+.house-ps5-game-name{position:relative;max-width:100%;font-size:13px;font-weight:900;line-height:1.3;text-shadow:0 2px 7px #000;overflow-wrap:anywhere}
+.house-ps5-game-meta{position:relative;margin-top:4px;color:#c8d8fa;font-size:10px}
+.house-ps5-empty{padding:20px;color:#d2d9ee;border:1px dashed #7583a2;background:#11182b;font-size:13px}
+.house-ps5-feature{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:4px 0 17px;padding:17px 20px;border:1px solid #6e83ae;background:linear-gradient(100deg,#18213b,#1e1d39 55%,#18263b);box-shadow:0 8px 24px #02040c88}
+.house-ps5-feature h2{margin:5px 0;color:#fff;font-size:clamp(19px,3vw,27px)}
+.house-ps5-feature p{margin:0;color:#c5d0e9;font-size:12px;line-height:1.5}
+.house-ps5-play{flex:0 0 auto;border:1px solid #f1d9a7;background:linear-gradient(#b7764e,#754054);color:#fff;padding:12px 22px;font-size:13px;font-weight:1000;box-shadow:3px 4px 0 #090b15}
+.house-ps5-play:disabled{opacity:.42;cursor:not-allowed}
+.house-ps5-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.house-ps5-card{min-width:0;min-height:150px;padding:15px;border:1px solid #5c6b8b;background:linear-gradient(145deg,#1b2234ed,#111625f2);box-shadow:0 7px 19px #02040c77}
+.house-ps5-card h3{display:flex;align-items:center;gap:8px;margin:0 0 12px;color:#f5e5bc;font-size:13px;letter-spacing:.03em}
+.house-ps5-trophy-total{display:flex;align-items:baseline;gap:7px;margin-bottom:10px;color:#fff;font-size:27px;font-weight:1000}
+.house-ps5-trophy-total small{color:#aab8d6;font-size:11px;font-weight:500}
+.house-ps5-trophy-types{display:flex;gap:8px;flex-wrap:wrap}
+.house-ps5-trophy-types span{padding:6px 8px;background:#ffffff0b;border:1px solid #73809b55;font-size:10px;color:#d5def2}
+.house-ps5-list{display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+.house-ps5-list li{display:flex;justify-content:space-between;gap:8px;padding:8px 9px;background:#0b1020aa;border-left:2px solid #6f96d5;color:#e8edfa;font-size:11px;line-height:1.4}
+.house-ps5-list li small{display:block;margin-top:2px;color:#97a7c9;font-size:10px}
+.house-ps5-list .empty{display:block;color:#9eabc8;border-left-color:#59647a}
+.house-ps5-stat-number{font-size:30px;font-weight:1000;color:#fff}
+.house-ps5-stat-caption{color:#aab8d6;font-size:11px;line-height:1.5}
+.house-ps5-form-card{grid-column:1/-1;min-height:0}
+.house-ps5-form{display:grid;grid-template-columns:1.1fr .95fr 1.5fr .8fr .9fr auto;align-items:end;gap:9px}
+.house-ps5-form label{display:flex;min-width:0;flex-direction:column;gap:5px;color:#b9c7e2;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.house-ps5-form input,.house-ps5-form select{box-sizing:border-box;width:100%;min-width:0;height:38px;border:1px solid #697999;background:#0c1222;color:#fff;padding:7px 9px;font:12px 'Trebuchet MS',Verdana,sans-serif}
+.house-ps5-form button{height:38px;border:1px solid #e5c796;background:#75506a;color:white;padding:0 13px;font-size:11px;font-weight:900}
+.house-ps5-form-note{margin:10px 0 0;color:#9eabc8;font-size:10px;line-height:1.45}
+@media(max-width:850px){.house-ps5-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.house-ps5-form{grid-template-columns:repeat(2,minmax(0,1fr))}.house-ps5-form button{grid-column:1/-1}}
+@media(max-width:520px){.house-ps5-head{min-height:54px}.house-ps5-brand{font-size:10px;letter-spacing:.08em}.house-ps5-logo{width:34px;height:34px;font-size:19px}.house-ps5-head-right{gap:8px;font-size:10px}.house-ps5-feature{align-items:flex-start;flex-direction:column}.house-ps5-play{width:100%}.house-ps5-cards{grid-template-columns:1fr}.house-ps5-card{min-height:120px}.house-ps5-form{grid-template-columns:1fr 1fr}.house-ps5-form label:nth-child(1),.house-ps5-form label:nth-child(3){grid-column:1/-1}}
+@media(max-width:650px){
+ .house-pc-overlay{padding:0}
+ .house-pc-case{width:100vw;height:100dvh;max-height:100dvh;border:0;box-shadow:none}
+ .house-pc-case-head{min-height:38px}
+ .house-pc-icons{inset:10px 6px 51px;grid-template-columns:repeat(3,minmax(70px,1fr));grid-auto-rows:93px;gap:3px}
+ .house-pc-app-window{top:2%;width:96%;height:91%;min-height:0}
+ .house-pc-browser-tools{flex-wrap:wrap}
+ .house-pc-browser-tools input{flex:1 1 65%}
+ .house-pc-browser-tools .house-pc-button{flex:1 1 auto}
+}
+.house-tv-section-title{margin:15px 0 6px;color:#ffe0ae;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.house-tv-platform-input{box-sizing:border-box;width:100%;padding:11px;border:2px solid #806079;background:#17121f;color:#fff0df;font:inherit}
+.house-tv-platform-note{font-size:11px!important;color:#e5c4bd!important}
 .house-tv-gallery{display:grid;gap:8px;max-height:45vh;overflow:auto;margin:10px 0}
 .house-tv-video-item{display:flex;flex-direction:column;gap:4px;text-align:left;border:2px solid #806079;background:#2d2037;color:#fff0df;padding:10px;width:100%;min-height:52px}
 .house-tv-video-item strong{font-size:13px;overflow-wrap:anywhere}
@@ -834,14 +954,94 @@
     </div>
     <div class="house-tv-stage">
       <iframe id="house-tv-iframe" title="Señal de televisión en vivo" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
+      <div class="house-tv-unavailable" id="house-tv-unavailable" hidden aria-live="polite">
+        <strong id="house-tv-unavailable-title">Canal seleccionado</strong>
+        <p id="house-tv-unavailable-message">Este canal no permite reproducir su señal dentro de esta televisión.</p>
+      </div>
+      <div id="house-tv-youtube-app" hidden></div>
+      <div class="house-tv-youtube-player" id="house-tv-youtube-player" hidden><div id="house-tv-youtube-player-inner"></div></div>
       <video id="house-tv-video" controls playsinline preload="metadata" hidden></video>
       <button class="house-tv-start" id="house-tv-start" type="button" hidden>▶ Tocar para comenzar</button>
     </div>
     <div class="house-tv-footer">
       <span id="house-tv-status">La televisión está compartida.</span>
-      <a id="house-tv-official" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir señal oficial</a>
     </div>
     <input id="house-tv-upload" type="file" accept="video/mp4,video/webm,video/quicktime,video/ogg" hidden>
+  </div>
+  <div class="house-pc-overlay" id="house-pc-overlay" hidden aria-label="Computador de escritorio">
+    <div class="house-pc-case">
+      <div class="house-pc-case-head"><span>▣ PAPOI PC · ARCADE DESKTOP</span><button type="button" id="house-pc-close" aria-label="Cerrar PC">×</button></div>
+      <div class="house-pc-screen">
+        <section class="house-pc-lock" id="house-pc-lock" aria-label="Pantalla de bloqueo">
+          <div class="house-pc-lock-card">
+            <div class="house-pc-lock-logo" aria-hidden="true">♥</div>
+            <h2>PC de Papoi</h2>
+            <p>Escribe la contraseña para entrar al escritorio.</p>
+            <form class="house-pc-lock-form" id="house-pc-login-form">
+              <input id="house-pc-password" type="password" autocomplete="current-password" placeholder="Contraseña" aria-label="Contraseña del computador" required>
+              <button type="submit">Desbloquear</button>
+            </form>
+            <div class="house-pc-error" id="house-pc-error" aria-live="polite"></div>
+          </div>
+        </section>
+        <section class="house-pc-desktop" id="house-pc-desktop" hidden aria-label="Escritorio de Papoi">
+          <div class="house-pc-icons" id="house-pc-icons">
+            <button class="house-pc-icon" type="button" data-pc-app="chrome"><span class="house-pc-icon-art"><span class="house-pc-chrome-mark"></span></span><span>Google Chrome</span></button>
+            <button class="house-pc-icon" type="button" data-pc-app="notepad"><span class="house-pc-icon-art">🗒️</span><span>Bloc de notas</span></button>
+            <button class="house-pc-icon" type="button" data-pc-app="progress"><span class="house-pc-icon-art">🏆</span><span>Récords y logros</span></button>
+          </div>
+          <div class="house-pc-app-window" id="house-pc-app-window" hidden>
+            <div class="house-pc-app-head"><span id="house-pc-app-title">Aplicación</span><button type="button" id="house-pc-app-close" aria-label="Cerrar aplicación">×</button></div>
+            <div class="house-pc-app-content" id="house-pc-app-content"></div>
+          </div>
+          <div class="house-pc-taskbar">
+            <button type="button" id="house-pc-start-button">♥ Inicio</button>
+            <button type="button" data-pc-task-app="chrome">Chrome</button>
+            <button type="button" data-pc-task-app="notepad">Notas</button>
+            <button type="button" data-pc-task-app="progress">Progreso</button>
+            <span class="house-pc-taskbar-spacer"></span><span>PC de Papoi</span><span class="house-pc-clock" id="house-pc-clock"></span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <div class="house-ps5-overlay" id="house-ps5-overlay" hidden aria-label="Panel de PlayStation arcade">
+    <header class="house-ps5-head">
+      <div class="house-ps5-brand"><span class="house-ps5-logo" aria-hidden="true">P5</span><span>PAPOI PLAYSTATION<br><small>ARCADE EDITION</small></span></div>
+      <div class="house-ps5-head-right"><span>JUEGOS</span><span class="house-ps5-clock" id="house-ps5-clock"></span><button class="house-ps5-close" type="button" id="house-ps5-close" aria-label="Cerrar PlayStation">×</button></div>
+    </header>
+    <main class="house-ps5-main">
+      <section aria-labelledby="house-ps5-games-title">
+        <div class="house-ps5-section-head"><h2 id="house-ps5-games-title">Juegos</h2><span id="house-ps5-game-count">Biblioteca compartida</span></div>
+        <div class="house-ps5-games" id="house-ps5-games" aria-label="Juegos disponibles"></div>
+      </section>
+      <section class="house-ps5-feature" aria-live="polite">
+        <div><span class="house-ps5-eyebrow">JUEGO SELECCIONADO</span><h2 id="house-ps5-selected-name">Elige un juego</h2><p id="house-ps5-selected-note">Los juegos guardados en la PC aparecen aquí. Selecciona uno para comenzar.</p></div>
+        <button class="house-ps5-play" id="house-ps5-play" type="button" disabled>▶ Jugar</button>
+      </section>
+      <section class="house-ps5-cards" aria-label="Progreso y actividad">
+        <article class="house-ps5-card">
+          <h3>🏆 Trofeos</h3>
+          <div class="house-ps5-trophy-total"><span id="house-ps5-trophy-count">0</span><small>registrados</small></div>
+          <div class="house-ps5-trophy-types"><span>🥉 <b id="house-ps5-bronze">0</b></span><span>🥈 <b id="house-ps5-silver">0</b></span><span>🥇 <b id="house-ps5-gold">0</b></span><span>💎 <b id="house-ps5-platinum">0</b></span><span>⭐ <b id="house-ps5-unranked">0</b> sin nivel</span></div>
+        </article>
+        <article class="house-ps5-card"><h3>✨ Actividad reciente</h3><ul class="house-ps5-list" id="house-ps5-recent"></ul></article>
+        <article class="house-ps5-card"><h3>🎯 Niveles y récords</h3><ul class="house-ps5-list" id="house-ps5-records"></ul></article>
+        <article class="house-ps5-card"><h3>🕹️ Partidas jugadas</h3><div class="house-ps5-stat-number" id="house-ps5-play-count">0</div><div class="house-ps5-stat-caption" id="house-ps5-last-play">Partidas iniciadas en este navegador.</div></article>
+        <article class="house-ps5-card house-ps5-form-card">
+          <h3>＋ Guardar logro, nivel o récord</h3>
+          <form class="house-ps5-form" id="house-ps5-progress-form">
+            <label>Juego<select id="house-ps5-progress-game" required></select></label>
+            <label>Tipo<select id="house-ps5-progress-kind"><option value="achievement">Logro / trofeo</option><option value="level">Nivel</option><option value="record">Récord</option></select></label>
+            <label>Nombre<input id="house-ps5-progress-title" maxlength="80" placeholder="Ej.: Nivel 5 o nuevo récord" required></label>
+            <label>Valor opcional<input id="house-ps5-progress-value" maxlength="32" placeholder="Ej.: 1200 pts"></label>
+            <label>Medalla<select id="house-ps5-progress-trophy"><option value="bronze">Bronce</option><option value="silver">Plata</option><option value="gold">Oro</option><option value="platinum">Platino</option></select></label>
+            <button type="submit">Guardar</button>
+          </form>
+          <p class="house-ps5-form-note">El progreso se guarda en este navegador. Si un juego incluye el puente de progreso de la página, sus logros y niveles pueden aparecer automáticamente; los demás se anotan aquí.</p>
+        </article>
+      </section>
+    </main>
   </div>
   <div class="house-dialog-backdrop" id="house-dialog-backdrop" hidden>
     <div class="house-dialog" role="dialog" aria-modal="true" aria-labelledby="house-dialog-title">
@@ -1345,6 +1545,7 @@ function closeModal(id){
   backdrop.classList.remove('open');
   currentModal = null;
   if(lastFocusedEl && typeof lastFocusedEl.focus === 'function') lastFocusedEl.focus();
+  
 }
 document.getElementById('modal-backdrop').addEventListener('click', ()=>{ if(currentModal) closeModal(currentModal); });
 document.addEventListener('keydown', (e)=>{
@@ -2033,6 +2234,7 @@ const gamePlayerModal = document.getElementById('game-player-modal');
 const gamePlayerFrame = document.getElementById('game-player-frame');
 const gamePlayerTitle = document.getElementById('game-player-title');
 let gamePlayerActive = false;
+let gamePlayerGameId = null;
 let gameSpriteX = -90;
 let gameSpriteDirection = 1;
 let gameSpriteLast = performance.now();
@@ -2094,6 +2296,7 @@ async function renderGamesMenu(){
 
 function clearGameFrame(){
   try{ gamePlayerFrame.srcdoc = ''; }catch(_){ }
+  gamePlayerGameId = null;
 }
 
 function focusGameFrame(){
@@ -2125,7 +2328,7 @@ function forwardGameKey(type, e){
   }
 }
 
-function protectGameContent(html){
+function protectGameContent(html, gameId){
   /* Solo se aplica al HTML del juego dentro del iframe. No modifica el contenido guardado. */
   const style = `
     <style id=\"__game_no_select_style\">
@@ -2145,6 +2348,15 @@ function protectGameContent(html){
       }
     </style>`;
 
+  const progressBridge = `<script>(function(){
+    const gameId=${JSON.stringify(String(gameId||''))};
+    const send=(kind,data)=>{
+      const item=typeof data==='string'?{title:data}:(data&&typeof data==='object'?data:{});
+      parent.postMessage({channel:'house-game-progress',gameId,kind,title:String(item.title||item.name||'Progreso del juego').slice(0,80),value:String(item.value??item.score??'').slice(0,32),trophy:String(item.trophy||'bronze').toLowerCase(),description:String(item.description||'').slice(0,140)},'*');
+    };
+    window.houseGameProgress=Object.freeze({achievement:data=>send('achievement',data),record:data=>send('record',data),level:data=>send('level',data)});
+  })();<\/script>`;
+
   const blocker = `<script>(function(){
     const editable = el => el && (el.matches && el.matches('input,textarea,[contenteditable=\"true\"],[contenteditable=\"\"]'));
     const stop = e => {
@@ -2160,8 +2372,8 @@ function protectGameContent(html){
     document.addEventListener('cut', e => { e.preventDefault(); e.stopPropagation(); }, true);
   })();<\/script>`;
 
-  if(/<\/head>/i.test(html)) html = html.replace(/<\/head>/i, style + '</head>');
-  else html = style + html;
+  if(/<\/head>/i.test(html)) html = html.replace(/<\/head>/i, style + progressBridge + '</head>');
+  else html = style + progressBridge + html;
 
   if(/<\/body>/i.test(html)) html = html.replace(/<\/body>/i, blocker + '</body>');
   else html += blocker;
@@ -2175,6 +2387,7 @@ function openGamePlayer(game){
   gamePlayerTitle.textContent = game.name || 'Juego';
   gamePlayerFrame.setAttribute('title', game.name || 'Juego');
   gamePlayerActive = true;
+  gamePlayerGameId = String(game.id||'');
 
   // Ejecutamos el HTML directamente como documento incrustado. Esto mantiene
   // sus scripts, Canvas, botones y estructura intactos sin convertirlo en blob:.
@@ -2182,7 +2395,7 @@ function openGamePlayer(game){
     setTimeout(focusGameFrame, 40);
     setTimeout(focusGameFrame, 180);
   };
-  gamePlayerFrame.srcdoc = protectGameContent(game.content);
+  gamePlayerFrame.srcdoc = protectGameContent(game.content,gamePlayerGameId);
   openModal('game-player-modal');
   setTimeout(focusGameFrame, 50);
   setTimeout(focusGameFrame, 300);
@@ -2222,32 +2435,59 @@ function openGamesMenu(){
     openModal('games-menu-modal');
   });
 }
+window.houseGameLibrary={
+  async list(){return (await dbGetAll('games')).sort((a,b)=>(Number(a.addedAt)||0)-(Number(b.addedAt)||0));},
+  async open(id,options={}){
+    const game=(await dbGetAll('games')).find(item=>String(item.id)===String(id));
+    if(!game||typeof game.content!=='string'||!game.content.trim())return false;
+    window.houseGameReturnToPlay=!!options.returnToPlay;
+    document.body.classList.add('house-games-open');
+    openGamePlayer(game);
+    return true;
+  }
+};
+window.addEventListener('house-open-games',()=>{
+  window.houseGameReturnToPlay=false;
+  document.body.classList.add('house-games-open');
+  openGamesMenu();
+});
+window.addEventListener('message',event=>{
+  const data=event.data;
+  if(event.source!==gamePlayerFrame.contentWindow||!data||data.channel!=='house-game-progress'||String(data.gameId)!==String(gamePlayerGameId||''))return;
+  if(!['achievement','record','level'].includes(data.kind))return;
+  const detail={gameId:String(data.gameId),kind:data.kind,title:String(data.title||'Progreso del juego').slice(0,80),value:String(data.value||'').slice(0,32),trophy:['bronze','silver','gold','platinum'].includes(String(data.trophy).toLowerCase())?String(data.trophy).toLowerCase():'bronze',description:String(data.description||'').slice(0,140),source:'game'};
+  window.dispatchEvent(new CustomEvent('house-game-progress',{detail}));
+});
+
+function finishGamePlayer(){
+  clearGameFrame();gamePlayerActive=false;
+  if(window.houseGameReturnToPlay){document.body.classList.remove('house-games-open');window.houseGameReturnToPlay=false;}
+  window.dispatchEvent(new Event('house-game-closed'));
+}
 
 document.getElementById('game-player-back').addEventListener('click', ()=>{
-  clearGameFrame();
-  gamePlayerActive = false;
+  const returnToPlayStation=!!window.houseGameReturnToPlay;
+  finishGamePlayer();
   closeModal('game-player-modal');
-  openGamesMenu();
+  if(!returnToPlayStation)openGamesMenu();
 });
 
 document.querySelectorAll('[data-modal-close="game-player-modal"]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    clearGameFrame();
-    gamePlayerActive = false;
+    finishGamePlayer();
   });
 });
 
 // Limpieza antes de los cierres globales por backdrop/Escape.
 document.getElementById('modal-backdrop').addEventListener('click', ()=>{
   if(document.getElementById('game-player-modal').classList.contains('open')){
-    clearGameFrame();
-    gamePlayerActive = false;
+    finishGamePlayer();
   }
 },{capture:true});
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape' && document.getElementById('game-player-modal').classList.contains('open')){
-    clearGameFrame();
-    gamePlayerActive = false;
+    if(window.houseGameReturnToPlay){e.preventDefault();e.stopImmediatePropagation();finishGamePlayer();closeModal('game-player-modal');return;}
+    finishGamePlayer();
   }
 },{capture:true});
 
@@ -2304,7 +2544,7 @@ document.getElementById('music-file-input').addEventListener('change', async (e)
     await dbAdd('music', {id:'song', name:file.name, mimeType:file.type, blob:file, addedAt:Date.now()});
     await renderMusicAdminPanel();
     await loadStoredMusicIntoAudio();
-    if(document.getElementById('experience').classList.contains('active')) bgAudio.play().catch(()=>{});
+    if(document.getElementById('experience').classList.contains('active')&&document.getElementById('house-tv-overlay')?.hidden!==false) bgAudio.play().catch(()=>{});
   }catch(err){ console.warn('No se pudo guardar la canción', file.name, err); }
 });
 document.getElementById('music-delete-btn').addEventListener('click', async ()=>{
@@ -3704,7 +3944,10 @@ const screen=$('house-screen'),launch=$('house-launch'),closeBtn=$('house-close'
 if(!screen||!launch||!sb){console.warn('Casa Digital: faltan elementos o cliente Supabase');return;}
 const canvas=$('house-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const modal=$('house-dialog-backdrop'),modalTitle=$('house-dialog-title'),modalContent=$('house-dialog-content'),modalActions=$('house-dialog-actions');
-const tvOverlay=$('house-tv-overlay'),tvTitle=$('house-tv-title'),tvFrame=$('house-tv-iframe'),tvVideo=$('house-tv-video'),tvStart=$('house-tv-start'),tvStatus=$('house-tv-status'),tvOfficial=$('house-tv-official'),tvUpload=$('house-tv-upload');
+const tvOverlay=$('house-tv-overlay'),tvTitle=$('house-tv-title'),tvFrame=$('house-tv-iframe'),tvVideo=$('house-tv-video'),tvStart=$('house-tv-start'),tvStatus=$('house-tv-status'),tvUpload=$('house-tv-upload'),tvUnavailable=$('house-tv-unavailable');
+const tvYouTubeApp=$('house-tv-youtube-app'),tvYouTubeLogin=$('house-tv-youtube-login'),tvYouTubeAccount=$('house-tv-youtube-account'),tvYouTubeNote=$('house-tv-youtube-note'),tvYouTubeSearch=$('house-tv-youtube-search-form'),tvYouTubeQuery=$('house-tv-youtube-query'),tvYouTubeResults=$('house-tv-youtube-results'),tvYouTubePlayerHost=$('house-tv-youtube-player');
+const pcOverlay=$('house-pc-overlay'),pcLock=$('house-pc-lock'),pcDesktop=$('house-pc-desktop'),pcLoginForm=$('house-pc-login-form'),pcPassword=$('house-pc-password'),pcError=$('house-pc-error'),pcIcons=$('house-pc-icons'),pcAppWindow=$('house-pc-app-window'),pcAppTitle=$('house-pc-app-title'),pcAppContent=$('house-pc-app-content'),pcClock=$('house-pc-clock');
+const ps5Overlay=$('house-ps5-overlay'),ps5GamesEl=$('house-ps5-games'),ps5GameCount=$('house-ps5-game-count'),ps5SelectedName=$('house-ps5-selected-name'),ps5SelectedNote=$('house-ps5-selected-note'),ps5PlayButton=$('house-ps5-play'),ps5Clock=$('house-ps5-clock'),ps5ProgressForm=$('house-ps5-progress-form'),ps5ProgressGame=$('house-ps5-progress-game');
 const roomLabel=$('house-subtitle'),hint=$('house-help'),onlineLabel=$('house-online'),progressBox=$('house-progress'),toastEl=$('house-toast');
 const joy=$('house-joystick'),knob=$('house-knob'),boardTools=$('house-board-tools');
 const W=1440,H=720,SPEED=148,ROLL_SPEED=190;
@@ -3713,17 +3956,257 @@ const BOARD_COLORS={black:'#24232a',blue:'#3476bd',red:'#c84a52',eraser:'#f3efdf
 const RECIPES={eggs:{name:'Huevos',ingredients:{egg:2},seconds:8,heal:22},rice:{name:'Arroz',ingredients:{rice:1,tomato:1},seconds:13,heal:30},pasta:{name:'Pasta',ingredients:{pasta:1,cheese:1},seconds:16,heal:34},sandwich:{name:'Sándwich',ingredients:{bread:1,cheese:1},seconds:7,heal:20}};
 const INGREDIENTS={egg:'Huevos',rice:'Arroz',pasta:'Pasta',bread:'Pan',cheese:'Queso',tomato:'Tomate',dog_food:'Comida para perrito'};
 const ROOMS={main:'Sala principal',bathroom:'Baño',bedroom:'Dormitorio'};
+const PC_NOTES_KEY='house-pc-notes-v1';
+const PS5_PROFILE_KEY='house-ps5-profile-v1';
+let ps5Games=[],ps5SelectedGameId='',ps5NativeEvents=[],parkourProgressClient=null;
+function readPs5Profile(){
+ try{const data=JSON.parse(localStorage.getItem(PS5_PROFILE_KEY)||'{}');return{games:data&&data.games&&typeof data.games==='object'?data.games:{},events:Array.isArray(data?.events)?data.events.filter(item=>item&&typeof item==='object'):[]};}
+ catch(_){return{games:{},events:[]};}
+}
+let ps5Profile=readPs5Profile();
+function savePs5Profile(){try{localStorage.setItem(PS5_PROFILE_KEY,JSON.stringify(ps5Profile));return true;}catch(_){return false;}}
+function ps5GameName(id){return ps5Games.find(game=>String(game.id)===String(id))?.name||ps5Games.find(game=>String(game.id)===String(id))?.originalName||'Juego';}
+function allPs5ProgressEvents(){return [...ps5NativeEvents,...ps5Profile.events].sort((a,b)=>(Number(b.at)||0)-(Number(a.at)||0));}
+function addPs5Progress(detail={}){
+ const kind=['achievement','level','record'].includes(detail.kind)?detail.kind:null;
+ if(!kind||!detail.gameId)return;
+ const title=String(detail.title||'Progreso del juego').trim().slice(0,80);
+ if(!title)return;
+ const trophy=['bronze','silver','gold','platinum'].includes(String(detail.trophy||'').toLowerCase())?String(detail.trophy).toLowerCase():'bronze';
+ const at=Date.now();
+ if(ps5Profile.events.some(item=>String(item.gameId)===String(detail.gameId)&&item.kind===kind&&item.title===title&&item.value===String(detail.value||'')&&at-(Number(item.at)||0)<1800))return;
+  ps5Profile.events.unshift({gameId:String(detail.gameId),kind,title,value:String(detail.value||'').slice(0,32),trophy,description:String(detail.description||'').slice(0,140),at,source:detail.source||'manual'});
+  ps5Profile.events=ps5Profile.events.slice(0,250);savePs5Profile();renderPs5Profile();window.dispatchEvent(new Event('house-native-progress-updated'));
+}
+function ps5ListRow(list,item,kind){
+ const li=document.createElement('li'),text=document.createElement('span'),title=document.createElement('span'),meta=document.createElement('small'),value=document.createElement('span');
+ const mark=kind==='achievement'?'🏆':kind==='level'?'🎚️':'🎯';
+ title.textContent=mark+' '+item.title;
+ const savedDate=Number(item.at)?new Date(Number(item.at)).toLocaleDateString('es-CL',{day:'2-digit',month:'short'}):'';
+ meta.textContent=ps5GameName(item.gameId)+(savedDate?' · '+savedDate:'');
+ text.append(title,meta);value.textContent=item.value||'';li.append(text,value);list.appendChild(li);
+}
+function renderPs5Profile(){
+ if(!ps5Overlay)return;
+ const events=allPs5ProgressEvents();
+ const trophies=events.filter(item=>item.kind==='achievement');
+ $('house-ps5-trophy-count').textContent=String(trophies.length);
+ for(const tier of ['bronze','silver','gold','platinum'])$(('house-ps5-'+tier)).textContent=String(trophies.filter(item=>item.trophy===tier).length);
+ $('house-ps5-unranked').textContent=String(trophies.filter(item=>!['bronze','silver','gold','platinum'].includes(item.trophy)).length);
+ const recent=$('house-ps5-recent');recent.replaceChildren();
+ if(!events.length){const empty=document.createElement('li');empty.className='empty';empty.textContent='Todavía no hay logros o actividad guardada.';recent.appendChild(empty);}
+ else events.slice(0,4).forEach(item=>ps5ListRow(recent,item,item.kind));
+ const records=$('house-ps5-records'),levelRecords=events.filter(item=>item.kind==='record'||item.kind==='level').slice(0,4);records.replaceChildren();
+ if(!levelRecords.length){const empty=document.createElement('li');empty.className='empty';empty.textContent='Los niveles y récords que guardes aparecerán aquí.';records.appendChild(empty);}
+ else levelRecords.forEach(item=>ps5ListRow(records,item,item.kind));
+ const total=Object.values(ps5Profile.games).reduce((sum,item)=>sum+(Number(item?.plays)||0),0);
+ $('house-ps5-play-count').textContent=String(total);
+ const last=Object.entries(ps5Profile.games).sort((a,b)=>(Number(b[1]?.lastPlayed)||0)-(Number(a[1]?.lastPlayed)||0))[0];
+ $('house-ps5-last-play').textContent=last&&Number(last[1]?.lastPlayed)?'Último juego: '+ps5GameName(last[0])+' · '+new Date(Number(last[1].lastPlayed)).toLocaleDateString('es-CL',{day:'2-digit',month:'short'}):'Las partidas que inicies aparecerán aquí.';
+}
+async function refreshNativeGameProgress(){
+ try{if(!ps5Games.length)ps5Games=await window.houseGameLibrary?.list()||[];}catch(_){}
+ const found=[];
+ const findGame=(term,storageKey)=>ps5Games.find(game=>{
+  const name=String(game.name||'').toLowerCase()+' '+String(game.originalName||'').toLowerCase();
+  return name.includes(term)||String(game.content||'').includes(storageKey);
+ });
+ const gato=findGame('gato','gato_scores_v1');
+ if(gato){
+  try{const score=JSON.parse(localStorage.getItem('gato_scores_v1')||'{}');const x=Number(score.X)||0,o=Number(score.O)||0,tie=Number(score.tie)||0;if(x||o||tie)found.push({gameId:String(gato.id),kind:'record',title:'Marcador guardado',value:'X '+x+' · O '+o+' · Empates '+tie,at:0,source:'game-save'});}catch(_){}
+ }
+ const parkour=findGame('parkour','game_best_scores');
+ if(parkour){
+  const levels={school:'Nivel 1 · Colegio',kfc:'Nivel 2 · KFC',plaza:'Nivel 3 · Plaza de Peñaflor',trapiche:'Nivel 4 · Trapiche'};
+  const achievements=[['level1','Primer paso','Completa el Nivel 1.'],['all_levels','Hasta el final','Completa los cuatro niveles.'],['boss1','Primer duelo','Derrota al primer jefe.'],['bosses3','Batalla final','Derrota a los tres jefes.'],['hearts10','Corazoncito','Recoge 10 corazones.'],['score10000','Puntos y más puntos','Consigue 10.000 puntos.'],['no_damage','Intocable','Completa un nivel sin recibir daño.'],['secret','Curiosa','Descubre una zona secreta.']];
+  try{const scores=JSON.parse(localStorage.getItem('game_best_scores')||'{}');for(const[id,name]of Object.entries(levels)){const value=Number(scores[id])||0;if(value>0)found.push({gameId:String(parkour.id),kind:'record',title:'Mejor puntuación · '+name,value:value.toLocaleString('es-CL')+' pts',at:0,source:'game-save'});}}catch(_){}
+  const unlocked=Math.max(0,Math.min(4,Number(localStorage.getItem('game_unlocked_levels'))||0));
+  if(unlocked)found.push({gameId:String(parkour.id),kind:'level',title:'Niveles desbloqueados',value:unlocked+' / 4',at:0,source:'game-save'});
+  for(const[id,title,description]of achievements){try{if(localStorage.getItem('ach_'+id)==='1')found.push({gameId:String(parkour.id),kind:'achievement',title,description,value:'Desbloqueado',trophy:'unranked',at:0,source:'game-save'});}catch(_){}}
+  try{
+   const authKey='sb-'+new URL(SUPABASE_URL).hostname.split('.')[0]+'-auth-token',savedAuth=JSON.parse(localStorage.getItem(authKey)||'null');
+   const gameUserId=savedAuth?.user?.id||savedAuth?.session?.user?.id||savedAuth?.currentSession?.user?.id;
+   if(gameUserId&&window.supabase){
+    if(!parkourProgressClient)parkourProgressClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{storageKey:authKey,persistSession:true,autoRefreshToken:false,detectSessionInUrl:false}});
+    const [progressResult,achievementResult]=await Promise.all([
+     parkourProgressClient.from('game_progress').select('level_id,score,best_time_ms,unlocked,updated_at').eq('user_id',gameUserId),
+     parkourProgressClient.from('game_achievements').select('achievement_id,unlocked_at').eq('user_id',gameUserId)
+    ]);
+    const levelNames={school:'Nivel 1 · Colegio',kfc:'Nivel 2 · KFC',plaza:'Nivel 3 · Plaza de Peñaflor',trapiche:'Nivel 4 · Trapiche'};
+    for(const row of progressResult.data||[]){const name=levelNames[row.level_id]||String(row.level_id||'Nivel');const score=Number(row.score)||0,time=Number(row.best_time_ms)||0;if(score>0)found.push({gameId:String(parkour.id),kind:'record',title:'Mejor puntuación · '+name,value:score.toLocaleString('es-CL')+' pts',at:Date.parse(row.updated_at)||0,source:'game-cloud'});if(time>0)found.push({gameId:String(parkour.id),kind:'record',title:'Mejor tiempo · '+name,value:(time/1000).toFixed(1)+' s',at:Date.parse(row.updated_at)||0,source:'game-cloud'});}
+    const names=new Map(achievements.map(([id,title,description])=>[id,{title,description}]));
+    for(const row of achievementResult.data||[]){const item=names.get(row.achievement_id);if(item)found.push({gameId:String(parkour.id),kind:'achievement',title:item.title,description:item.description,value:'Desbloqueado',trophy:'unranked',at:Date.parse(row.unlocked_at)||0,source:'game-cloud'});}
+   }
+  }catch(_){}
+ }
+ const shooting=findGame('disparos','shooting_scores');
+ if(shooting&&sb){
+  try{const{data,error}=await sb.from('shooting_scores').select('name,best_score').order('best_score',{ascending:false}).limit(5);if(!error)(data||[]).forEach(row=>found.push({gameId:String(shooting.id),kind:'record',title:'Récord global · '+String(row.name||'Jugador').slice(0,24),value:(Number(row.best_score)||0).toLocaleString('es-CL')+' pts',at:0,source:'game-save'}));}catch(_){}
+ }
+ const unique=new Map();for(const item of found){const key=[item.gameId,item.kind,item.title,item.value].join('|');const previous=unique.get(key);if(!previous||(Number(item.at)||0)>(Number(previous.at)||0))unique.set(key,item);}
+ ps5NativeEvents=[...unique.values()];renderPs5Profile();window.dispatchEvent(new Event('house-native-progress-updated'));
+}
+function paintPcProgress(){
+ const panel=pcAppContent?.querySelector('.house-pc-progress-panel');if(!panel)return;
+ const events=allPs5ProgressEvents();panel.replaceChildren();
+ const heading=document.createElement('h3');heading.textContent='Progreso guardado de los juegos';panel.appendChild(heading);
+ const summary=document.createElement('div');summary.className='house-pc-progress-summary';
+ const achievementCount=events.filter(item=>item.kind==='achievement').length,recordCount=events.filter(item=>item.kind==='record').length,levelCount=events.filter(item=>item.kind==='level').length;
+ for(const label of [achievementCount+' logros',levelCount+' niveles',recordCount+' récords']){const chip=document.createElement('span');chip.textContent=label;summary.appendChild(chip);}panel.appendChild(summary);
+ if(!events.length){const empty=document.createElement('div');empty.className='house-pc-progress-empty';empty.textContent='No se encontraron partidas guardadas todavía. Al abrir esta app se revisan los juegos y sus datos guardados.';panel.appendChild(empty);return;}
+ const list=document.createElement('ul');list.className='house-ps5-list';events.slice(0,30).forEach(item=>ps5ListRow(list,item,item.kind));panel.appendChild(list);
+}
+async function renderPcProgress(){
+ const panel=document.createElement('section');panel.className='house-pc-progress-panel';pcAppContent.appendChild(panel);
+ await refreshNativeGameProgress();paintPcProgress();
+}
+window.addEventListener('house-native-progress-updated',()=>{if(pcAppWindow?.dataset.app==='progress'&&!pcAppWindow.hidden)paintPcProgress();});
+window.addEventListener('house-game-closed',()=>refreshNativeGameProgress());
+window.addEventListener('storage',event=>{if(!event.key||['gato_scores_v1','game_best_scores','game_unlocked_levels'].includes(event.key)||String(event.key).startsWith('ach_'))refreshNativeGameProgress();});
+function renderPs5Games(){
+ if(!ps5GamesEl)return;
+ if(!ps5Games.some(game=>String(game.id)===String(ps5SelectedGameId)))ps5SelectedGameId=String(ps5Games[0]?.id||'');
+ ps5GamesEl.replaceChildren();
+ const count=ps5Games.length;ps5GameCount.textContent=count+' '+(count===1?'juego':'juegos')+' · biblioteca de la PC';
+ if(!count){const empty=document.createElement('div');empty.className='house-ps5-empty';empty.textContent='Todavía no hay juegos en la PC. Agrégalos desde el menú de juegos y aparecerán aquí.';ps5GamesEl.appendChild(empty);}
+ ps5Games.forEach((game,index)=>{
+  const title=String(game.name||game.originalName||'Juego '+(index+1)),button=document.createElement('button'),mark=document.createElement('span'),name=document.createElement('span'),meta=document.createElement('span');
+  const hue=Array.from(title).reduce((sum,char)=>sum+char.charCodeAt(0),195)%360;
+  button.type='button';button.className='house-ps5-game-card'+(String(game.id)===String(ps5SelectedGameId)?' selected':'');button.dataset.ps5Game=String(game.id||'');button.setAttribute('aria-pressed',String(String(game.id)===String(ps5SelectedGameId)));button.style.setProperty('--game-hue',String(hue));
+  mark.className='house-ps5-game-mark';mark.textContent=title.trim().split(/\s+/).slice(0,2).map(word=>word[0]||'').join('').toUpperCase().slice(0,2)||'P5';
+  name.className='house-ps5-game-name';name.textContent=title;
+  meta.className='house-ps5-game-meta';meta.textContent=typeof game.content==='string'&&game.content.trim()?'Seleccionar juego':'No disponible';
+  button.append(mark,name,meta);ps5GamesEl.appendChild(button);
+ });
+ const selected=ps5Games.find(game=>String(game.id)===String(ps5SelectedGameId));
+ const selectedTitle=selected?String(selected.name||selected.originalName||'Juego'):'Elige un juego';
+ ps5SelectedName.textContent=selectedTitle;
+ const stats=ps5Profile.games[ps5SelectedGameId]||{};
+ ps5SelectedNote.textContent=selected?(typeof selected.content==='string'&&selected.content.trim()?'Partidas iniciadas: '+(Number(stats.plays)||0)+' · El mismo juego está en el escritorio de la PC.':'Este archivo no tiene contenido reproducible.'):'Agrega juegos desde la biblioteca de la PC y se mostrarán aquí.';
+ ps5PlayButton.disabled=!selected||typeof selected.content!=='string'||!selected.content.trim();
+ if(ps5ProgressGame){const previous=ps5ProgressGame.value;ps5ProgressGame.replaceChildren();ps5Games.forEach((game,index)=>{const option=document.createElement('option');option.value=String(game.id||'');option.textContent=String(game.name||game.originalName||'Juego '+(index+1));ps5ProgressGame.appendChild(option);});if(ps5Games.some(game=>String(game.id)===previous))ps5ProgressGame.value=previous;else ps5ProgressGame.value=ps5SelectedGameId;}
+ renderPs5Profile();
+}
+async function refreshPs5Games(){
+ try{ps5Games=await window.houseGameLibrary?.list()||[];}
+ catch(error){ps5Games=[];toast('No se pudo cargar la biblioteca: '+friendly(error));}
+ renderPs5Games();
+ await refreshNativeGameProgress();
+}
+async function openPlayStation(){
+ if(!ps5Overlay)return;
+ if(pcOverlay&&!pcOverlay.hidden)closePc();
+ ps5Overlay.hidden=false;gamePaused=true;
+ ps5Clock.textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+ await refreshPs5Games();
+}
+function closePlayStation(){if(ps5Overlay)ps5Overlay.hidden=true;gamePaused=!!(tvOverlay&&!tvOverlay.hidden)||!!(pcOverlay&&!pcOverlay.hidden);}
+async function playSelectedPs5Game(){
+ const id=ps5SelectedGameId;if(!id)return;
+ try{
+  const opened=await window.houseGameLibrary?.open(id,{returnToPlay:true});
+  if(!opened){toast('No se pudo abrir este juego.');return;}
+  const record=ps5Profile.games[id]||{plays:0,lastPlayed:0};record.plays=(Number(record.plays)||0)+1;record.lastPlayed=Date.now();ps5Profile.games[id]=record;savePs5Profile();renderPs5Games();
+ }catch(error){toast('No se pudo abrir el juego: '+friendly(error));}
+}
+window.addEventListener('house-game-progress',event=>addPs5Progress(event.detail||{}));
+function openPc(){
+ if(!pcOverlay)return;
+ pcOverlay.hidden=false;pcLock.hidden=false;pcDesktop.hidden=true;pcAppWindow.hidden=true;
+ pcPassword.value='';pcError.textContent='';pcClock.textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+ gamePaused=true;
+ setTimeout(()=>pcPassword.focus(),40);
+}
+function closePc(){
+ if(pcOverlay)pcOverlay.hidden=true;
+ if(pcAppWindow)pcAppWindow.hidden=true;
+ gamePaused=!!(tvOverlay&&!tvOverlay.hidden);
+}
+async function showPcDesktop(){
+ pcLock.hidden=true;pcDesktop.hidden=false;pcAppWindow.hidden=true;gamePaused=true;
+ pcClock.textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+ await renderPcGameIcons();
+}
+async function renderPcGameIcons(){
+ if(!pcIcons)return;
+ pcIcons.querySelectorAll('[data-pc-game],.house-pc-empty-games').forEach(el=>el.remove());
+ try{
+  const games=await window.houseGameLibrary?.list()||[];
+  if(!games.length){const empty=document.createElement('div');empty.className='house-pc-empty-games';empty.textContent='Aquí aparecerán los juegos guardados en la PC principal.';pcIcons.appendChild(empty);return;}
+  games.forEach((game,index)=>{
+   const button=document.createElement('button');button.type='button';button.className='house-pc-icon house-pc-game-icon';button.dataset.pcGame=String(game.id||'');
+   const art=document.createElement('span');art.className='house-pc-icon-art';art.textContent='🎮';
+   const title=document.createElement('span');title.textContent=String(game.name||game.originalName||'Juego '+(index+1));
+   button.append(art,title);pcIcons.appendChild(button);
+  });
+ }catch(error){const empty=document.createElement('div');empty.className='house-pc-empty-games';empty.textContent='No se pudo cargar la biblioteca de juegos.';pcIcons.appendChild(empty);}
+}
+async function openPcApp(name){
+ if(!pcAppWindow||!pcAppContent)return;
+ pcAppContent.replaceChildren();pcAppWindow.hidden=false;pcAppWindow.dataset.app=name;
+ if(name==='notepad'){
+  pcAppTitle.textContent='Bloc de notas';
+  const tools=document.createElement('div');tools.className='house-pc-notepad-tools';
+  const status=document.createElement('span');status.textContent='Se guarda en este PC.';
+  const saveButton=document.createElement('button');saveButton.type='button';saveButton.className='house-pc-button';saveButton.textContent='Guardar';
+  const area=document.createElement('textarea');area.className='house-pc-notepad';area.placeholder='Escribe aquí tus notas…';area.setAttribute('aria-label','Notas guardadas en este computador');
+  try{area.value=localStorage.getItem(PC_NOTES_KEY)||'';}catch(_){area.value='';}
+  const save=()=>{try{localStorage.setItem(PC_NOTES_KEY,area.value);status.textContent='Guardado en este PC · '+new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});}catch(_){status.textContent='No se pudo guardar en este navegador.';}};
+  area.addEventListener('input',save);saveButton.addEventListener('click',save);
+  tools.append(status,saveButton);pcAppContent.append(tools,area);area.focus();
+  return;
+ }
+  if(name==='progress'){
+   pcAppTitle.textContent='Récords y logros guardados';
+   await renderPcProgress();
+   return;
+  }
+ if(name==='chrome'){
+  pcAppTitle.textContent='Google Chrome · Google';
+  const tools=document.createElement('form');tools.className='house-pc-browser-tools';
+  const search=document.createElement('input');search.type='search';search.placeholder='Buscar en Google';search.setAttribute('aria-label','Buscar en Google');
+  const go=document.createElement('button');go.type='submit';go.className='house-pc-button';go.textContent='Buscar';
+  const openExternal=document.createElement('button');openExternal.type='button';openExternal.className='house-pc-button';openExternal.textContent='Abrir Google en pestaña';
+  const frame=document.createElement('iframe');frame.className='house-pc-google-frame';frame.title='Google dentro de Google Chrome';frame.referrerPolicy='strict-origin-when-cross-origin';frame.src='https://www.google.com/webhp?igu=1&hl=es';
+  const hint=document.createElement('p');hint.className='house-pc-browser-hint';hint.textContent='Si Google no se muestra en esta ventana, ábrelo en otra pestaña del navegador.';
+  tools.addEventListener('submit',event=>{event.preventDefault();const q=search.value.trim();if(q)frame.src='https://www.google.com/search?igu=1&hl=es&q='+encodeURIComponent(q);});
+  openExternal.addEventListener('click',()=>window.open('https://www.google.com','_blank','noopener,noreferrer'));
+  tools.append(search,go,openExternal);pcAppContent.append(tools,frame,hint);search.focus();
+ }
+}
 
 const TV_BUCKET='house-tv-videos';
 const TV_MAX_BYTES=50*1024*1024;
 const TV_MIME_TYPES=['video/mp4','video/webm','video/quicktime','video/ogg'];
+// La API key se restringe a la ruta pública del juego y a YouTube Data API v3.
+// El Client ID OAuth es público. Nunca se incorpora un client secret en esta página.
+const YOUTUBE_DATA_API_KEY='';
+const GOOGLE_OAUTH_CLIENT_ID='';
+const YOUTUBE_READ_SCOPE='https://www.googleapis.com/auth/youtube.readonly';
 const TV_CHANNELS={
- tvn:{name:'TVN',number:'7.1',url:'https://www.tvn.cl/en-vivo'},
- mega:{name:'Mega',number:'9.1',url:'https://www.mega.cl/senal-en-vivo/'},
- chv:{name:'Chilevisión',number:'11.1',url:'https://www.chilevision.cl/senal-online/'},
- tele13:{name:'Tele 13',number:'13.1',url:'https://www.13.cl/en-vivo'}
+ tele13:{name:'Canal 13 · Tele 13',number:'13.1',group:'TV chilena en vivo',detail:'Señal oficial de Canal 13',platform:'tv',embedUrl:'https://rudo.video/live/c13?autostart=0'}
 };
-let tvState={open:false,mode:'channel',channel:'tvn',videoId:null,playing:true,position:0,changedAt:null,changedBy:null};
+
+let tvState={open:false,mode:'channel',channel:'tele13',videoId:null,playing:true,position:0,changedAt:null,changedBy:null};
+let sharedDishes=[];
+let youtubeAccessToken='',youtubeTokenExpiry=0,youtubeTokenClient=null,youtubeIdentityPromise=null,youtubePlayerApiPromise=null,youtubePlayerReadyPromise=null,youtubePlayer=null,youtubePlayerVideoId='',youtubeAppHome=false;
+const tvBackgroundMusic=$('bg-audio');
+let tvBackgroundDucked=false,tvMusicResumeAfterTv=false;
+function setTvBackgroundMusic(active){
+ if(!tvBackgroundMusic)return;
+ if(active){
+  if(!tvBackgroundDucked){
+   tvMusicResumeAfterTv=!tvBackgroundMusic.paused&&!tvBackgroundMusic.ended&&!!tvBackgroundMusic.currentSrc;
+   tvBackgroundDucked=true;
+  }
+  tvBackgroundMusic.pause();
+  return;
+ }
+ if(!tvBackgroundDucked)return;
+ const resume=tvMusicResumeAfterTv&&!!tvBackgroundMusic.currentSrc;
+ tvBackgroundDucked=false;tvMusicResumeAfterTv=false;
+ if(resume)tvBackgroundMusic.play().catch(()=>{});
+}
 let tvTapTimer=null,tvRenderSeq=0,tvIgnoreEventsUntil=0,tvLastCheckpoint=0;
 
 let me=null,people=[],world=null,user=null,channel=null,visible=false,playing=false,choiceBusy=false;
@@ -3778,10 +4261,12 @@ function action(name,value=null){return safeCall('house_action',{p_action:name,p
 
 function normalizeTvState(raw={}){
  const mode=raw.mode==='video'?'video':'channel';
+ const channel=String(raw.channel||'');
+ const validChannel=!!TV_CHANNELS[channel];
  return {
   open:!!raw.open,
   mode,
-  channel:TV_CHANNELS[raw.channel]?raw.channel:'tvn',
+  channel:validChannel?channel:'tele13',
   videoId:raw.videoId||raw.video_id||null,
   playing:raw.playing!==false,
   position:Math.max(0,Number(raw.position??raw.position_seconds)||0),
@@ -3837,9 +4322,12 @@ function closeTvOverlayLocal(){
  if(!tvOverlay)return;
  tvRenderSeq++;
  tvIgnoreEventsUntil=Date.now()+1100;
- tvOverlay.hidden=true;
+ tvOverlay.hidden=true;setTvBackgroundMusic(false);
  if(tvVideo&&!tvVideo.paused)tvVideo.pause();
- if(tvFrame&&tvFrame.getAttribute('src'))tvFrame.src='about:blank';
+ if(youtubePlayer&&typeof youtubePlayer.pauseVideo==='function')youtubePlayer.pauseVideo();
+ if(tvYouTubeApp)tvYouTubeApp.hidden=true;
+ if(tvYouTubePlayerHost)tvYouTubePlayerHost.hidden=true;
+ if(tvFrame&&tvFrame.getAttribute('src')){tvFrame.src='about:blank';tvFrame.dataset.src='';}
  gamePaused=!!(modal&&!modal.hidden);
 }
 async function openTvOverlay(remoteOpen=false){
@@ -3848,15 +4336,15 @@ async function openTvOverlay(remoteOpen=false){
   return;
  }
  if(!remoteOpen&&!tvState.open){
-  await saveTvState({open:true,playing:tvState.mode==='video'?tvState.playing:true});
+  await saveTvState({open:true,playing:tvState.mode==='video'?tvState.playing:tvState.channel==='youtube:home'?false:true});
  }
- tvOverlay.hidden=false;gamePaused=true;
+ tvOverlay.hidden=false;gamePaused=true;setTvBackgroundMusic(true);
  await renderTvState(true);
 }
 async function closeTvScreen(){
  if(tvOverlay.hidden)return;
  try{
-  const position=tvState.mode==='video'&&tvVideo?Number(tvVideo.currentTime)||tvCurrentPosition():tvCurrentPosition();
+  const position=tvState.mode==='video'&&tvVideo?Number(tvVideo.currentTime)||tvCurrentPosition():isYouTubeVideoChannel()?currentYouTubeTime():tvCurrentPosition();
   await saveTvState({open:false,playing:false,position});
  }catch(e){toast('No se pudo cerrar la televisión compartida: '+friendly(e));}
  closeTvOverlayLocal();
@@ -3866,13 +4354,18 @@ function openTvMenu(){
   bottomNotice('Siéntate en el sillón para usar la televisión.');
   return;
  }
- dialog('Televisión compartida',`<p>¿Qué quieren ver juntos?</p><p>Elige una señal de antena o abre la galería de videos que han subido a la tele.</p>`,[
-  {label:'📡 Antena',primary:true,run:openTvChannels},
-  {label:'▣ Galería',run:openTvGallery}
+ dialog('Televisión compartida','<p>Elige un canal, la galería compartida o la PlayStation 5.</p>',[
+  {label:'📡 TV por canal',primary:true,run:()=>openTvChannels(false)},
+  {label:'📱 Sintonizar desde el celular',run:()=>openTvChannels(true)},
+  {label:'▣ Galería compartida',run:openTvGallery},
+   {label:'🎮 PlayStation 5',run:()=>{hideModal();window.dispatchEvent(new Event('house-open-playstation'));}}
  ]);
 }
-function openTvChannels(){
- dialog('Antena · canales disponibles',`<p>Selecciona el canal que quieren sintonizar.</p><div class="house-tv-gallery">${Object.entries(TV_CHANNELS).map(([id,c])=>`<button type="button" class="house-tv-video-item" data-tv-channel="${id}"><strong>${c.number} · ${esc(c.name)}</strong><small>Señal oficial en vivo</small></button>`).join('')}</div>`,[
+function openTvChannels(mobileMode=false){
+ const groups=[...new Set(Object.values(TV_CHANNELS).map(c=>c.group))];
+ const list=groups.map(group=>'<h3 class="house-tv-section-title">'+esc(group)+'</h3><div class="house-tv-gallery">'+Object.entries(TV_CHANNELS).filter(([,c])=>c.group===group).map(([id,c])=>'<button type="button" class="house-tv-video-item" data-tv-channel="'+esc(id)+'"><strong>'+esc(c.number)+' · '+esc(c.name)+'</strong><small>'+esc(c.detail)+'</small></button>').join('')+'</div>').join('');
+ const mobileNote=mobileMode?'<p>El celular reproducirá las señales de canales disponibles por internet. Esta página no puede acceder a una antena terrestre del teléfono; para eso se necesita un receptor de TV compatible.</p>':'';
+ dialog(mobileMode?'Sintonizador del celular · TV por internet':'Canales de televisión','<p>Elige una señal y se reproducirá dentro de la televisión compartida.</p>'+mobileNote+list,[
   {label:'Volver',run:openTvMenu}
  ]);
  modalContent.querySelectorAll('[data-tv-channel]').forEach(button=>button.addEventListener('click',()=>{
@@ -3880,6 +4373,144 @@ function openTvChannels(){
   selectTvChannel(id).catch(e=>toast(friendly(e)));
  }));
 }
+function renderYouTubeApp(){
+ if(!tvYouTubeApp)return;
+ tvYouTubeApp.hidden=false;
+ try{
+  if(localStorage.getItem('house-youtube-consented')==='1'&&!youtubeAccessToken){
+   tvYouTubeAccount.textContent='Acceso concedido antes en este navegador';
+  }
+ }catch(_){}
+ const searchButton=tvYouTubeSearch?.querySelector('button');
+ if(YOUTUBE_DATA_API_KEY||validYouTubeAccessToken()){
+  tvYouTubeNote.textContent='Busca videos en YouTube. Al elegir uno, se reproducirá dentro de la TV compartida.';
+  if(searchButton){searchButton.disabled=false;searchButton.textContent='Buscar';}
+ }else{
+  tvYouTubeNote.textContent='La búsqueda por palabras requiere credenciales oficiales de Google. Mientras tanto, pega un enlace o ID de video y se reproducirá dentro de esta TV.';
+  if(searchButton){searchButton.disabled=false;searchButton.textContent='Reproducir aquí';}
+ }
+ if(!GOOGLE_OAUTH_CLIENT_ID){
+  tvYouTubeLogin.disabled=true;
+  tvYouTubeLogin.title='Falta configurar el OAuth Client ID de Google.';
+ }else{
+  tvYouTubeLogin.disabled=false;
+  tvYouTubeLogin.title='Conectar tu cuenta de Google con acceso de solo lectura a YouTube.';
+ }
+}
+async function openYouTubeApp(){
+ hideModal();
+ await saveTvState({open:true,mode:'channel',channel:'youtube:home',videoId:null,playing:false,position:0});
+ await openTvOverlay(true);
+}
+function loadGoogleIdentityServices(){
+ if(window.google?.accounts?.oauth2)return Promise.resolve();
+ if(!youtubeIdentityPromise)youtubeIdentityPromise=new Promise((resolve,reject)=>{
+  let script=document.querySelector('script[data-house-google-identity]');
+  if(!script){script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;script.defer=true;script.dataset.houseGoogleIdentity='1';document.head.appendChild(script);}
+  const timer=setTimeout(()=>reject(new Error('Google Identity Services no respondió.')),12000);
+  script.addEventListener('load',()=>{clearTimeout(timer);window.google?.accounts?.oauth2?resolve():reject(new Error('No se pudo cargar la conexión con Google.'));},{once:true});
+  script.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('No se pudo cargar la conexión con Google.'));},{once:true});
+ });
+ return youtubeIdentityPromise;
+}
+async function connectYouTubeAccount(){
+ if(!GOOGLE_OAUTH_CLIENT_ID)throw new Error('Falta el OAuth Client ID de Google.');
+ if(location.protocol!=='https:')throw new Error('Inicia sesión desde la versión HTTPS publicada en GitHub Pages.');
+ await loadGoogleIdentityServices();
+ return new Promise((resolve,reject)=>{
+  youtubeTokenClient=window.google.accounts.oauth2.initTokenClient({
+   client_id:GOOGLE_OAUTH_CLIENT_ID,
+   scope:YOUTUBE_READ_SCOPE,
+   callback:async response=>{
+    if(response.error||!response.access_token){reject(new Error(response.error_description||response.error||'Google no autorizó la conexión.'));return;}
+    youtubeAccessToken=response.access_token;
+    youtubeTokenExpiry=Date.now()+(Number(response.expires_in)||3600)*1000;
+    try{localStorage.setItem('house-youtube-consented','1');}catch(_){}
+    try{
+     const account=await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',{headers:{Authorization:'Bearer '+youtubeAccessToken}});
+     if(account.ok){const data=await account.json();tvYouTubeAccount.textContent=data.items?.[0]?.snippet?.title?'Cuenta conectada: '+data.items[0].snippet.title:'Cuenta conectada a YouTube';}
+     else tvYouTubeAccount.textContent='Cuenta conectada a YouTube';
+    }catch(_){tvYouTubeAccount.textContent='Cuenta conectada a YouTube';}
+    renderYouTubeApp();
+    resolve(youtubeAccessToken);
+   }
+  });
+  let prompt='';
+  try{if(localStorage.getItem('house-youtube-consented')!=='1')prompt='consent';}catch(_){prompt='consent';}
+  youtubeTokenClient.requestAccessToken({prompt});
+ });
+}
+function validYouTubeAccessToken(){return youtubeAccessToken&&Date.now()<youtubeTokenExpiry-30000?youtubeAccessToken:'';}
+async function searchYouTube(query){
+ const token=validYouTubeAccessToken();
+ if(!YOUTUBE_DATA_API_KEY&&!token)throw new Error('Para buscar por palabras faltan credenciales oficiales de YouTube.');
+ const url=new URL('https://youtube.googleapis.com/youtube/v3/search');
+ const params=new URLSearchParams({part:'snippet',type:'video',videoEmbeddable:'true',maxResults:'18',q:query,regionCode:'CL',relevanceLanguage:'es',safeSearch:'moderate'});
+ if(YOUTUBE_DATA_API_KEY)params.set('key',YOUTUBE_DATA_API_KEY);
+ url.search=params.toString();
+ const headers={Accept:'application/json'};
+ if(token)headers.Authorization='Bearer '+token;
+ let response=await fetch(url.href,{headers});
+ if(response.status===401&&token&&YOUTUBE_DATA_API_KEY){youtubeAccessToken='';youtubeTokenExpiry=0;delete headers.Authorization;response=await fetch(url.href,{headers});}
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error?.message||'No se pudo buscar en YouTube.');
+ return Array.isArray(data.items)?data.items:[];
+}
+function extractYouTubeVideoId(input){
+ const value=String(input||'').trim();
+ if(/^[A-Za-z0-9_-]{11}$/.test(value))return value;
+ let candidate=value;
+ if(/^(?:www\.|m\.)?(?:youtube\.com|youtu\.be)\//i.test(candidate))candidate='https://'+candidate;
+ try{
+  const url=new URL(candidate);
+  const host=url.hostname.toLowerCase();
+  if(!['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtu.be','www.youtu.be','youtube-nocookie.com','www.youtube-nocookie.com'].includes(host))return '';
+  let id='';
+  if(host==='youtu.be'||host==='www.youtu.be')id=url.pathname.split('/').filter(Boolean)[0]||'';
+  else if(url.pathname==='/watch')id=url.searchParams.get('v')||'';
+  else id=/^\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})(?:\/|$)/.exec(url.pathname)?.[1]||'';
+  return /^[A-Za-z0-9_-]{11}$/.test(id)?id:'';
+ }catch(_){return '';}
+}
+async function runYouTubeSearch(event){
+ event?.preventDefault();
+ const query=String(tvYouTubeQuery?.value||'').trim();
+ if(!query)return;
+ const directVideoId=extractYouTubeVideoId(query);
+ if(directVideoId){
+  tvYouTubeResults.innerHTML='';
+  tvYouTubeNote.textContent='Abriendo el video dentro de la TV…';
+  try{await selectYouTubeResult(directVideoId);}
+  catch(error){tvYouTubeNote.textContent=friendly(error);}
+  return;
+ }
+ if(!YOUTUBE_DATA_API_KEY&&!validYouTubeAccessToken()){
+  tvYouTubeNote.textContent='La búsqueda por palabras necesita credenciales de Google. Por ahora usa un enlace de YouTube o su ID para reproducirlo aquí.';
+  return;
+ }
+ tvYouTubeNote.textContent='Buscando “'+query.slice(0,70)+'”…';
+ tvYouTubeResults.innerHTML='';
+ try{
+  const results=await searchYouTube(query);
+  tvYouTubeResults.innerHTML=results.map(item=>{
+   const id=String(item.id?.videoId||'');
+   if(!/^[A-Za-z0-9_-]{11}$/.test(id))return '';
+   const title=String(item.snippet?.title||'Video de YouTube');
+   const creator=String(item.snippet?.channelTitle||'YouTube');
+   const thumb=item.snippet?.thumbnails?.medium?.url||item.snippet?.thumbnails?.default?.url||'';
+   return '<button type="button" class="house-tv-youtube-result" data-youtube-id="'+id+'" data-youtube-title="'+esc(title)+'">'+(thumb?'<img loading="lazy" src="'+esc(thumb)+'" alt="">':'')+'<strong>'+esc(title)+'</strong><small>'+esc(creator)+'</small></button>';
+  }).join('')||'<p class="house-tv-youtube-note">No encontré videos para esa búsqueda.</p>';
+  tvYouTubeNote.textContent=results.length?'Elige un resultado para reproducirlo en la TV compartida.':'Prueba otra búsqueda.';
+ }catch(error){tvYouTubeNote.textContent=friendly(error);}
+}
+async function selectYouTubeResult(videoId,title='Video de YouTube'){
+ if(!/^[A-Za-z0-9_-]{11}$/.test(String(videoId||'')))return;
+ youtubeAppHome=false;
+ await saveTvState({open:true,mode:'channel',channel:'youtube:'+videoId,videoId:null,playing:true,position:0});
+ tvTitle.textContent=String(title).slice(0,110)+' · YouTube';
+ await openTvOverlay(true);
+}
+
 async function selectTvChannel(id){
  if(!TV_CHANNELS[id])throw new Error('Canal no válido.');
  await saveTvState({open:true,mode:'channel',channel:id,videoId:null,playing:true,position:0});
@@ -3933,7 +4564,7 @@ async function uploadTvVideo(file){
  const {data:uploaded,error:uploadError}=await sb.storage.from(TV_BUCKET).upload(path,file,{contentType:mime,cacheControl:'3600',upsert:false});
  if(uploadError)throw uploadError;
  const {data:record,error:insertError}=await sb.from('house_tv_videos').insert({
-  title,storage_path:uploaded.path,mime_type:mime,size_bytes:file.size,uploaded_by:user.id
+   title,storage_path:uploaded.path,mime_type:mime,size_bytes:file.size,created_by:user.id
  }).select('id,title,storage_path,mime_type,size_bytes,created_at').single();
  if(insertError){
   await sb.storage.from(TV_BUCKET).remove([path]).catch(()=>{});
@@ -3977,25 +4608,145 @@ async function applyTvVideoPlayback(state){
   tvStart.hidden=false;
  }
 }
+function isYouTubeVideoChannel(channel=tvState.channel){return /^youtube:[A-Za-z0-9_-]{11}$/.test(String(channel||''));}
+function youtubeVideoIdFromChannel(channel=tvState.channel){const match=/^youtube:([A-Za-z0-9_-]{11})$/.exec(String(channel||''));return match?.[1]||'';}
+function currentYouTubeTime(){
+ if(!youtubePlayer||typeof youtubePlayer.getCurrentTime!=='function')return tvCurrentPosition();
+ try{return Math.max(0,Number(youtubePlayer.getCurrentTime())||0);}catch(_){return tvCurrentPosition();}
+}
+function loadYouTubePlayerApi(){
+ if(window.YT?.Player)return Promise.resolve(window.YT);
+ if(!youtubePlayerApiPromise)youtubePlayerApiPromise=new Promise((resolve,reject)=>{
+  let script=document.querySelector('script[data-house-youtube-player-api]');
+  const timer=setTimeout(()=>reject(new Error('El reproductor de YouTube no respondió.')),15000);
+  const previous=window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady=()=>{if(typeof previous==='function')previous();clearTimeout(timer);resolve(window.YT);};
+  if(!script){script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';script.async=true;script.dataset.houseYoutubePlayerApi='1';script.onerror=()=>{clearTimeout(timer);reject(new Error('No se pudo cargar el reproductor de YouTube.'));};document.head.appendChild(script);}
+ });
+ return youtubePlayerApiPromise;
+}
+async function getYouTubePlayer(){
+ if(youtubePlayerReadyPromise)return youtubePlayerReadyPromise;
+ youtubePlayerReadyPromise=(async()=>{
+  const YT=await loadYouTubePlayerApi();
+  return new Promise((resolve,reject)=>{
+   try{
+    youtubePlayer=new YT.Player('house-tv-youtube-player-inner',{
+     width:'100%',height:'100%',
+     playerVars:{autoplay:0,controls:1,enablejsapi:1,origin:location.origin,playsinline:1,rel:0},
+     events:{
+      onReady:event=>resolve(event.target),
+      onStateChange:event=>{
+       if(event.data===YT.PlayerState.PLAYING){tvStart.hidden=true;if(tvIgnoreEventsUntil<=Date.now())publishTvPlayback(true).catch(()=>{});}
+       else if(event.data===YT.PlayerState.PAUSED&&tvIgnoreEventsUntil<=Date.now()&&!tvOverlay.hidden)publishTvPlayback(false).catch(()=>{});
+       else if(event.data===YT.PlayerState.ENDED&&tvIgnoreEventsUntil<=Date.now()&&!tvOverlay.hidden)publishTvPlayback(false).catch(()=>{});
+      },
+      onAutoplayBlocked:()=>{tvStart.textContent='▶ Reproducir aquí';tvStart.hidden=false;},
+      onError:event=>{tvStatus.textContent='YouTube no permite reproducir este video (error '+Number(event.data||0)+'). Prueba otro resultado.';tvStart.hidden=true;}
+     }
+    });
+   }catch(error){reject(error);}
+  });
+ })().catch(error=>{youtubePlayerReadyPromise=null;throw error;});
+ return youtubePlayerReadyPromise;
+}
+async function applyYouTubePlayback(state,force=false){
+ const videoId=youtubeVideoIdFromChannel(state.channel);
+ if(!videoId)return;
+ tvYouTubeApp.hidden=true;tvYouTubePlayerHost.hidden=false;tvFrame.hidden=true;tvVideo.hidden=true;tvStart.hidden=true;
+ if(!tvVideo.paused)tvVideo.pause();
+ const player=await getYouTubePlayer();
+ const target=Math.max(0,tvCurrentPosition(state));
+ let current='';
+ try{current=player.getVideoData()?.video_id||youtubePlayerVideoId;}catch(_){current=youtubePlayerVideoId;}
+ const playerState=player.getPlayerState();
+ if(force||current!==videoId){
+  youtubePlayerVideoId=videoId;tvIgnoreEventsUntil=Date.now()+1800;
+  if(state.playing)player.loadVideoById({videoId,startSeconds:target});
+  else player.cueVideoById({videoId,startSeconds:target});
+  if(!state.playing){tvStart.textContent='▶ Reanudar juntos';tvStart.hidden=false;}
+  else if(state.changedBy&&state.changedBy!==user?.id){tvStart.textContent='▶ Reproducir aquí';tvStart.hidden=false;}
+  tvStatus.textContent='Reproducción de YouTube compartida. Si no parte automáticamente, toca reproducir.';
+  return;
+ }
+ try{
+  if(Math.abs((Number(player.getCurrentTime())||0)-target)>1.8){tvIgnoreEventsUntil=Date.now()+900;player.seekTo(target,true);}
+ }catch(_){}
+ if(state.playing&&playerState!==window.YT.PlayerState.PLAYING){tvIgnoreEventsUntil=Date.now()+1300;player.playVideo();}
+ if(!state.playing){tvIgnoreEventsUntil=Date.now()+900;player.pauseVideo();tvStart.textContent='▶ Reanudar juntos';tvStart.hidden=false;}
+}
+function resolveTvChannel(channel){
+ return TV_CHANNELS[String(channel||'')]||null;
+}
 async function renderTvState(force=false){
  if(!tvOverlay||tvOverlay.hidden)return;
  const token=++tvRenderSeq;
  const state={...tvState};
  if(state.mode==='channel'){
-  const c=TV_CHANNELS[state.channel]||TV_CHANNELS.tvn;
-  tvTitle.textContent=`${c.name} · ${c.number}`;
-  tvStatus.textContent='Señal en vivo compartida · si el reproductor no carga, abre la señal oficial.';
-  tvOfficial.href=c.url;tvOfficial.hidden=false;
+  const c=resolveTvChannel(state.channel)||TV_CHANNELS.tele13;
+  tvTitle.textContent=c.name+' · '+c.number;
   tvVideo.hidden=true;tvStart.hidden=true;
   if(tvVideo&&!tvVideo.paused){tvIgnoreEventsUntil=Date.now()+1000;tvVideo.pause();}
   if(tvVideo){tvVideo.removeAttribute('src');tvVideo.dataset.videoId='';tvVideo.load();}
-  tvFrame.hidden=false;
-  if(force||tvFrame.dataset.src!==c.url){tvFrame.dataset.src=c.url;tvFrame.src=c.url;}
+  if(c.platform==='youtube-home'){
+   youtubeAppHome=true;tvYouTubePlayerHost.hidden=true;tvFrame.hidden=true;
+   if(tvFrame.getAttribute('src')!=='about:blank')tvFrame.src='about:blank';tvFrame.dataset.src='';
+   if(tvUnavailable)tvUnavailable.hidden=true;
+   if(youtubePlayer&&youtubePlayer.getPlayerState?.()===window.YT?.PlayerState?.PLAYING){tvIgnoreEventsUntil=Date.now()+900;youtubePlayer.pauseVideo();}
+   renderYouTubeApp();tvStatus.textContent='YouTube está abierto en la televisión compartida.';return;
+  }
+  if(c.platform==='youtube'){
+   youtubeAppHome=false;tvYouTubeApp.hidden=true;tvYouTubePlayerHost.hidden=false;tvFrame.hidden=true;
+   if(tvFrame.getAttribute('src')!=='about:blank')tvFrame.src='about:blank';tvFrame.dataset.src='';
+   if(tvUnavailable)tvUnavailable.hidden=true;
+   try{await applyYouTubePlayback(state,force);}catch(error){if(token!==tvRenderSeq)return;tvStatus.textContent='No se pudo cargar YouTube: '+friendly(error);tvStart.textContent='Volver a YouTube';tvStart.dataset.error='youtube';tvStart.hidden=false;}
+   return;
+  }
+  youtubeAppHome=false;tvYouTubeApp.hidden=true;tvYouTubePlayerHost.hidden=true;
+  if(youtubePlayer&&youtubePlayer.getPlayerState?.()===window.YT?.PlayerState?.PLAYING){tvIgnoreEventsUntil=Date.now()+900;youtubePlayer.pauseVideo();}
+  if(c.embedUrl){
+   const needsHttps=c.platform==='twitch'||c.platform==='dailymotion';
+   if((c.platform&&c.platform!=='tv'&&location.protocol==='file:')||(needsHttps&&location.protocol!=='https:')){
+    tvFrame.hidden=true;
+    if(tvFrame.getAttribute('src')!=='about:blank')tvFrame.src='about:blank';
+    tvFrame.dataset.src='';
+    if(tvUnavailable){
+     const unavailableTitle=$('house-tv-unavailable-title');
+     const unavailableMessage=$('house-tv-unavailable-message');
+     if(unavailableTitle)unavailableTitle.textContent='Abre la versión web para usar '+c.name;
+     if(unavailableMessage)unavailableMessage.textContent=needsHttps?c.name+' requiere que la página esté publicada con HTTPS. Entra al sitio web y el reproductor aparecerá aquí.':'El navegador bloquea los reproductores cuando esta página se abre como archivo local. Entra al sitio web publicado con https:// y el video aparecerá aquí.';
+     tvUnavailable.hidden=false;
+    }
+    tvStatus.textContent=c.name+' requiere una página web publicada.';
+    return;
+   }
+   if(tvFrame.dataset.src!==c.embedUrl||tvFrame.getAttribute('src')!==c.embedUrl){tvFrame.dataset.src=c.embedUrl;tvFrame.src=c.embedUrl;}
+   tvFrame.hidden=false;
+   if(tvUnavailable)tvUnavailable.hidden=true;
+   tvFrame.title=c.name+' dentro de la televisión';
+   tvFrame.referrerPolicy='strict-origin-when-cross-origin';
+   tvFrame.setAttribute('allow','autoplay; encrypted-media; fullscreen; picture-in-picture; web-share');
+   tvStatus.textContent=c.platform==='tv'?'Señal en vivo dentro de la televisión. La selección se comparte con la otra persona.':'Reproductor de '+c.name+' dentro de la televisión. La selección se comparte con la otra persona.';
+  }else{
+   tvFrame.hidden=true;
+   if(tvFrame.getAttribute('src')!=='about:blank')tvFrame.src='about:blank';
+   tvFrame.dataset.src='';
+   if(tvUnavailable){
+    const unavailableTitle=$('house-tv-unavailable-title');
+    const unavailableMessage=$('house-tv-unavailable-message');
+    if(unavailableTitle)unavailableTitle.textContent=c.name+' no permite la inserción';
+    if(unavailableMessage)unavailableMessage.textContent=c.name+' bloquea la reproducción desde esta página. La emisora debe habilitar el reproductor para que aparezca aquí.';
+    tvUnavailable.hidden=false;
+   }
+   tvStatus.textContent=c.name+' bloquea la reproducción dentro de esta televisión.';
+  }
   return;
  }
- tvTitle.textContent='Galería · video compartido ♥';
+ youtubeAppHome=false;tvYouTubeApp.hidden=true;tvYouTubePlayerHost.hidden=true;
+ if(youtubePlayer&&youtubePlayer.getPlayerState?.()===window.YT?.PlayerState?.PLAYING){tvIgnoreEventsUntil=Date.now()+900;youtubePlayer.pauseVideo();}
+tvTitle.textContent='Galería · video compartido ♥';
  tvStatus.textContent='Reproducción sincronizada para los dos.';
- tvOfficial.hidden=true;
+  if(tvUnavailable)tvUnavailable.hidden=true;
  tvFrame.hidden=true;
  if(tvFrame.getAttribute('src')!=='about:blank')tvFrame.src='about:blank';
  tvVideo.hidden=false;
@@ -4033,17 +4784,23 @@ function receiveTvState(payload){
  }else if(!tvOverlay.hidden)closeTvOverlayLocal();
 }
 async function publishTvPlayback(playing){
- if(tvIgnoreEventsUntil>Date.now()||!tvOverlay||tvOverlay.hidden||tvState.mode!=='video'||!tvState.videoId)return;
+ const youtube=tvState.mode==='channel'&&isYouTubeVideoChannel();
+ if(tvIgnoreEventsUntil>Date.now()||!tvOverlay||tvOverlay.hidden||(!youtube&&(tvState.mode!=='video'||!tvState.videoId)))return;
  try{
-  await saveTvState({open:true,playing,position:Number(tvVideo.currentTime)||0});
+  const position=youtube?currentYouTubeTime():Number(tvVideo.currentTime)||0;
+  await saveTvState({open:true,playing,position});
  }catch(e){toast('No se pudo sincronizar el video: '+friendly(e));}
 }
 function tvTick(t){
- if(tvOverlay?.hidden||tvState.mode!=='video'||!tvState.open||!tvState.playing||!tvVideo||tvVideo.paused||tvVideo.readyState<2)return;
+ const youtube=tvState.mode==='channel'&&isYouTubeVideoChannel();
+ if(tvOverlay?.hidden||!tvState.open||!tvState.playing)return;
+ if(!youtube&&(tvState.mode!=='video'||!tvVideo||tvVideo.paused||tvVideo.readyState<2))return;
+ if(youtube&&(!youtubePlayer||youtubePlayer.getPlayerState?.()!==window.YT?.PlayerState?.PLAYING))return;
  const leader=tvState.changedBy===user?.id||!tvState.changedBy||!online.has(tvState.changedBy);
  if(!leader||t-tvLastCheckpoint<8000)return;
  tvLastCheckpoint=t;
- saveTvState({open:true,playing:true,position:Number(tvVideo.currentTime)||0}).catch(e=>console.warn('Checkpoint TV:',e));
+ const position=youtube?currentYouTubeTime():Number(tvVideo.currentTime)||0;
+ saveTvState({open:true,playing:true,position}).catch(e=>console.warn('Checkpoint TV:',e));
 }
 
 function setSessionError(str){const el=$('house-auth-error');if(el)el.textContent=str;else toast(str);}
@@ -4119,7 +4876,8 @@ async function initGame(){
 }
 async function sync(first=false){
  const previouslyBothSick=people.length===2&&people.every(p=>p.sick);
- const data=await safeCall('house_sync');
+ const [data,dishData]=await Promise.all([safeCall('house_sync'),safeCall('house_dishes_sync')]);
+  sharedDishes=Array.isArray(dishData)?dishData:[];
  people=Array.isArray(data.members)?data.members:[];
  if(!first&&previouslyBothSick&&people.length===2&&people.every(p=>!p.sick)){
    toast('♥ ¡Se han recuperado juntos! Pueden volver a caminar y cuidarse.',4600);
@@ -4189,7 +4947,11 @@ async function connect(){
   samples.push(item);if(samples.length>18)samples.shift();
   remoteDog={samples,room:item.room,at:at||0,lastPacketAt:t};
  });
- channel.on('broadcast',{event:'dog_feed'},({payload})=>{
+ channel.on('broadcast',{event:'dishes_changed'},({payload})=>{
+   if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+   sync(false).catch(e=>console.warn('No se pudieron sincronizar los platos:',e));
+  });
+  channel.on('broadcast',{event:'dog_feed'},({payload})=>{
    if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
    // Confirma la ración en el servidor antes de hacer correr al perrito.
    sync(false).catch(()=>{});
@@ -4366,8 +5128,54 @@ $('house-board-clear')?.addEventListener('click',clearWhiteboard);
 $('house-board-stand')?.addEventListener('click',()=>runAction('stand'));
 $('house-tv-menu')?.addEventListener('click',openTvMenu);
 $('house-tv-close')?.addEventListener('click',closeTvScreen);
+$('house-pc-close')?.addEventListener('click',closePc);
+$('house-ps5-close')?.addEventListener('click',closePlayStation);
+$('house-ps5-games')?.addEventListener('click',event=>{
+ const button=event.target.closest('[data-ps5-game]');if(!button)return;
+ if(ps5Games.some(game=>String(game.id)===button.dataset.ps5Game)){ps5SelectedGameId=button.dataset.ps5Game;renderPs5Games();}
+});
+$('house-ps5-play')?.addEventListener('click',playSelectedPs5Game);
+ps5ProgressForm?.addEventListener('submit',event=>{
+ event.preventDefault();
+ const gameId=ps5ProgressGame?.value,kind=$('house-ps5-progress-kind')?.value,title=$('house-ps5-progress-title')?.value.trim();
+ if(!gameId||!title){toast('Elige un juego y escribe el nombre del progreso.');return;}
+ addPs5Progress({gameId,kind,title,value:$('house-ps5-progress-value')?.value.trim()||'',trophy:$('house-ps5-progress-trophy')?.value||'bronze',source:'manual'});
+ $('house-ps5-progress-title').value='';$('house-ps5-progress-value').value='';
+});
+window.addEventListener('house-open-playstation',openPlayStation);
+$('house-pc-app-close')?.addEventListener('click',()=>{pcAppWindow.hidden=true;});
+pcLoginForm?.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(pcPassword.value!=='Amor'){pcError.textContent='Contraseña incorrecta. Intenta otra vez.';pcPassword.select();return;}
+ pcError.textContent='';await showPcDesktop();
+});
+pcIcons?.addEventListener('click',event=>{
+ const app=event.target.closest('[data-pc-app]');
+ if(app){openPcApp(app.dataset.pcApp);return;}
+ const game=event.target.closest('[data-pc-game]');
+ if(game)window.houseGameLibrary?.open(game.dataset.pcGame).catch(error=>toast(friendly(error)));
+});
+document.querySelectorAll('[data-pc-task-app]').forEach(button=>button.addEventListener('click',()=>openPcApp(button.dataset.pcTaskApp)));
+tvYouTubeLogin?.addEventListener('click',async()=>{
+ tvYouTubeLogin.disabled=true;tvYouTubeLogin.textContent='Conectando…';
+ try{await connectYouTubeAccount();tvYouTubeNote.textContent='Tu cuenta de YouTube quedó conectada en este navegador. La búsqueda y reproducción siguen dentro de la TV.';}
+ catch(error){tvYouTubeNote.textContent=friendly(error);}
+ finally{tvYouTubeLogin.disabled=false;tvYouTubeLogin.textContent='Conectar cuenta';}
+});
+tvYouTubeSearch?.addEventListener('submit',runYouTubeSearch);
+tvYouTubeResults?.addEventListener('click',event=>{
+ const button=event.target.closest('[data-youtube-id]');
+ if(button)selectYouTubeResult(button.dataset.youtubeId,button.dataset.youtubeTitle||'Video de YouTube').catch(error=>toast(friendly(error)));
+});
 tvStart?.addEventListener('click',()=>{
  if(tvStart.dataset.error==='gallery'){tvStart.dataset.error='';openTvGallery();return;}
+ if(tvStart.dataset.error==='youtube'){tvStart.dataset.error='';openYouTubeApp().catch(error=>toast(friendly(error)));return;}
+ if(tvState.mode==='channel'&&isYouTubeVideoChannel()&&youtubePlayer){
+  tvStart.dataset.error='';tvIgnoreEventsUntil=0;
+  try{youtubePlayer.seekTo(tvCurrentPosition(),true);youtubePlayer.playVideo();tvStart.hidden=true;}
+  catch(error){toast('YouTube no pudo reanudar: '+friendly(error));}
+  return;
+ }
  if(tvState.mode==='video'&&tvVideo){
   tvIgnoreEventsUntil=0;
   tvVideo.play().then(()=>{tvStart.hidden=true;}).catch(e=>toast('El navegador no pudo reproducir el video: '+friendly(e)));
@@ -4459,7 +5267,9 @@ async function rescueSofaPosition(){
 async function runAction(name,value){
  if(me?.sick){toast('Estás enfermo. Necesitas cuidados de tu pareja.');return;}
  try{
-  if(name==='desk_sit'){
+  if(DISH_ACTIONS[name]){
+   await safeCall('house_dish_action',{p_action:DISH_ACTIONS[name],p_dish_id:DISH_ACTIONS[name]==='place'?null:value||null});
+  }else if(name==='desk_sit'){
    if(positionSavePromise){try{await positionSavePromise;}catch(_){}}
    await safeCall('house_desk_sit',{p_seat:value||'left',p_x:Math.round(myPos.x),p_y:Math.round(myPos.y),p_facing:myPos.facing});
    pendingMove=false;positionRetryAt=0;
@@ -4481,6 +5291,7 @@ async function runAction(name,value){
   if(name==='stand'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),activity:'idle',deskSeat:null};}
   if(name==='desk_sit'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),room:me.room,activity:'desk',deskSeat:me.desk_seat||value||'left'};}
   if(name==='stand')await rescueSofaPosition();
+  if(DISH_ACTIONS[name]||['cook','care_feed','eat'].includes(name))channel?.send({type:'broadcast',event:'dishes_changed',payload:{id:user.id}}).catch(()=>{});
   broadcast(true);hideModal();refreshBoardTools();
   if(name==='feed_dog'){
     // El mensaje avisa al líder de la animación inmediatamente, sin esperar
@@ -4529,11 +5340,11 @@ async function closeHouse(){
  // La posición se envía primero y luego el estado de descanso al servidor.
  const shouldRest=playing&&!me?.sick&&myPos.activity!=='sleep';
  const saved=(pendingMove||positionSavePromise)?persist(true).catch(()=>{}):Promise.resolve();
- visible=false;screen.hidden=true;keys.clear();stick={x:0,y:0};knob.style.transform='';
+  visible=false;screen.hidden=true;document.body.classList.remove('house-games-open');if(pcOverlay)pcOverlay.hidden=true;if(ps5Overlay)ps5Overlay.hidden=true;if(pcAppWindow)pcAppWindow.hidden=true;window.houseGameReturnToPlay=false;keys.clear();stick={x:0,y:0};knob.style.transform='';
  tvIgnoreEventsUntil=Date.now()+1200;
  if(tvVideo&&!tvVideo.paused)tvVideo.pause();
  if(tvFrame&&tvFrame.getAttribute('src'))tvFrame.src='about:blank';
- if(tvOverlay)tvOverlay.hidden=true;
+ if(tvOverlay)tvOverlay.hidden=true;setTvBackgroundMusic(false);
  launch.setAttribute('aria-expanded','false');hideModal();gamePaused=false;
  saved.then(()=>{if(shouldRest&&!visible)sendRest();}).catch(()=>{});
  if(channel){try{await channel.track({id:user.id,visible:false,joined:Date.now()});}catch(_){}}
@@ -4544,9 +5355,11 @@ const objects={
  main:[
   {id:'fridge',label:'Refrigerador',x:970,y:180,range:160,hitRadius:82},
   {id:'stove',label:'Fogones',x:1100,y:180,range:160,hitRadius:88},
+   {id:'dishCounter',label:'Mesón con platos',x:1238,y:180,range:165,hitRadius:82},
   {id:'table',label:'Mesa y sillas',x:870,y:400,range:165,hitRadius:92},
   {id:'sofa',label:'Sillón',x:440,y:420,range:145,hitRadius:84},
   {id:'tv',label:'Televisión',x:440,y:355,range:135,hitRadius:78},
+  {id:'ps5',label:'PlayStation 5',x:522,y:307,range:140,hitRadius:36},
   {id:'bathDoor',label:'Puerta del baño',x:120,y:230,range:140,hitRadius:72},
   {id:'bedDoor',label:'Puerta del dormitorio',x:120,y:420,range:140,hitRadius:72},
   {id:'entrance',label:'Puerta principal',x:1330,y:530,range:145,hitRadius:85}
@@ -4558,6 +5371,7 @@ const objects={
   {id:'back',label:'Salir al pasillo',x:1200,y:530,range:155,hitRadius:75}
  ],
  bedroom:[
+  {id:'computer',label:'Computador',x:151,y:268,range:255,hitRadius:58},
   {id:'deskChair',label:'Silla del escritorio',x:175,y:385,range:135,hitRadius:58,seat:'left'},
   {id:'deskChairPink',label:'Silla rosada del escritorio',x:315,y:385,range:135,hitRadius:58,seat:'pink'},
   {id:'bed',label:'Cama de dos plazas',x:520,y:300,range:215,hitRadius:100},
@@ -4621,6 +5435,7 @@ async function saveWardrobeOutfit(){
 }
 const inventoryText=(prefix='')=>Object.entries(own()?.inventory||{}).filter(([,n])=>Number(n)>0).map(([key,n])=>`${esc(INGREDIENTS[key]||RECIPES[key.replace('dish_','')]?.name||key)} ×${n}`).join(' · ')||'Vacío';
 const actionBtn=(label,name,value)=>({label,run:()=>runAction(name,value)});
+const DISH_ACTIONS={dish_place:'place',dish_pickup:'pickup',dish_return:'return',dish_eat:'eat'};
 function interact(targetId=null){
  if(!playing||!visible||gamePaused)return;
  if(me?.sick){toast('La enfermedad solo termina tras tres días consecutivos de cuidados de tu pareja.');return;}
@@ -4636,23 +5451,59 @@ function interact(targetId=null){
   actions.push(actionBtn(world.fridge_open?'Cerrar refrigerador':'Abrir refrigerador','fridge'));
   if(world.fridge_open)for(const [key,label]of Object.entries(INGREDIENTS))actions.push({label:'Sacar '+label,disabled:Number(world.stock?.[key]||0)<1,run:async()=>{await runAction('take',key);interact();}});
   break;
- case 'stove':text=`Tu mochila: ${invStr}. Cada receta consume ingredientes y necesita esperar un tiempo real. Puedes cocinar al mismo tiempo que tu pareja.`;
+ case 'stove':{
+  text='Acércate a los fogones para preparar una receta. Al terminar, deja el plato en el mesón; ambos pueden cocinar y acumular varios platos.';
   if(own()?.pending_recipe){
+   const recipe=RECIPES[own().pending_recipe];
    const secs=Math.max(0,Math.ceil((Date.parse(own().cook_ready_at)-timeNow())/1000));
-   text+=`\nPreparando ${RECIPES[own().pending_recipe]?.name}. ${secs?`Faltan ${secs} s.`:'¡Listo para retirar!'}`;
-   actions.push({label:'Recoger plato listo',disabled:secs>0,run:()=>runAction('collect')});
+   text+='\nPreparando '+(recipe?.name||'comida')+'. '+(secs?'Faltan '+secs+' s.':'¡Listo para llevar al mesón!');
+   actions.push({label:'Poner plato en el mesón',disabled:secs>0,run:()=>runAction('dish_place')});
   }else for(const [key,r]of Object.entries(RECIPES)){
    const ok=Object.entries(r.ingredients).every(([k,n])=>inv(k)>=n);
-   actions.push({label:`${r.name} · ${r.seconds}s · llena el hambre`,disabled:!ok,run:()=>runAction('cook',key)});
-  }break;
- case 'table':text='Aquí pueden sentarse los dos. Solo se puede comer un plato que hayas cocinado y recogido.';
+   actions.push({label:r.name+' · '+r.seconds+'s · llena el hambre',disabled:!ok,run:()=>runAction('cook',key)});
+  }
+  break;
+ }
+ case 'dishCounter':{
+  const ready=sharedDishes.filter(dish=>dish.status==='counter');
+  const carried=sharedDishes.filter(dish=>dish.status==='carried'&&dish.carried_by===user?.id);
+  text=ready.length?'Hay '+ready.length+' plato(s) listo(s) en el mesón. Cualquiera puede recoger uno.':'Todavía no hay platos en el mesón.';
+  for(const dish of ready){
+   const recipe=RECIPES[dish.recipe];
+   if(recipe)actions.push(actionBtn('Recoger '+recipe.name,'dish_pickup',dish.id));
+  }
+  for(const dish of carried){
+   const recipe=RECIPES[dish.recipe];
+   if(recipe)actions.push(actionBtn('Dejar '+recipe.name+' en el mesón','dish_return',dish.id));
+  }
+  break;
+ }
+ case 'table':{
+  const carried=sharedDishes.filter(dish=>dish.status==='carried'&&dish.carried_by===user?.id);
+  text='Recoge un plato del mesón, siéntate y cómelo. El plato se verá sobre la mesa mientras comes.';
   if(myPos.activity!=='table')actions.push(actionBtn('Sentarse a la mesa','table'));
-  if(myPos.activity==='table'){
-   for(const [key,r] of Object.entries(RECIPES))if(inv('dish_'+key)>0)actions.push(actionBtn('Comer '+r.name+' (hambre al 100%)','eat',key));
+  else{
+   for(const dish of carried){
+    const recipe=RECIPES[dish.recipe];
+    if(recipe)actions.push(actionBtn('Comer '+recipe.name,'dish_eat',dish.id));
+   }
+   if(!carried.length)text+=' Primero recoge un plato de la cocina.';
    actions.push(actionBtn('Levantarse','stand'));
-  }break;
+  }
+  break;
+ }
  case 'sofa':text='Un sillón amplio para los dos.';
   actions.push(actionBtn(myPos.activity==='sofa'?'Levantarse':'Sentarse en el sillón',myPos.activity==='sofa'?'stand':'sofa'));break;
+ case 'computer':{
+  const sittingAtDesk=myPos.activity==='desk'&&['left','pink'].includes(myPos.deskSeat||me?.desk_seat);
+  if(sittingAtDesk){
+   hideModal();
+   openPc();
+   return;
+  }
+  text='El monitor abre el computador. Acércate a una de las sillas y siéntate antes de tocarlo.';
+  break;
+ }
  case 'deskChair':
  case 'deskChairPink':{
   const seat=o.seat||(o.id==='deskChairPink'?'pink':'left');
@@ -4665,6 +5516,10 @@ function interact(targetId=null){
   else actions.push(actionBtn(seat==='pink'?'Sentarse en la silla rosada':'Sentarse en la silla','desk_sit',seat));
   break;
  }
+ case 'ps5':
+   text='La PlayStation arcade comparte los juegos guardados en la PC y muestra su progreso, logros y récords.';
+   actions.push({label:'Encender PlayStation',primary:true,run:()=>{hideModal();window.dispatchEvent(new Event('house-open-playstation'));}});
+  break;
  case 'tv':
   if(world.tv_on){
    text='La televisión está encendida y comparte la misma señal o video con tu pareja.';
@@ -4880,6 +5735,34 @@ function drawDeskSetup(t){
  if(!occupiedSeats.has('left'))drawOfficeChair(DESK_SEATS.left.x,DESK_SEATS.left.y,t,0,'left');
  if(!occupiedSeats.has('pink'))drawOfficeChair(DESK_SEATS.pink.x,DESK_SEATS.pink.y,t,0,'pink');
 }
+function drawPlateAt(x,y,recipe){
+ r(x-12,y-6,24,12,'#60485a');r(x-10,y-5,20,10,'#fff1d9');r(x-7,y-3,14,6,'#d1c9b8');
+ if(recipe==='eggs'){r(x-5,y-3,4,3,'#f5c64f');r(x+1,y-3,4,3,'#f5c64f');}
+ else if(recipe==='rice'){r(x-5,y-3,10,4,'#f8f2db');r(x+3,y-3,2,2,'#e56c58');}
+ else if(recipe==='pasta'){r(x-5,y-3,10,4,'#e9bb61');r(x+2,y-3,3,2,'#d75b52');}
+ else if(recipe==='sandwich'){r(x-5,y-3,10,4,'#d99a55');r(x-2,y-3,5,2,'#6c9a55');}
+}
+function drawSharedDishes(t){
+ if(myPos.room!=='main')return;
+ const counter=sharedDishes.filter(dish=>dish.status==='counter');
+ counter.slice(0,6).forEach((dish,i)=>drawPlateAt(1204+(i%3)*27,103+Math.floor(i/3)*14,dish.recipe));
+ if(counter.length>6)label('+'+(counter.length-6),1270,132,10,'#fff1d9');
+ for(const dish of sharedDishes){
+  if(dish.status==='carried'){
+   const holder=people.find(p=>p.user_id===dish.carried_by);
+   if(!holder)continue;
+   const loc=holder.user_id===user?.id?myPos:holder;
+   if(loc.room==='main')drawPlateAt(Number(loc.x)+22,Number(loc.y)-20,dish.recipe);
+  }else if(dish.status==='eating'&&Date.parse(dish.eat_until||'')>timeNow()){
+   const eater=people.find(p=>p.user_id===dish.eating_by);
+   if(!eater)continue;
+   const sameRecipe=sharedDishes.filter(x=>x.status==='eating'&&x.eating_by===dish.eating_by&&Date.parse(x.eat_until||'')>timeNow());
+   const index=sameRecipe.findIndex(x=>x.id===dish.id);
+   const baseX=eater.avatar==='boy'?835:918;
+   drawPlateAt(baseX+(index%2)*24,352+Math.floor(index/2)*13,dish.recipe);
+  }
+ }
+}
 function drawMain(t){
  // Ventanas, cuadros y flores en el pasillo central.
  for(let x of [470,780,1150]){r(x,12,95,65,'#785e79');r(x+8,18,80,48,'#7da9ae');r(x+8,43,80,4,'#e3c7ad');r(x+45,18,4,48,'#e3c7ad');}
@@ -4901,13 +5784,20 @@ function drawMain(t){
  r(325,335,285,205,'#8a6372');r(335,346,265,181,'#d0a18e');r(352,361,230,150,'#e3bba1');
  furniture(365,390,177,47,'#704565','#bc7582');r(372,400,161,13,'#eab2ae');r(442,390,7,46,'#8c5266');
  furniture(368,280,138,45,'#413c54',world?.tv_on?'#78b5b7':'#202437');
- if(world?.tv_on){r(378,289,118,25,'#9ee1d9');r(395,295,77,12,'#dfb2dd');label(world?.tv_mode==='video'?'VIDEO':(TV_CHANNELS[world?.tv_channel]?.number||'TV'),437,310,8,'#fff3d5');}
+ if(world?.tv_on){const sharedChannel=String(world?.tv_channel||'');const tvNumber=TV_CHANNELS[sharedChannel]?.number||'TV';r(378,289,118,25,'#9ee1d9');r(395,295,77,12,'#dfb2dd');label(world?.tv_mode==='video'?'VIDEO':tvNumber,437,310,8,'#fff3d5');}
+ drawPlaystation5();
  furniture(550,380,80,70,'#795067','#ca9887');r(571,395,40,31,'#f2c1a3');
  // Decoración / corazones / cuadros.
  r(620,43,80,75,'#6f536a');r(629,54,62,51,'#e9bca4');label('♥',661,90,34,'#c95f75');
  for(let x of [735,1320]){r(x,105,18,55,'#578670');r(x+4,105,10,10,'#e4a5a9');r(x-6,155,32,25,'#ba8977');}
  drawDoor(87,200,world?.bath_door_open,'BAÑO');drawDoor(87,386,world?.bedroom_door_open,'DORM.');
  drawDoor(1307,487,world?.entrance_open||(introUntil>performance.now()&&performance.now()-introStartedAt>500),'ENTRADA');
+}
+function drawPlaystation5(){
+ // Consola blanca junto al televisor.
+ r(512,283,19,38,'#f7f3ea');r(515,286,13,32,'#ded9d7');r(518,287,5,29,'#fffdf6');
+ r(512,316,22,4,'#43364a');r(511,321,24,3,'#76536e');
+ label('PS5',522,336,9,'#fff1d8');
 }
 function drawDoor(x,y,isOpen,name){
  r(x-6,y-27,106,101,'#332537');r(x,y-23,90,88,'#e6aa85');r(x+7,y-15,76,72,isOpen?'#2b2139':'#a66d6c');
@@ -5403,6 +6293,7 @@ function draw(t){
  drawHouseDog(getDogDisplay(t),t);
  const drawList=people.filter(p=>(p.user_id!==user?.id)).concat(me?[me]:[]);
  drawList.forEach(p=>drawPerson(p,p.user_id===user?.id,t));
+  drawSharedDishes(t);
 }
 function frame(t){
  if(!playing||!visible){frameId=0;return;}
@@ -5434,7 +6325,7 @@ document.addEventListener('keydown',e=>{
  if(!visible||!playing||e.target.closest('input,textarea'))return;
  const k=e.key.toLowerCase();if(MOVE_KEYS.has(k)){e.preventDefault();if(!gamePaused)keys.add(k);}
  if(k==='e'&&e.pointerType!=='touch'){e.preventDefault();interact();}
- if(k==='escape'){e.preventDefault();if(!modal.hidden&&$('house-dialog-x').style.display!=='none')hideModal();else if(tvOverlay&&!tvOverlay.hidden)closeTvScreen();else closeHouse();}
+ if(k==='escape'){e.preventDefault();if(ps5Overlay&&!ps5Overlay.hidden)closePlayStation();else if(!modal.hidden&&$('house-dialog-x').style.display!=='none')hideModal();else if(tvOverlay&&!tvOverlay.hidden)closeTvScreen();else closeHouse();}
 });
 document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{keys.clear();stick={x:0,y:0};knob.style.transform='';});
