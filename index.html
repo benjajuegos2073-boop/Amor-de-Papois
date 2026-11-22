@@ -458,6 +458,42 @@
 .house-dialog label{display:block;font-size:12px;margin:10px 0 6px}
 .house-dialog input{width:100%;padding:10px;background:#1b1425;border:2px solid #93748b;border-radius:0;color:white;font-size:15px}
 .house-dialog select{width:100%;padding:11px 12px;background:#1b1425;border:2px solid #93748b;border-radius:0;color:#fff1db;font-size:14px;margin:5px 0 10px}
+.house-dialog-backdrop.recipe-book-open .house-dialog{width:min(760px,96vw)}
+.house-dialog-backdrop.fridge-catalog-open .house-dialog{width:min(860px,97vw)}
+.house-fridge-intro{padding:10px 12px;border:1px solid #799365;background:#26332a;color:#e3f3d2;font-size:11px;line-height:1.5}
+.house-fridge-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px;margin:12px 0;max-height:58vh;overflow:auto;padding:2px}
+.house-fridge-section{border:2px solid #637e56;background:linear-gradient(145deg,#2e382e,#20272a);box-shadow:3px 3px 0 #100d15}
+.house-fridge-section summary{padding:10px;color:#e4f3bc;font-size:12px;font-weight:900;cursor:pointer;list-style:none}
+.house-fridge-section summary::-webkit-details-marker{display:none}
+.house-fridge-section summary:after{content:'＋';float:right;color:#f5c77a}
+.house-fridge-section[open] summary:after{content:'−'}
+.house-fridge-items{display:grid;gap:5px;padding:0 8px 8px}
+.house-fridge-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:6px;padding:6px;border:1px solid #56664e;background:#1c2524;font-size:11px}
+.house-fridge-item-icon{font-size:17px;text-align:center}
+.house-fridge-item-name{color:#f3ead5}
+.house-fridge-item-stock{display:block;color:#b9c5aa;font-size:9px;margin-top:2px}
+.house-fridge-take{border:1px solid #e6bd91;background:#48634a;color:#fff4d9;padding:6px 8px;font-size:10px;font-weight:900;white-space:nowrap}
+.house-fridge-take:disabled{opacity:.45;filter:grayscale(1)}
+.house-recipe-book-intro{padding:10px 12px;border:1px solid #9c7181;background:#302439;color:#f3d9ba;font-size:11px;line-height:1.5}
+.house-recipe-book-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin:12px 0;max-height:52vh;overflow:auto}
+.house-recipe-book-card{padding:11px;border:2px solid #74546b;background:linear-gradient(145deg,#30263a,#211b2a);box-shadow:3px 3px 0 #100d15}
+.house-recipe-book-card h3{margin:0 0 5px;color:#ffe0a9;font-size:14px}
+.house-recipe-book-card p{margin:4px 0;color:#ddd0d4;font-size:10px;line-height:1.45}
+.house-recipe-book-tag{color:#f0b47b;font-size:9px;font-weight:900;letter-spacing:.1em}
+.house-recipe-form label{display:block;margin:9px 0 4px;color:#f2d2ae;font-size:11px;font-weight:800}
+.house-recipe-form input,.house-recipe-form select,.house-recipe-form textarea{box-sizing:border-box;width:100%;min-width:0;padding:8px;border:2px solid #866b83;border-radius:0;background:#1b1425;color:#fff1db;font:inherit;font-size:12px}
+.house-recipe-form textarea{min-height:58px;resize:vertical}
+.house-recipe-form-section{margin:12px 0;padding:10px;border:1px solid #72566d;background:#2b2234}
+.house-recipe-form-section h3{margin:0 0 7px;color:#ffdda5;font-size:13px}
+.house-recipe-form-help{margin:4px 0 8px!important;color:#d4c2d3!important;font-size:10px!important}
+.house-recipe-ingredient-row,.house-recipe-step-row{display:grid;grid-template-columns:minmax(0,1fr) 80px 42px;gap:6px;align-items:end;margin:7px 0;padding:8px;border:1px dashed #81637b;background:#211a2a}
+.house-recipe-step-row{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.house-recipe-step-row .wide{grid-column:1/-1}
+.house-recipe-step-row button.house-recipe-remove{grid-column:1/-1;justify-self:end;width:132px}
+.house-recipe-remove,.house-recipe-add{border:1px solid #e6bd91;background:#684659;color:#fff1dc;padding:8px;font-size:11px;font-weight:900}
+.house-recipe-add{width:100%;margin-top:5px;background:#47624b}
+.house-recipe-form select{margin:0}
+@media(max-width:520px){.house-recipe-ingredient-row{grid-template-columns:minmax(0,1fr) 64px 34px}.house-recipe-step-row{grid-template-columns:1fr}.house-recipe-step-row .wide{grid-column:auto}.house-recipe-book-list{grid-template-columns:1fr;max-height:45vh}}
 .house-clothes-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .house-clothes-preview{display:flex;align-items:center;gap:10px;background:#2d2037;border:2px solid #785d78;padding:9px;margin:8px 0}
 .house-color-dot{width:22px;height:22px;border:2px solid #fff0d5;display:inline-block;box-shadow:2px 2px #130e1b;flex:0 0 auto}
@@ -561,6 +597,58 @@
 .house-pc-progress-panel .house-ps5-list li{font-size:12px}
 .house-pc-progress-empty{padding:12px;border:1px dashed #68758e;color:#bec9df;font-size:12px}
 .house-pc-screen [hidden]{display:none!important}
+.house-cook-overlay{position:absolute;inset:0;z-index:45;display:grid;place-items:center;overflow:auto;padding:clamp(9px,2vw,24px);background:radial-gradient(ellipse at 15% 12%,#e98a5f55,transparent 32%),radial-gradient(ellipse at 88% 84%,#a94c7755,transparent 36%),#100d18ed;backdrop-filter:blur(5px);touch-action:auto;image-rendering:auto}
+.house-cook-overlay[hidden]{display:none!important}
+.house-cook-machine{width:min(1050px,97vw);max-height:96%;display:flex;flex-direction:column;overflow:hidden;border:5px solid #9e6b76;background:#171420;box-shadow:0 0 0 4px #32243a,8px 8px 0 #08070c;color:#fff1dc}
+.house-cook-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:7px 13px;background:linear-gradient(90deg,#57364b,#342942);border-bottom:3px solid #d59b82;font-size:11px;font-weight:1000;letter-spacing:.12em}
+.house-cook-head button{min-width:35px;height:32px;border:2px solid #f4b6ae;background:#a33850;color:#fff;font-size:20px;line-height:1}
+.house-cook-content{display:grid;grid-template-columns:minmax(195px,.78fr) minmax(0,1.55fr);gap:14px;min-height:0;padding:clamp(12px,2.4vw,24px);overflow:auto}
+.house-cook-recipe-card{align-self:start;padding:17px;border:3px solid #795b72;background:linear-gradient(150deg,#34293d,#211a2a);box-shadow:4px 4px 0 #0b0911}
+.house-cook-recipe-eyebrow{color:#f5b77c;font-size:9px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.house-cook-recipe-card h2{margin:7px 0 4px;color:#ffe0a9;font-size:clamp(19px,3vw,27px)}
+.house-cook-recipe-card p{margin:5px 0;color:#d9c8d2;font-size:11px;line-height:1.55}
+.house-cook-bowl{display:grid;place-items:center;min-height:112px;margin:14px 0;border:2px dashed #997487;background:radial-gradient(circle,#58425a,#231c2b 70%);font-size:53px;filter:drop-shadow(2px 4px 0 #100d16)}
+.house-cook-ingredients{display:flex;flex-wrap:wrap;gap:6px}
+.house-cook-ingredient-chip{padding:5px 7px;border:1px solid #94738a;background:#221b2b;color:#fff1dc;font-size:10px}
+.house-cook-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:13px}
+.house-cook-stats span{padding:7px;border:1px solid #6c576f;background:#1e1926;color:#d9c7d2;font-size:9px;text-align:center}
+.house-cook-console{display:flex;min-width:0;flex-direction:column;padding:clamp(12px,2.2vw,21px);border:3px solid #70546d;background:linear-gradient(160deg,#282136,#1a1928);box-shadow:4px 4px 0 #0b0911}
+.house-cook-steps{display:flex;gap:5px;margin:0 0 15px}
+.house-cook-step-dot{flex:1;min-width:18px;height:7px;border:1px solid #8a7289;background:#3a3042}
+.house-cook-step-dot.done{background:#9bc180;border-color:#c6e6a6;box-shadow:0 0 8px #a5d27877}
+.house-cook-step-dot.active{background:#efad68;border-color:#ffe0a6;box-shadow:0 0 9px #f4b36a88}
+.house-cook-step-label{color:#efb985;font-size:9px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.house-cook-console h3{margin:5px 0 4px;color:#fff0cf;font-size:clamp(17px,2.4vw,23px)}
+.house-cook-description{min-height:34px;margin:3px 0 11px;color:#d9ccd9;font-size:11px;line-height:1.5}
+.house-cook-workbench{display:grid;place-items:center;min-height:210px;padding:12px;border:2px solid #655269;background:radial-gradient(ellipse at 50% 55%,#47364a,#1e1a27 72%);overflow:hidden}
+.house-cook-task-stack{display:flex;width:100%;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.house-cook-task-icon{display:grid;place-items:center;width:96px;height:82px;border:3px solid #a0848e;background:linear-gradient(145deg,#615064,#372c42);box-shadow:4px 4px 0 #130f19;font-size:42px}
+.house-cook-task-progress{color:#ffe0a9;font-size:11px;font-weight:900}
+.house-cook-tap-button,.house-cook-cut-button,.house-cook-next,.house-cook-plate-item,.house-cook-stir-button{border:2px solid #ffe0a6;background:#80536d;color:#fff5e7;padding:10px 14px;font-size:11px;font-weight:1000;box-shadow:3px 3px 0 #100d16;touch-action:manipulation}
+.house-cook-tap-button:hover,.house-cook-cut-button:hover,.house-cook-next:hover,.house-cook-plate-item:hover,.house-cook-stir-button:hover{filter:brightness(1.16)}
+.house-cook-cut-board{position:relative;display:grid;place-items:center;width:min(340px,95%);height:136px;border:4px solid #906948;background:repeating-linear-gradient(0deg,#c3925e 0 14px,#b77d4c 15px 17px);box-shadow:5px 5px 0 #17111b;touch-action:none;user-select:none}
+.house-cook-cut-board:before{content:"";position:absolute;inset:7px;border:1px solid #f0c99588;pointer-events:none}
+.house-cook-cut-ingredient{position:relative;font-size:50px;filter:drop-shadow(2px 3px 0 #65412f)}
+.house-cook-cut-hint{color:#fff1dc;font-size:10px;text-shadow:1px 2px #100d16}
+.house-cook-heat-button{position:relative;display:grid;place-items:center;width:140px;height:140px;border:4px solid #f0c08a;border-radius:50%;background:radial-gradient(circle at 50% 48%,#ec9e5b,#b4443d 47%,#493044 70%);box-shadow:0 0 0 7px #35283d,0 0 25px #ef795566;color:white;touch-action:none;user-select:none}
+.house-cook-heat-button strong{font-size:34px;text-shadow:2px 3px #482433;pointer-events:none}
+.house-cook-heat-button small{position:absolute;bottom:18px;font-size:9px;font-weight:1000;letter-spacing:.08em;pointer-events:none}
+.house-cook-pattern{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:2px 0 5px}
+.house-cook-pattern span{display:grid;place-items:center;width:36px;height:34px;border:2px solid #817086;background:#2d2637;color:#cbb9ce;font-size:17px}
+.house-cook-pattern span.done{background:#54704f;border-color:#add08c;color:#fff}
+.house-cook-stir-controls{display:grid;grid-template-columns:repeat(4,42px);gap:7px;justify-content:center}
+.house-cook-stir-button{width:42px;height:42px;padding:0;font-size:18px}
+.house-cook-plate{display:flex;min-height:115px;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;width:min(360px,100%);padding:17px;border:5px solid #d3c4c5;border-radius:50%;background:radial-gradient(circle,#fff0d5,#d7c6ba 65%,#ae9399);box-shadow:5px 6px 0 #17111b}
+.house-cook-plate-item{border-color:#a97466;background:#6b4658;padding:7px 10px;font-size:21px}
+.house-cook-plate-item.done{border-color:#d5efac;background:#58744f;filter:brightness(1.12)}
+.house-cook-meter{width:min(370px,95%);height:16px;border:2px solid #d6bf9b;background:#2a2232;overflow:hidden}
+.house-cook-meter-fill{width:0;height:100%;background:linear-gradient(90deg,#7ca875,#f1b85d,#e76e4b);transition:width .08s linear}
+.house-cook-status{min-height:21px;margin:9px 0 0;color:#cde59d;font-size:10px;text-align:center}
+.house-cook-footer{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
+.house-cook-cancel{border:1px solid #b68b9d;background:#3a293a;color:#f7e8e9;padding:9px 12px;font-size:10px;font-weight:900}
+.house-cook-next{min-width:155px;background:linear-gradient(#b87650,#80506c)}
+.house-cook-next:disabled{opacity:.38;filter:grayscale(.6);cursor:not-allowed}
+@media(max-width:650px){.house-cook-overlay{padding:0}.house-cook-machine{width:100%;height:100%;max-height:100%;border:0;box-shadow:none}.house-cook-head{min-height:40px}.house-cook-content{grid-template-columns:1fr;gap:8px;padding:9px;overflow:auto}.house-cook-recipe-card{display:grid;grid-template-columns:74px 1fr;gap:0 10px;padding:9px}.house-cook-recipe-card .house-cook-recipe-eyebrow,.house-cook-recipe-card h2,.house-cook-recipe-card p{grid-column:2}.house-cook-bowl{grid-column:1;grid-row:1/4;min-height:72px;margin:0;font-size:40px}.house-cook-ingredients,.house-cook-stats{grid-column:1/-1}.house-cook-stats{margin-top:6px}.house-cook-console{padding:10px}.house-cook-workbench{min-height:175px;padding:8px}.house-cook-cut-board{height:118px}.house-cook-heat-button{width:120px;height:120px}}
 .house-ps5-overlay{position:absolute;inset:0;z-index:28;display:flex;flex-direction:column;overflow:hidden;color:#f6f5ff;background:radial-gradient(ellipse at 82% 8%,#2360a655,transparent 33%),radial-gradient(ellipse at 8% 90%,#713d8d55,transparent 34%),linear-gradient(135deg,#090d1c,#11162b 55%,#090b16);font-family:'Trebuchet MS',Verdana,sans-serif;touch-action:auto;image-rendering:auto}
 .house-ps5-overlay[hidden]{display:none!important}
 .house-ps5-overlay:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.28;background:repeating-linear-gradient(0deg,transparent 0 47px,#7fb9ff17 48px 49px),repeating-linear-gradient(90deg,transparent 0 47px,#7fb9ff12 48px 49px)}
@@ -1005,6 +1093,30 @@
       </div>
     </div>
   </div>
+  <section class="house-cook-overlay" id="house-cook-overlay" hidden aria-label="Minijuego para cocinar">
+    <div class="house-cook-machine">
+      <header class="house-cook-head"><span>🍳 COCINA PAPOI · RECETA EN MARCHA</span><button type="button" id="house-cook-cancel-x" aria-label="Salir de la preparación">×</button></header>
+      <div class="house-cook-content">
+        <aside class="house-cook-recipe-card">
+          <span class="house-cook-recipe-eyebrow">RECETA COMPARTIDA</span>
+          <h2 id="house-cook-recipe-name">Preparando…</h2>
+          <p id="house-cook-recipe-note">Cada paso queda a cargo de quien está cocinando.</p>
+          <div class="house-cook-bowl" id="house-cook-recipe-art" aria-hidden="true">🍲</div>
+          <div class="house-cook-ingredients" id="house-cook-ingredients"></div>
+          <div class="house-cook-stats"><span>⏱ COCCIÓN<br><b id="house-cook-recipe-seconds">0 s</b></span><span>♥ ENERGÍA<br><b id="house-cook-recipe-heal">0</b></span></div>
+        </aside>
+        <section class="house-cook-console" aria-live="polite">
+          <div class="house-cook-steps" id="house-cook-steps" aria-label="Pasos de la receta"></div>
+          <span class="house-cook-step-label" id="house-cook-step-label">PASO 1</span>
+          <h3 id="house-cook-step-title">Prepara la cocina</h3>
+          <p class="house-cook-description" id="house-cook-step-description"></p>
+          <div class="house-cook-workbench" id="house-cook-workbench"></div>
+          <div class="house-cook-status" id="house-cook-status" role="status">Haz los pasos con cuidado para preparar el plato.</div>
+          <div class="house-cook-footer"><button class="house-cook-cancel" type="button" id="house-cook-cancel">Cancelar · ingredientes intactos</button><button class="house-cook-next" type="button" id="house-cook-next" disabled>Siguiente paso →</button></div>
+        </section>
+      </div>
+    </div>
+  </section>
   <div class="house-ps5-overlay" id="house-ps5-overlay" hidden aria-label="Panel de PlayStation arcade">
     <header class="house-ps5-head">
       <div class="house-ps5-brand"><span class="house-ps5-logo" aria-hidden="true">P5</span><span>PAPOI PLAYSTATION<br><small>ARCADE EDITION</small></span></div>
@@ -3947,18 +4059,321 @@ const modal=$('house-dialog-backdrop'),modalTitle=$('house-dialog-title'),modalC
 const tvOverlay=$('house-tv-overlay'),tvTitle=$('house-tv-title'),tvFrame=$('house-tv-iframe'),tvVideo=$('house-tv-video'),tvStart=$('house-tv-start'),tvStatus=$('house-tv-status'),tvUpload=$('house-tv-upload'),tvUnavailable=$('house-tv-unavailable');
 const tvYouTubeApp=$('house-tv-youtube-app'),tvYouTubeLogin=$('house-tv-youtube-login'),tvYouTubeAccount=$('house-tv-youtube-account'),tvYouTubeNote=$('house-tv-youtube-note'),tvYouTubeSearch=$('house-tv-youtube-search-form'),tvYouTubeQuery=$('house-tv-youtube-query'),tvYouTubeResults=$('house-tv-youtube-results'),tvYouTubePlayerHost=$('house-tv-youtube-player');
 const pcOverlay=$('house-pc-overlay'),pcLock=$('house-pc-lock'),pcDesktop=$('house-pc-desktop'),pcLoginForm=$('house-pc-login-form'),pcPassword=$('house-pc-password'),pcError=$('house-pc-error'),pcIcons=$('house-pc-icons'),pcAppWindow=$('house-pc-app-window'),pcAppTitle=$('house-pc-app-title'),pcAppContent=$('house-pc-app-content'),pcClock=$('house-pc-clock');
+const cookOverlay=$('house-cook-overlay'),cookWorkbench=$('house-cook-workbench'),cookNext=$('house-cook-next'),cookStatus=$('house-cook-status');
 const ps5Overlay=$('house-ps5-overlay'),ps5GamesEl=$('house-ps5-games'),ps5GameCount=$('house-ps5-game-count'),ps5SelectedName=$('house-ps5-selected-name'),ps5SelectedNote=$('house-ps5-selected-note'),ps5PlayButton=$('house-ps5-play'),ps5Clock=$('house-ps5-clock'),ps5ProgressForm=$('house-ps5-progress-form'),ps5ProgressGame=$('house-ps5-progress-game');
 const roomLabel=$('house-subtitle'),hint=$('house-help'),onlineLabel=$('house-online'),progressBox=$('house-progress'),toastEl=$('house-toast');
 const joy=$('house-joystick'),knob=$('house-knob'),boardTools=$('house-board-tools');
 const W=1440,H=720,SPEED=148,ROLL_SPEED=190;
 const WHITEBOARD={x:90,y:103,w:255,h:112};
 const BOARD_COLORS={black:'#24232a',blue:'#3476bd',red:'#c84a52',eraser:'#f3efdf'};
-const RECIPES={eggs:{name:'Huevos',ingredients:{egg:2},seconds:8,heal:22},rice:{name:'Arroz',ingredients:{rice:1,tomato:1},seconds:13,heal:30},pasta:{name:'Pasta',ingredients:{pasta:1,cheese:1},seconds:16,heal:34},sandwich:{name:'Sándwich',ingredients:{bread:1,cheese:1},seconds:7,heal:20}};
+const RECIPES={
+ eggs:{name:'Huevos a la sartén',art:'🍳',ingredients:{egg:2},seconds:8,heal:22,steps:[
+  {kind:'tap',title:'Rompe los huevos',description:'Toca cada huevo sobre el borde del bol, sin que caiga cáscara.',icon:'🥚',target:2,verb:'Romper huevo'},
+  {kind:'heat',title:'Calienta la sartén',description:'Mantén el fuego hasta que la sartén esté a temperatura.',icon:'🔥',label:'MANTÉN PARA CALENTAR',heatMs:1900},
+  {kind:'stir',title:'Cocina y da vuelta',description:'Sigue el ritmo de la espátula para que queden doraditos.',pattern:['←','↑','→','↓']},
+  {kind:'plate',title:'Emplata los huevos',description:'Pasa los dos huevos al plato para servirlos.',items:['🍳','🍳']}
+ ]},
+ rice:{name:'Arroz con tomate',art:'🍚',ingredients:{rice:1,tomato:1},seconds:13,heal:30,steps:[
+  {kind:'tap',title:'Lava el arroz',description:'Enjuaga el arroz hasta que el agua quede limpia.',icon:'🍚',target:3,verb:'Enjuagar arroz'},
+  {kind:'cut',title:'Pica el tomate',description:'Desliza el cuchillo por la tabla o pulsa el botón para picarlo.',icon:'🍅',target:4,verb:'Cortar tomate'},
+  {kind:'heat',title:'Hierve el agua',description:'Mantén el fuego hasta que la olla empiece a burbujear.',icon:'💧',label:'MANTÉN PARA HERVIR',heatMs:2400},
+  {kind:'stir',title:'Revuelve a fuego lento',description:'Sigue la secuencia con la cuchara para que no se pegue.',pattern:['←','→','↓','↑','←']},
+  {kind:'plate',title:'Sirve el arroz',description:'Coloca el arroz y el tomate en el plato.',items:['🍚','🍅']}
+ ]},
+ pasta:{name:'Pasta con queso',art:'🍝',ingredients:{pasta:1,cheese:1},seconds:16,heal:34,steps:[
+  {kind:'cut',title:'Ralla el queso',description:'Pasa el cuchillo por la tabla varias veces para preparar el queso.',icon:'🧀',target:3,verb:'Rallar queso'},
+  {kind:'heat',title:'Hierve el agua',description:'Mantén el fuego hasta que el agua esté burbujeando.',icon:'💧',label:'MANTÉN PARA HERVIR',heatMs:2500},
+  {kind:'stir',title:'Mezcla la pasta',description:'Sigue el ritmo para que la pasta se cocine pareja.',pattern:['↑','←','↓','→','↑']},
+  {kind:'plate',title:'Termina el plato',description:'Sirve la pasta y agrega el queso rallado.',items:['🍝','🧀']}
+ ]},
+ sandwich:{name:'Sándwich tostado',art:'🥪',ingredients:{bread:1,cheese:1},seconds:7,heal:20,steps:[
+  {kind:'cut',title:'Corta el pan',description:'Desliza el cuchillo por la tabla para dejar listo el pan.',icon:'🍞',target:3,verb:'Cortar pan'},
+  {kind:'heat',title:'Tuesta el sándwich',description:'Mantén la plancha caliente; suelta antes de quemarlo.',icon:'🥪',label:'MANTÉN PARA TOSTAR',heatMs:1750},
+  {kind:'plate',title:'Arma y sirve',description:'Pon el pan tostado y el queso en el plato.',items:['🍞','🧀']}
+ ]}
+};
 const INGREDIENTS={egg:'Huevos',rice:'Arroz',pasta:'Pasta',bread:'Pan',cheese:'Queso',tomato:'Tomate',dog_food:'Comida para perrito'};
+let ingredientCatalog=[],INGREDIENT_SECTIONS=[];
 const ROOMS={main:'Sala principal',bathroom:'Baño',bedroom:'Dormitorio'};
 const PC_NOTES_KEY='house-pc-notes-v1';
 const PS5_PROFILE_KEY='house-ps5-profile-v1';
 let ps5Games=[],ps5SelectedGameId='',ps5NativeEvents=[],parkourProgressClient=null;
+const COOK_ICONS={egg:'🥚',rice:'🍚',pasta:'🍝',bread:'🍞',cheese:'🧀',tomato:'🍅',dog_food:'🐶'};
+let FRIDGE_RECIPE_KEYS=['egg','rice','pasta','bread','cheese','tomato'];
+let cookingPrep=null,cookHeatFrame=0,customRecipeRows=[];
+const cookById=id=>document.getElementById(id);
+async function loadIngredientCatalog(){
+ const {data,error}=await sb.from('house_ingredients').select('key,name,icon,section,sort_order,daily_stock,takeable,cookable').order('sort_order');
+ if(error)throw error;
+ ingredientCatalog=Array.isArray(data)?data:[];
+ if(!ingredientCatalog.length)throw Error('El catálogo de ingredientes está vacío.');
+ for(const key of Object.keys(INGREDIENTS))delete INGREDIENTS[key];
+ for(const key of Object.keys(COOK_ICONS))delete COOK_ICONS[key];
+ const groups=new Map();
+ for(const item of ingredientCatalog){
+  INGREDIENTS[item.key]=item.name;COOK_ICONS[item.key]=item.icon;
+  if(!item.takeable)continue;
+  if(!groups.has(item.section))groups.set(item.section,[]);
+  groups.get(item.section).push(item.key);
+ }
+ INGREDIENT_SECTIONS=[...groups].map(([name,keys])=>({name,keys}));
+ FRIDGE_RECIPE_KEYS=ingredientCatalog.filter(item=>item.cookable).map(item=>item.key);
+ return ingredientCatalog;
+}
+function ingredientOptionGroups(keys=FRIDGE_RECIPE_KEYS,showStock=true){
+ const allowed=new Set(keys);
+ return INGREDIENT_SECTIONS.map(section=>{
+  const options=section.keys.filter(key=>allowed.has(key)).map(key=>`<option value="${esc(key)}">${esc(COOK_ICONS[key]||'🥣')} ${esc(INGREDIENTS[key]||key)}${showStock?` · refri: ${Number(world?.stock?.[key]||0)}`:''}</option>`).join('');
+  return options?`<optgroup label="${esc(section.name)}">${options}</optgroup>`:'';
+ }).join('');
+}
+async function openFridgeCatalog(){
+ if(!ingredientCatalog.length){try{await loadIngredientCatalog();}catch(error){toast('No se pudo cargar el catálogo del refrigerador: '+friendly(error));return;}}
+ const groups=INGREDIENT_SECTIONS.map((section,index)=>{
+  const items=section.keys.map(key=>{
+   const item=ingredientCatalog.find(row=>row.key===key),stock=Number(world?.stock?.[key]||0);
+   return `<article class="house-fridge-item"><span class="house-fridge-item-icon">${esc(item?.icon||'🥣')}</span><span class="house-fridge-item-name">${esc(item?.name||key)}<small class="house-fridge-item-stock">Quedan ${stock}</small></span><button type="button" class="house-fridge-take" data-fridge-take="${esc(key)}" ${!world?.fridge_open||stock<1?'disabled':''}>＋ Sacar</button></article>`;
+  }).join('');
+  return `<details class="house-fridge-section" ${index===0?'open':''}><summary>${esc(section.name)} · ${section.keys.length}</summary><div class="house-fridge-items">${items}</div></details>`;
+ }).join('');
+ const status=world?.fridge_open?'Elige una sección y saca lo que necesites. El stock es compartido y se repone cada día.':'El refrigerador está cerrado. Ábrelo para sacar ingredientes.';
+ const actions=world?.fridge_open?[
+  {label:'Cerrar refrigerador',run:()=>runAction('fridge')}
+ ]:[
+  {label:'Abrir refrigerador',primary:true,run:async()=>{await runAction('fridge');if(world?.fridge_open)await openFridgeCatalog();}},
+  {label:'Cerrar panel',run:hideModal}
+ ];
+ dialog('🧊 Refrigerador · Ingredientes',`<div class="house-fridge-intro">${esc(status)} Hay verduras, frutas, proteínas, lácteos, granos, condimentos y comida para Papoi.</div><div class="house-fridge-sections">${groups}</div>`,actions);
+ modal.classList.add('fridge-catalog-open');modal.dataset.fridgeCatalog='true';
+ modalContent.querySelectorAll('[data-fridge-take]').forEach(button=>button.addEventListener('click',async()=>{
+  if(button.disabled)return;button.disabled=true;
+  try{const item=ingredientCatalog.find(row=>row.key===button.dataset.fridgeTake),ok=await runAction('take',button.dataset.fridgeTake);if(ok&&world?.fridge_open){toast(`Guardaste ${item?.name||'el ingrediente'} en tu inventario.`);await openFridgeCatalog();}else if(!ok)button.disabled=false;}
+  catch(error){toast(friendly(error));button.disabled=false;}
+ }));
+}
+async function refreshCustomRecipes(){
+ const {data,error}=await sb.from('house_recipes').select('id,name,ingredients,steps,seconds,heal,created_by,created_at').order('created_at',{ascending:true});
+ if(error)throw error;
+ customRecipeRows=Array.isArray(data)?data:[];
+ Object.keys(RECIPES).filter(key=>key.startsWith('custom_')).forEach(key=>delete RECIPES[key]);
+ for(const row of customRecipeRows){
+  if(!String(row.id||'').startsWith('custom_')||!row.ingredients||!Array.isArray(row.steps))continue;
+  const steps=row.steps.map(raw=>{
+   const step={...raw};
+   if(step.kind==='cut'){step.verb=step.title;step.icon=COOK_ICONS[step.ingredient]||'🥕';}
+   if(step.kind==='tap'){step.verb=step.title;step.icon=COOK_ICONS[FRIDGE_RECIPE_KEYS.find(key=>Number(row.ingredients[key])>0)]||'🥣';}
+   if(step.kind==='heat'){step.label=step.title;step.icon=/agua|herv|hervor/i.test((step.title||'')+' '+(step.description||''))?'💧':'🔥';}
+   return step;
+  });
+  const plateItems=Object.entries(row.ingredients).flatMap(([key,amount])=>Array.from({length:Math.max(0,Math.min(12,Number(amount)||0))},()=>COOK_ICONS[key]||'🥣'));
+  steps.push({kind:'plate',title:'Emplata y sirve',description:'Coloca todos los ingredientes en el plato.',items:plateItems});
+  RECIPES[row.id]={name:String(row.name||'Receta casera'),art:'🍲',ingredients:row.ingredients,seconds:Number(row.seconds)||10,heal:Number(row.heal)||20,steps};
+ }
+ return customRecipeRows;
+}
+function recipeIngredientOptions(){return ingredientOptionGroups(FRIDGE_RECIPE_KEYS,true);}
+function renderRecipeBook(){
+ const cards=Object.entries(RECIPES).map(([key,recipe])=>{
+  const ingredients=Object.entries(recipe.ingredients||{}).map(([ingredient,amount])=>`${COOK_ICONS[ingredient]||'🥣'} ${esc(INGREDIENTS[ingredient]||ingredient)} ×${Number(amount)||0}`).join(' · ');
+  const steps=(recipe.steps||[]).filter(step=>step.kind!=='plate').map((step,index)=>`<b>${index+1}. ${esc(step.title)}</b>: ${esc(step.description)}`).join('<br>');
+  return `<article class="house-recipe-book-card"><span class="house-recipe-book-tag">${key.startsWith('custom_')?'RECETA DE CASA':'RECETA CLÁSICA'}</span><h3>${esc(recipe.art||'🍲')} ${esc(recipe.name)}</h3><p>${ingredients}</p><p>Preparación:<br>${steps}</p><p>⏱ ${Number(recipe.seconds)||0} s de cocción final</p></article>`;
+ }).join('');
+ modal.dataset.recipeBookView='list';modal.classList.add('recipe-book-open');
+ dialog('📚 Librero · Recetario',`<div class="house-recipe-book-intro">Las recetas caseras usan ingredientes del refrigerador compartido. Primero sácalos del refri; después acércate a los fogones y completa cada paso.</div><div class="house-recipe-book-list">${cards||'<p>Todavía no hay recetas. ¡Escribe la primera!</p>'}</div>`,[
+  {label:'✍️ Escribir receta',primary:true,run:openRecipeCreationForm}
+ ]);
+ modal.classList.add('recipe-book-open');modal.dataset.recipeBookView='list';
+}
+async function openRecipeBook(){
+ try{await refreshCustomRecipes();}catch(error){toast('No se pudo actualizar el recetario compartido: '+friendly(error));}
+ renderRecipeBook();
+}
+function syncRecipeCutOptions(){
+ const selected=[...modalContent.querySelectorAll('.house-recipe-ingredient-row [data-recipe-ingredient]')].map(input=>input.value);
+ const available=FRIDGE_RECIPE_KEYS.filter(key=>selected.includes(key));
+ for(const select of modalContent.querySelectorAll('[data-recipe-cut-ingredient]')){
+  const previous=select.value,keys=available.length?available:FRIDGE_RECIPE_KEYS;
+  select.innerHTML=ingredientOptionGroups(keys,false);
+  if(keys.includes(previous))select.value=previous;
+ }
+}
+function recipeFormIngredientRow(){
+ const row=document.createElement('div');row.className='house-recipe-ingredient-row';
+ row.innerHTML=`<label>Ingrediente<select data-recipe-ingredient required>${recipeIngredientOptions()}</select></label><label>Unidades<input data-recipe-amount type="number" min="1" max="6" value="1" required></label><button class="house-recipe-remove" type="button">×</button>`;
+ row.querySelector('[data-recipe-ingredient]').addEventListener('change',syncRecipeCutOptions);
+ row.querySelector('button').addEventListener('click',()=>{if(modalContent.querySelectorAll('.house-recipe-ingredient-row').length>1)row.remove();updateRecipeFormButtons();});return row;
+}
+function recipeFormStepRow(){
+ const row=document.createElement('div');row.className='house-recipe-step-row';
+ row.innerHTML=`<label class="wide">Tipo de paso<select data-recipe-step-kind><option value="tap">Preparar, lavar o romper</option><option value="cut">Cortar un ingrediente</option><option value="heat">Calentar o hervir</option><option value="stir">Revolver siguiendo flechas</option></select></label><label>Título del paso<input data-recipe-step-title maxlength="60" minlength="2" placeholder="Ej.: Pica el tomate" required></label><label>Repeticiones / segundos / flechas<input data-recipe-step-target type="number" min="1" max="8" value="3" required></label><label class="wide">¿Qué hay que hacer?<textarea data-recipe-step-description minlength="5" maxlength="180" placeholder="Describe la acción para quien cocina" required></textarea></label><label class="wide">Ingrediente a cortar (si corresponde)<select data-recipe-cut-ingredient>${recipeIngredientOptions()}</select></label><button class="house-recipe-remove" type="button">Quitar paso</button>`;
+ const kind=row.querySelector('[data-recipe-step-kind]'),target=row.querySelector('[data-recipe-step-target]');
+ kind.addEventListener('change',()=>{target.min=kind.value==='stir'?'3':'1';target.max=kind.value==='stir'?'6':'8';target.value=String(Math.max(Number(target.min),Math.min(Number(target.max),Number(target.value)||Number(target.min))));});
+ row.querySelector('button').addEventListener('click',()=>{if(modalContent.querySelectorAll('.house-recipe-step-row').length>1)row.remove();updateRecipeFormButtons();});return row;
+}
+function updateRecipeFormButtons(){
+ const ingredients=modalContent.querySelectorAll('.house-recipe-ingredient-row').length,steps=modalContent.querySelectorAll('.house-recipe-step-row').length;
+ const addIngredient=cookById('house-recipe-add-ingredient'),addStep=cookById('house-recipe-add-step');
+ if(addIngredient)addIngredient.disabled=ingredients>=6;if(addStep)addStep.disabled=steps>=6;
+ syncRecipeCutOptions();
+}
+function openRecipeCreationForm(){
+ modal.dataset.recipeBookView='form';modal.classList.add('recipe-book-open');
+ dialog('✍️ Escribir receta casera',`<form class="house-recipe-form" id="house-recipe-form"><div class="house-recipe-book-intro">Elige ingredientes que existan en el refrigerador. Para cortarlos o cocinarlos, tendrás que tenerlos en tu inventario antes de iniciar la receta.</div><label for="house-recipe-name">Nombre del plato</label><input id="house-recipe-name" maxlength="48" minlength="3" placeholder="Ej.: Papas con queso" required><div class="house-recipe-form-section"><h3>Ingredientes del refrigerador</h3><p class="house-recipe-form-help">Hasta 6 tipos y 12 unidades en total. El icono muestra cuánto queda ahora en el refri.</p><div id="house-recipe-ingredient-rows"></div><button class="house-recipe-add" type="button" id="house-recipe-add-ingredient">＋ Añadir ingrediente</button></div><div class="house-recipe-form-section"><h3>Pasos de preparación</h3><p class="house-recipe-form-help">Cada paso se convertirá en una acción jugable de la cocina. El paso de emplatar aparece automáticamente.</p><div id="house-recipe-step-rows"></div><button class="house-recipe-add" type="button" id="house-recipe-add-step">＋ Añadir paso</button></div><div class="house-recipe-form-section"><label for="house-recipe-seconds">Tiempo de cocción final</label><input id="house-recipe-seconds" type="number" min="5" max="30" value="10" required><p class="house-recipe-form-help">Segundos que tarda la receta en terminar después del minijuego.</p></div></form>`,[
+  {label:'Guardar en el recetario',primary:true,run:saveCustomRecipe},
+  {label:'Volver a recetas',run:openRecipeBook}
+ ]);
+ modal.classList.add('recipe-book-open');modal.dataset.recipeBookView='form';
+ const ingredientRows=cookById('house-recipe-ingredient-rows'),stepRows=cookById('house-recipe-step-rows');
+ ingredientRows.appendChild(recipeFormIngredientRow());stepRows.appendChild(recipeFormStepRow());
+ cookById('house-recipe-add-ingredient').addEventListener('click',()=>{if(ingredientRows.children.length<6)ingredientRows.appendChild(recipeFormIngredientRow());updateRecipeFormButtons();});
+ cookById('house-recipe-add-step').addEventListener('click',()=>{if(stepRows.children.length<6)stepRows.appendChild(recipeFormStepRow());updateRecipeFormButtons();});
+ cookById('house-recipe-form').addEventListener('submit',event=>event.preventDefault());updateRecipeFormButtons();syncRecipeCutOptions();
+}
+function recipeUuid(){
+ if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID().toLowerCase();
+ const bytes=new Uint8Array(16);globalThis.crypto.getRandomValues(bytes);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;const hex=[...bytes].map(byte=>byte.toString(16).padStart(2,'0')).join('');return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+async function saveCustomRecipe(){
+ const form=cookById('house-recipe-form');if(!form||!form.reportValidity())return;
+ const name=cookById('house-recipe-name').value.trim(),seconds=Number(cookById('house-recipe-seconds').value);
+ if(Object.values(RECIPES).some(recipe=>recipe.name.trim().toLocaleLowerCase('es-CL')===name.toLocaleLowerCase('es-CL'))){toast('Ya existe una receta con ese nombre.');return;}
+ const ingredients={};
+ for(const row of modalContent.querySelectorAll('.house-recipe-ingredient-row')){
+  const key=row.querySelector('[data-recipe-ingredient]').value,amount=Number(row.querySelector('[data-recipe-amount]').value);
+  ingredients[key]=(ingredients[key]||0)+amount;
+ }
+ const total=Object.values(ingredients).reduce((sum,amount)=>sum+amount,0);
+ if(Object.keys(ingredients).length<1||Object.keys(ingredients).length>6||total>12||Object.values(ingredients).some(amount=>amount<1||amount>6)){toast('Usa hasta 6 ingredientes distintos y 12 unidades en total.');return;}
+ const steps=[];
+ for(const row of modalContent.querySelectorAll('.house-recipe-step-row')){
+  const kind=row.querySelector('[data-recipe-step-kind]').value,title=row.querySelector('[data-recipe-step-title]').value.trim(),description=row.querySelector('[data-recipe-step-description]').value.trim(),amount=Number(row.querySelector('[data-recipe-step-target]').value),cutIngredient=row.querySelector('[data-recipe-cut-ingredient]').value;
+  const base={kind,title,description};
+  if(kind==='tap'){base.target=amount;base.verb=title;base.icon=COOK_ICONS[Object.keys(ingredients)[0]]||'🥣';}
+  else if(kind==='cut'){if(!ingredients[cutIngredient]){toast('El ingrediente que cortes debe estar incluido en la receta.');return;}base.target=amount;base.verb=title;base.ingredient=cutIngredient;base.icon=COOK_ICONS[cutIngredient];}
+  else if(kind==='heat'){base.heatMs=amount*1000;base.label=title;base.icon=/agua|herv|hervor/i.test(title+' '+description)?'💧':'🔥';}
+  else if(kind==='stir'){const arrows=['←','↑','→','↓','←','↓'];base.pattern=arrows.slice(0,Math.max(3,Math.min(6,amount)));}
+  steps.push(base);
+ }
+ const row={id:'custom_'+recipeUuid(),name,ingredients,steps,seconds,heal:Math.min(60,14+total*4),created_by:user.id};
+ try{
+  const {error}=await sb.from('house_recipes').insert(row);if(error)throw error;
+  await refreshCustomRecipes();channel?.send({type:'broadcast',event:'recipes_changed',payload:{id:user.id}}).catch(()=>{});
+  hideModal();toast('📖 ¡'+name+' quedó en el recetario compartido! Saca sus ingredientes del refri y prepárala en los fogones.',5000);
+ }catch(error){toast('No se pudo guardar la receta: '+friendly(error));}
+}
+function cookSetReady(ready,label){
+ if(!cookNext)return;
+ cookNext.disabled=!ready;
+ const recipe=RECIPES[cookingPrep?.recipeKey];
+ cookNext.textContent=ready&&cookingPrep?.stepIndex===recipe?.steps.length-1?'Servir y terminar 🍽️':'Siguiente paso →';
+ if(label)cookStatus.textContent=label;
+}
+function cookStepProgress(message){
+ const step=RECIPES[cookingPrep?.recipeKey]?.steps[cookingPrep?.stepIndex];
+ if(!step)return;
+ if(step.kind==='tap')cookWorkbench.querySelector('[data-cook-progress]').textContent=`${cookingPrep.progress} / ${step.target} · ${step.verb.toLowerCase()}`;
+ if(step.kind==='cut')cookWorkbench.querySelector('[data-cook-progress]').textContent=`${cookingPrep.progress} / ${step.target} cortes`;
+ if(step.kind==='plate')cookWorkbench.querySelector('[data-cook-progress]').textContent=`${cookingPrep.plated.length} / ${step.items.length} ingredientes servidos`;
+ if(message)cookStatus.textContent=message;
+}
+function cookAddProgress(message){
+ const recipe=RECIPES[cookingPrep?.recipeKey],step=recipe?.steps[cookingPrep?.stepIndex];
+ if(!step||!['tap','cut'].includes(step.kind))return;
+ cookingPrep.progress=Math.min(step.target,cookingPrep.progress+1);
+ cookStepProgress(message||'¡Bien! Sigue preparando con cuidado.');
+ if(cookingPrep.progress>=step.target){cookSetReady(true,'¡Listo! Puedes continuar con el siguiente paso.');}
+}
+function cookMakeStack(icon,progressText){
+ const stack=document.createElement('div');stack.className='house-cook-task-stack';
+ const picture=document.createElement('div');picture.className='house-cook-task-icon';picture.textContent=icon;
+ const progress=document.createElement('div');progress.className='house-cook-task-progress';progress.dataset.cookProgress='';progress.textContent=progressText;
+ stack.append(picture,progress);return stack;
+}
+function cookRenderStep(){
+ if(!cookingPrep||!cookOverlay)return;
+ const recipe=RECIPES[cookingPrep.recipeKey],step=recipe.steps[cookingPrep.stepIndex];
+ cookById('house-cook-step-label').textContent=`PASO ${cookingPrep.stepIndex+1} DE ${recipe.steps.length}`;
+ cookById('house-cook-step-title').textContent=step.title;
+ cookById('house-cook-step-description').textContent=step.description;
+ const dots=cookById('house-cook-steps');dots.replaceChildren();
+ recipe.steps.forEach((_,index)=>{const dot=document.createElement('span');dot.className='house-cook-step-dot'+(index<cookingPrep.stepIndex?' done':'')+(index===cookingPrep.stepIndex?' active':'');dot.setAttribute('aria-label',`Paso ${index+1}${index<cookingPrep.stepIndex?' completado':index===cookingPrep.stepIndex?' actual':''}`);dots.appendChild(dot);});
+ cookWorkbench.replaceChildren();cookSetReady(false,'Completa este paso para continuar.');
+ if(step.kind==='tap'){
+  const stack=cookMakeStack(step.icon,`0 / ${step.target} ${step.verb.toLowerCase()}s`),button=document.createElement('button');button.type='button';button.className='house-cook-tap-button';button.textContent=step.verb+' · tocar';
+  button.addEventListener('click',()=>cookAddProgress());stack.appendChild(button);cookWorkbench.appendChild(stack);
+ }else if(step.kind==='cut'){
+  const stack=cookMakeStack(step.icon,`0 / ${step.target} cortes`),board=document.createElement('div');board.className='house-cook-cut-board';board.setAttribute('role','button');board.setAttribute('aria-label',`Desliza el cuchillo para ${step.verb.toLowerCase()}`);board.tabIndex=0;
+  const item=document.createElement('span');item.className='house-cook-cut-ingredient';item.textContent=step.icon;const knife=document.createElement('span');knife.className='house-cook-knife';knife.textContent='🔪';knife.style.cssText='position:absolute;z-index:2;left:50%;top:50%;opacity:0;pointer-events:none;font-size:31px;filter:drop-shadow(2px 3px 1px #422a25);transform:translate(-50%,-50%) rotate(-28deg)';
+  const hint=document.createElement('span');hint.className='house-cook-cut-hint';hint.textContent='Desliza el cuchillo ↔';board.append(item,hint);
+  board.appendChild(knife);let swipe=null;board.addEventListener('pointerdown',event=>{swipe={x:event.clientX,y:event.clientY};knife.style.opacity='1';board.setPointerCapture?.(event.pointerId);});
+  board.addEventListener('pointermove',event=>{if(!swipe)return;const bounds=board.getBoundingClientRect();knife.style.left=(event.clientX-bounds.left)+'px';knife.style.top=(event.clientY-bounds.top)+'px';});
+  board.addEventListener('pointerup',event=>{if(!swipe)return;const moved=Math.hypot(event.clientX-swipe.x,event.clientY-swipe.y);swipe=null;knife.style.opacity='0';if(moved>=32)cookAddProgress('¡Buen corte! Sigue hasta preparar todo.');});
+  board.addEventListener('pointercancel',()=>{swipe=null;knife.style.opacity='0';});
+  const button=document.createElement('button');button.type='button';button.className='house-cook-cut-button';button.textContent='🔪 Cortar';button.addEventListener('click',()=>cookAddProgress('¡Buen corte! Sigue hasta preparar todo.'));
+  stack.append(board,button);cookWorkbench.appendChild(stack);
+ }else if(step.kind==='heat'){
+  const stack=cookMakeStack(step.icon,'0% de temperatura'),meter=document.createElement('div'),fill=document.createElement('div'),button=document.createElement('button');
+  meter.className='house-cook-meter';meter.setAttribute('role','progressbar');meter.setAttribute('aria-label','Temperatura');meter.setAttribute('aria-valuemin','0');meter.setAttribute('aria-valuemax','100');meter.setAttribute('aria-valuenow','0');fill.className='house-cook-meter-fill';meter.appendChild(fill);
+  button.type='button';button.className='house-cook-heat-button';button.setAttribute('aria-label',step.label);button.innerHTML='<strong>🔥</strong><small>'+esc(step.label)+'</small>';
+  button.style.transition='transform .2s,filter .2s,box-shadow .2s';
+  const start=event=>{event.preventDefault();if(cookingPrep.heating||cookingPrep.heat>=step.heatMs)return;cookingPrep.heating=true;cookingPrep.lastHeatAt=performance.now();button.style.transform='scale(1.04)';button.style.filter='saturate(1.4)';button.style.boxShadow='0 0 0 7px #6e493f,0 0 38px #ffb455aa';cookStatus.textContent='Mantén pulsado… suelta el fuego cuando llegue al punto.';if(event.pointerId!=null)button.setPointerCapture?.(event.pointerId);cookHeatFrame=requestAnimationFrame(tick);};
+  const stop=()=>{if(!cookingPrep)return;cookingPrep.heating=false;button.style.transform='';button.style.filter='';button.style.boxShadow='';if(cookHeatFrame)cancelAnimationFrame(cookHeatFrame);cookHeatFrame=0;if(cookingPrep.heat<step.heatMs)cookStatus.textContent='El calor se conserva. Mantén pulsado otra vez para seguir.';};
+  const tick=now=>{if(!cookingPrep?.heating)return;const elapsed=Math.min(100,Math.max(0,now-cookingPrep.lastHeatAt));cookingPrep.lastHeatAt=now;cookingPrep.heat=Math.min(step.heatMs,cookingPrep.heat+elapsed);const pct=Math.round(cookingPrep.heat/step.heatMs*100);fill.style.width=pct+'%';meter.setAttribute('aria-valuenow',String(pct));stack.querySelector('[data-cook-progress]').textContent=pct+'% de temperatura';if(cookingPrep.heat>=step.heatMs){stop();cookSetReady(true,'¡A punto! El agua hirvió sin desbordarse.');}else cookHeatFrame=requestAnimationFrame(tick);};
+  button.addEventListener('pointerdown',start);button.addEventListener('pointerup',stop);button.addEventListener('pointercancel',stop);button.addEventListener('lostpointercapture',stop);button.addEventListener('keydown',event=>{if(event.code==='Space'||event.code==='Enter'){if(!event.repeat)start(event);}});button.addEventListener('keyup',event=>{if(event.code==='Space'||event.code==='Enter')stop();});
+  stack.append(button,meter);cookWorkbench.appendChild(stack);
+ }else if(step.kind==='stir'){
+  const stack=cookMakeStack('🥄',`0 / ${step.pattern.length} movimientos`),pattern=document.createElement('div'),controls=document.createElement('div');pattern.className='house-cook-pattern';controls.className='house-cook-stir-controls';
+  const paint=()=>{pattern.replaceChildren();step.pattern.forEach((arrow,index)=>{const cell=document.createElement('span');cell.textContent=arrow;if(index<cookingPrep.patternIndex)cell.classList.add('done');if(index===cookingPrep.patternIndex)cell.setAttribute('aria-current','step');pattern.appendChild(cell);});stack.querySelector('[data-cook-progress]').textContent=`${cookingPrep.patternIndex} / ${step.pattern.length} movimientos`;};
+  const move=arrow=>{if(step.pattern[cookingPrep.patternIndex]===arrow){cookingPrep.patternIndex++;paint();if(cookingPrep.patternIndex>=step.pattern.length)cookSetReady(true,'¡Quedó bien mezclado!');else cookStatus.textContent='¡Correcto! Sigue el orden que aparece arriba.';}else{cookingPrep.patternIndex=0;paint();cookStatus.textContent='Se perdió el ritmo; vuelve a empezar la secuencia.';}};
+  [['←','ArrowLeft'],['↑','ArrowUp'],['→','ArrowRight'],['↓','ArrowDown']].forEach(([arrow,key])=>{const button=document.createElement('button');button.type='button';button.className='house-cook-stir-button';button.textContent=arrow;button.setAttribute('aria-label','Mover '+arrow);button.addEventListener('click',()=>move(arrow));controls.appendChild(button);});
+  cookingPrep.moveStir=move;stack.append(pattern,controls);cookWorkbench.appendChild(stack);paint();
+ }else if(step.kind==='plate'){
+  const stack=cookMakeStack('🍽️',`0 / ${step.items.length} ingredientes servidos`),plate=document.createElement('div');plate.className='house-cook-plate';plate.setAttribute('aria-label','Plato para servir');
+  step.items.forEach((icon,index)=>{const button=document.createElement('button');button.type='button';button.className='house-cook-plate-item';button.textContent=icon;button.setAttribute('aria-label','Servir '+icon);button.addEventListener('click',()=>{if(cookingPrep.plated.includes(index))return;cookingPrep.plated.push(index);button.classList.add('done');button.disabled=true;cookStepProgress('¡Al plato! Coloca todos los ingredientes para servir.');if(cookingPrep.plated.length===step.items.length)cookSetReady(true,'¡Se ve delicioso! Ya puedes servirlo.');});plate.appendChild(button);});stack.appendChild(plate);cookWorkbench.appendChild(stack);
+ }
+}
+function openCookingGame(recipeKey){
+ const recipe=RECIPES[recipeKey];if(!recipe||!cookOverlay||!cookWorkbench)return;
+ const missing=Object.entries(recipe.ingredients).find(([key,amount])=>inv(key)<amount);
+ if(missing){toast(`Te falta ${INGREDIENTS[missing[0]]||missing[0]} para preparar ${recipe.name}.`);return;}
+ hideModal();cookingPrep={recipeKey,stepIndex:0,progress:0,heat:0,patternIndex:0,plated:[],heating:false,previousActivity:myPos.activity};
+ myPos.activity='cook';broadcast(true);
+ cookById('house-cook-recipe-name').textContent=recipe.name;cookById('house-cook-recipe-note').textContent='Prepara cada ingrediente, controla el fuego y sirve el plato. Los ingredientes se descuentan al iniciar la cocción final.';
+ cookById('house-cook-recipe-art').textContent=recipe.art;cookById('house-cook-recipe-seconds').textContent=recipe.seconds+' s';cookById('house-cook-recipe-heal').textContent='+'+recipe.heal;
+ const chips=cookById('house-cook-ingredients');chips.replaceChildren();Object.entries(recipe.ingredients).forEach(([key,amount])=>{const chip=document.createElement('span');chip.className='house-cook-ingredient-chip';chip.textContent=`${COOK_ICONS[key]||'🥣'} ${INGREDIENTS[key]||key} ×${amount}`;chips.appendChild(chip);});
+ cookOverlay.hidden=false;cookOverlay.tabIndex=-1;gamePaused=true;cookRenderStep();cookOverlay.focus({preventScroll:true});
+}
+function closeCookingGame(showToast=false){
+ if(cookingPrep?.saving){toast('Espera un momento: estamos guardando la receta.');return false;}
+ const previousActivity=cookingPrep?.previousActivity;
+ if(cookHeatFrame)cancelAnimationFrame(cookHeatFrame);cookHeatFrame=0;if(cookingPrep)cookingPrep.heating=false;
+ if(cookOverlay)cookOverlay.hidden=true;cookingPrep=null;
+ if(showToast&&myPos.activity==='cook'&&previousActivity){myPos.activity=previousActivity;broadcast(true);}
+ gamePaused=!!(tvOverlay&&!tvOverlay.hidden)||!!(pcOverlay&&!pcOverlay.hidden)||!!(ps5Overlay&&!ps5Overlay.hidden);
+ if(showToast)toast('Preparación cancelada. No se descontaron ingredientes.');
+ return true;
+}
+async function finishCookingPrep(){
+ if(!cookingPrep)return;
+ const prep=cookingPrep,key=prep.recipeKey,recipe=RECIPES[key];prep.saving=true;cookNext.disabled=true;cookById('house-cook-cancel').disabled=true;cookById('house-cook-cancel-x').disabled=true;cookStatus.textContent='Guardando la receta y descontando ingredientes…';
+ gamePaused=true;const ok=await runAction('cook',key);
+ if(cookingPrep!==prep)return;
+ prep.saving=false;cookById('house-cook-cancel').disabled=false;cookById('house-cook-cancel-x').disabled=false;
+ if(ok){closeCookingGame();toast('🍽️ '+recipe.name+' está en marcha. Cuando termine, déjalo en el mesón para que cualquiera pueda recogerlo.',4500);}
+ else{gamePaused=true;cookNext.disabled=false;cookStatus.textContent='No se pudo iniciar la receta. Puedes volver a intentarlo o cancelar.';}
+}
+function advanceCookStep(){
+ if(!cookingPrep||cookNext.disabled)return;
+ const recipe=RECIPES[cookingPrep.recipeKey];
+ if(cookingPrep.stepIndex===recipe.steps.length-1){finishCookingPrep();return;}
+ if(cookHeatFrame)cancelAnimationFrame(cookHeatFrame);cookHeatFrame=0;cookingPrep.heating=false;
+ cookingPrep.stepIndex++;cookingPrep.progress=0;cookingPrep.heat=0;cookingPrep.patternIndex=0;cookingPrep.plated=[];cookRenderStep();
+}
+if(cookNext)cookNext.addEventListener('click',advanceCookStep);
+if(cookById('house-cook-cancel'))cookById('house-cook-cancel').addEventListener('click',()=>closeCookingGame(true));
+if(cookById('house-cook-cancel-x'))cookById('house-cook-cancel-x').addEventListener('click',()=>closeCookingGame(true));
+if(cookOverlay)cookOverlay.addEventListener('keydown',event=>{if(!cookingPrep)return;const arrow={ArrowLeft:'←',ArrowUp:'↑',ArrowRight:'→',ArrowDown:'↓'}[event.key];if(arrow&&cookingPrep.moveStir){event.preventDefault();cookingPrep.moveStir(arrow);}});
+document.addEventListener('visibilitychange',()=>{if(cookingPrep?.heating){cookingPrep.heating=false;if(cookHeatFrame)cancelAnimationFrame(cookHeatFrame);cookHeatFrame=0;}});
 function readPs5Profile(){
  try{const data=JSON.parse(localStorage.getItem(PS5_PROFILE_KEY)||'{}');return{games:data&&data.games&&typeof data.games==='object'?data.games:{},events:Array.isArray(data?.events)?data.events.filter(item=>item&&typeof item==='object'):[]};}
  catch(_){return{games:{},events:[]};}
@@ -4249,9 +4664,9 @@ function refreshBoardTools(){
   button.title=inRange?'':'Acerca la silla a la pizarra para usar esta herramienta.';
  });
 }
-function hideModal(){modal.hidden=true;modalActions.innerHTML='';modalContent.innerHTML='';gamePaused=!!(tvOverlay&&!tvOverlay.hidden);}
+function hideModal(){modal.hidden=true;modalActions.innerHTML='';modalContent.innerHTML='';modal.classList.remove('recipe-book-open','fridge-catalog-open');delete modal.dataset.recipeBookView;delete modal.dataset.fridgeCatalog;gamePaused=!!(tvOverlay&&!tvOverlay.hidden);}
 function dialog(title,html,actions=[],locked=false){
- modalTitle.textContent=title;modalContent.innerHTML=html;modalActions.innerHTML='';modal.hidden=false;gamePaused=true;
+ modalTitle.textContent=title;modalContent.innerHTML=html;modalActions.innerHTML='';modal.hidden=false;gamePaused=true;modal.classList.remove('recipe-book-open','fridge-catalog-open');delete modal.dataset.recipeBookView;delete modal.dataset.fridgeCatalog;
  $('house-dialog-x').style.display=locked?'none':'';
  for(const a of actions){const b=document.createElement('button');b.className='house-action'+(a.primary?' primary':'');b.textContent=a.label;b.disabled=!!a.disabled;b.onclick=async()=>{if(choiceBusy)return;choiceBusy=true;b.disabled=true;try{await a.run();}catch(e){toast(friendly(e));}finally{choiceBusy=false;b.disabled=false;}};modalActions.appendChild(b);}
 }
@@ -4855,7 +5270,7 @@ async function initGame(){
  try{
   // Deja que Supabase renueve automáticamente el JWT del canal privado.
   await sb.realtime.setAuth();
-  await sync(true);await connect();await loadWhiteboard();
+  await sync(true);try{await loadIngredientCatalog();}catch(error){console.warn('No se pudo cargar el catálogo de ingredientes:',error);}try{await refreshCustomRecipes();}catch(error){console.warn('No se pudieron cargar las recetas de casa:',error);}await connect();await loadWhiteboard();
   if(!me.has_entered){
    introStartedAt=performance.now();introUntil=introStartedAt+3200;
    myPos={x:1390,y:530,room:'main',facing:'left',activity:'welcome'};
@@ -4950,6 +5365,14 @@ async function connect(){
  channel.on('broadcast',{event:'dishes_changed'},({payload})=>{
    if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
    sync(false).catch(e=>console.warn('No se pudieron sincronizar los platos:',e));
+  });
+ channel.on('broadcast',{event:'fridge_changed'},({payload})=>{
+   if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+   sync(false).then(()=>{if(modal.dataset.fridgeCatalog==='true')openFridgeCatalog();}).catch(e=>console.warn('No se pudo sincronizar el refrigerador:',e));
+  });
+ channel.on('broadcast',{event:'recipes_changed'},({payload})=>{
+   if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+   refreshCustomRecipes().then(()=>{if(modal.dataset.recipeBookView==='list')renderRecipeBook();}).catch(e=>console.warn('No se pudo actualizar el recetario:',e));
   });
   channel.on('broadcast',{event:'dog_feed'},({payload})=>{
    if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
@@ -5265,7 +5688,7 @@ async function rescueSofaPosition(){
  }catch(e){toast('No se pudo liberar el personaje: '+friendly(e));}
 }
 async function runAction(name,value){
- if(me?.sick){toast('Estás enfermo. Necesitas cuidados de tu pareja.');return;}
+ if(me?.sick){toast('Estás enfermo. Necesitas cuidados de tu pareja.');return false;}
  try{
   if(DISH_ACTIONS[name]){
    await safeCall('house_dish_action',{p_action:DISH_ACTIONS[name],p_dish_id:DISH_ACTIONS[name]==='place'?null:value||null});
@@ -5275,7 +5698,9 @@ async function runAction(name,value){
    pendingMove=false;positionRetryAt=0;
   }else{
    if(pendingMove||positionSavePromise)await persist(true);
-   await action(name,value);
+   if(name==='take')await safeCall('house_take_ingredient',{p_ingredient:String(value||'')});
+   else if(name==='cook'&&String(value||'').startsWith('custom_'))await safeCall('house_cook_custom_recipe',{p_recipe_id:String(value)});
+   else await action(name,value);
   }
   await sync(false);
   if(name==='tv'&&!world?.tv_on){
@@ -5292,6 +5717,7 @@ async function runAction(name,value){
   if(name==='desk_sit'&&me){myPos={...myPos,x:Number(me.x),y:Number(me.y),room:me.room,activity:'desk',deskSeat:me.desk_seat||value||'left'};}
   if(name==='stand')await rescueSofaPosition();
   if(DISH_ACTIONS[name]||['cook','care_feed','eat'].includes(name))channel?.send({type:'broadcast',event:'dishes_changed',payload:{id:user.id}}).catch(()=>{});
+  if(name==='take'||name==='fridge')channel?.send({type:'broadcast',event:'fridge_changed',payload:{id:user.id}}).catch(()=>{});
   broadcast(true);hideModal();refreshBoardTools();
   if(name==='feed_dog'){
     // El mensaje avisa al líder de la animación inmediatamente, sin esperar
@@ -5319,7 +5745,8 @@ async function runAction(name,value){
      toast(`♥ Cuidado guardado: comida ${flags&1?'✓':'pendiente'} · compañía ${flags&2?'✓':'pendiente'}. Al completar ambos, se marcará el día inmediatamente.`,6900);
    }
   }
- }catch(e){toast(friendly(e));}
+  return true;
+ }catch(e){toast(friendly(e));return false;}
 }
 async function transition(to){
  try{
@@ -5340,6 +5767,7 @@ async function closeHouse(){
  // La posición se envía primero y luego el estado de descanso al servidor.
  const shouldRest=playing&&!me?.sick&&myPos.activity!=='sleep';
  const saved=(pendingMove||positionSavePromise)?persist(true).catch(()=>{}):Promise.resolve();
+  if(cookOverlay)cookOverlay.hidden=true;if(cookHeatFrame)cancelAnimationFrame(cookHeatFrame);cookHeatFrame=0;cookingPrep=null;
   visible=false;screen.hidden=true;document.body.classList.remove('house-games-open');if(pcOverlay)pcOverlay.hidden=true;if(ps5Overlay)ps5Overlay.hidden=true;if(pcAppWindow)pcAppWindow.hidden=true;window.houseGameReturnToPlay=false;keys.clear();stick={x:0,y:0};knob.style.transform='';
  tvIgnoreEventsUntil=Date.now()+1200;
  if(tvVideo&&!tvVideo.paused)tvVideo.pause();
@@ -5359,6 +5787,7 @@ const objects={
   {id:'table',label:'Mesa y sillas',x:870,y:400,range:165,hitRadius:92},
   {id:'sofa',label:'Sillón',x:440,y:420,range:145,hitRadius:84},
   {id:'tv',label:'Televisión',x:440,y:355,range:135,hitRadius:78},
+  {id:'recipeBook',label:'Recetario',x:408,y:120,range:140,hitRadius:24},
   {id:'ps5',label:'PlayStation 5',x:522,y:307,range:140,hitRadius:36},
   {id:'bathDoor',label:'Puerta del baño',x:120,y:230,range:140,hitRadius:72},
   {id:'bedDoor',label:'Puerta del dormitorio',x:120,y:420,range:140,hitRadius:72},
@@ -5447,12 +5876,12 @@ function interact(targetId=null){
  let actions=[],text='';
  const invStr=inventoryText();
  switch(o.id){
- case 'fridge':text=`Estado: ${world.fridge_open?'abierto':'cerrado'}. Existencias compartidas: ${Object.entries(world.stock||{}).map(([k,n])=>`${INGREDIENTS[k]} ${n}`).join(' · ')}`;
-  actions.push(actionBtn(world.fridge_open?'Cerrar refrigerador':'Abrir refrigerador','fridge'));
-  if(world.fridge_open)for(const [key,label]of Object.entries(INGREDIENTS))actions.push({label:'Sacar '+label,disabled:Number(world.stock?.[key]||0)<1,run:async()=>{await runAction('take',key);interact();}});
+ case 'fridge':text=world.fridge_open?'El refrigerador está abierto. Revisa sus ingredientes por sección y elige lo que llevarás.':'El refrigerador está cerrado. Ábrelo para revisar las existencias.';
+  if(world.fridge_open){actions.push({label:'🧺 Ver ingredientes por secciones',primary:true,run:openFridgeCatalog});actions.push(actionBtn('Cerrar refrigerador','fridge'));}
+  else actions.push({label:'Abrir refrigerador',primary:true,run:async()=>{await runAction('fridge');if(world?.fridge_open)await openFridgeCatalog();}});
   break;
  case 'stove':{
-  text='Acércate a los fogones para preparar una receta. Al terminar, deja el plato en el mesón; ambos pueden cocinar y acumular varios platos.';
+  text='Elige una receta y prepara los ingredientes, corta, controla el fuego y emplata. Después espera la cocción; el plato aparecerá en el mesón compartido y cualquiera puede recogerlo.';
   if(own()?.pending_recipe){
    const recipe=RECIPES[own().pending_recipe];
    const secs=Math.max(0,Math.ceil((Date.parse(own().cook_ready_at)-timeNow())/1000));
@@ -5460,10 +5889,15 @@ function interact(targetId=null){
    actions.push({label:'Poner plato en el mesón',disabled:secs>0,run:()=>runAction('dish_place')});
   }else for(const [key,r]of Object.entries(RECIPES)){
    const ok=Object.entries(r.ingredients).every(([k,n])=>inv(k)>=n);
-   actions.push({label:r.name+' · '+r.seconds+'s · llena el hambre',disabled:!ok,run:()=>runAction('cook',key)});
+   actions.push({label:r.name+' · '+r.seconds+'s · llena el hambre',disabled:!ok,run:()=>{hideModal();openCookingGame(key);}});
   }
+  actions.push({label:'📖 Consultar recetario',run:openRecipeBook});
   break;
  }
+ case 'recipeBook':
+  text='El libro rojo es el recetario del librero. Los demás libros son decoración; aquí puedes consultar recetas y escribir nuevas con ingredientes del refrigerador.';
+  actions.push({label:'📖 Abrir el recetario',primary:true,run:openRecipeBook});
+  break;
  case 'dishCounter':{
   const ready=sharedDishes.filter(dish=>dish.status==='counter');
   const carried=sharedDishes.filter(dish=>dish.status==='carried'&&dish.carried_by===user?.id);
@@ -5604,10 +6038,11 @@ function interact(targetId=null){
  }
  case 'back':text='Regresa al pasillo y conserva tu estado.';actions.push({label:'Salir de la habitación',primary:true,run:()=>transition('main')});break;
  }
- dialog(o.label,`<p>${esc(text).replace(/\n/g,'<br>')}</p>${o.id==='stove'?'<p>Ingredientes necesarios: huevos (2 huevos), arroz (arroz + tomate), pasta (pasta + queso), sándwich (pan + queso). Además puedes sacar <strong>comida para perrito</strong> desde el refrigerador.</p>':''}`,actions);
+ const recipeRequirements=o.id==='stove'?`<p>Ingredientes por receta: ${Object.values(RECIPES).map(recipe=>`${esc(recipe.name)} (${Object.entries(recipe.ingredients).map(([key,amount])=>`${esc(INGREDIENTS[key]||key)} ×${Number(amount)||0}`).join(' + ')})`).join(' · ')}</p><p>Usa el refrigerador compartido para sacar ingredientes. También puedes sacar comida para perrito.</p>`:'';
+ dialog(o.label,`<p>${esc(text).replace(/\n/g,'<br>')}</p>${recipeRequirements}`,actions);
 }
 const rects={
- main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:550,y:380,w:80,h:70}],
+ main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:348,y:90,w:194,h:112},{x:548,y:105,w:44,h:58},{x:550,y:380,w:80,h:70}],
  bathroom:[{x:964,y:139,w:142,h:110},{x:596,y:145,w:129,h:100},{x:238,y:158,w:110,h:98}],
  bedroom:[{x:85,y:232,w:292,h:85},{x:432,y:185,w:189,h:156},{x:800,y:105,w:200,h:140},{x:1120,y:166,w:94,h:90}]
 };
@@ -5741,6 +6176,7 @@ function drawPlateAt(x,y,recipe){
  else if(recipe==='rice'){r(x-5,y-3,10,4,'#f8f2db');r(x+3,y-3,2,2,'#e56c58');}
  else if(recipe==='pasta'){r(x-5,y-3,10,4,'#e9bb61');r(x+2,y-3,3,2,'#d75b52');}
  else if(recipe==='sandwich'){r(x-5,y-3,10,4,'#d99a55');r(x-2,y-3,5,2,'#6c9a55');}
+ else if(String(recipe||'').startsWith('custom_')){r(x-5,y-3,10,4,'#a96886');r(x-3,y-2,6,2,'#8eb06f');r(x+2,y-3,3,2,'#e7ad60');}
 }
 function drawSharedDishes(t){
  if(myPos.room!=='main')return;
@@ -5781,6 +6217,7 @@ function drawMain(t){
  for(let x of [820,905]){r(x,413,47,23,'#66516e');r(x+5,413,37,6,'#cfa786');}
  r(811,339,130,5,'#e3b29a');label('♡',872,380,30,'#ffddc9');
  // Sillón con dos asientos y TV.
+ drawRecipeBookcase();
  r(325,335,285,205,'#8a6372');r(335,346,265,181,'#d0a18e');r(352,361,230,150,'#e3bba1');
  furniture(365,390,177,47,'#704565','#bc7582');r(372,400,161,13,'#eab2ae');r(442,390,7,46,'#8c5266');
  furniture(368,280,138,45,'#413c54',world?.tv_on?'#78b5b7':'#202437');
@@ -5792,6 +6229,30 @@ function drawMain(t){
  for(let x of [735,1320]){r(x,105,18,55,'#578670');r(x+4,105,10,10,'#e4a5a9');r(x-6,155,32,25,'#ba8977');}
  drawDoor(87,200,world?.bath_door_open,'BAÑO');drawDoor(87,386,world?.bedroom_door_open,'DORM.');
  drawDoor(1307,487,world?.entrance_open||(introUntil>performance.now()&&performance.now()-introStartedAt>500),'ENTRADA');
+}
+function drawRecipeBookcase(){
+ // Mueble pegado a la pared, alineado con el refrigerador y los fogones.
+ r(348,101,194,101,'#251c2a');r(353,92,184,101,'#765044');r(358,97,174,88,'#3b2a38');
+ r(351,90,188,9,'#d3a06f');r(355,95,180,5,'#a66f52');
+ r(354,97,9,91,'#a36e50');r(527,97,9,91,'#a36e50');
+ r(358,138,174,6,'#d2a16b');r(358,161,174,6,'#d2a16b');r(351,184,188,9,'#d3a06f');r(355,188,180,5,'#9c664d');
+ r(362,94,8,7,'#e7bd8d');r(527,94,8,7,'#e7bd8d');r(366,101,3,4,'#4a3543');r(530,101,3,4,'#4a3543');
+ // Un solo libro rojo marcado REC es el recetario; los demás son novelas.
+ r(365,104,12,31,'#d57663');r(368,104,3,31,'#f1bb82');
+ r(379,109,15,26,'#688b79');r(383,112,3,20,'#c4d29a');
+ r(397,101,22,34,'#a8495b');r(401,104,3,28,'#f1cc9c');r(401,115,14,12,'#f1cc9c');label('REC',408,124,5,'#784758');
+ r(422,107,13,28,'#6682a0');r(425,110,3,22,'#b7d0da');
+ r(438,102,18,33,'#d3a257');r(443,106,3,25,'#73566e');
+ r(459,110,14,25,'#ba758d');r(463,113,3,19,'#f1b7bf');
+ r(476,103,17,32,'#527b70');r(481,106,3,25,'#b7d79d');
+ r(496,111,13,24,'#ca8261');r(500,114,3,18,'#f4c792');
+ // Novelas y cuadernos apilados en la repisa inferior.
+ r(364,144,17,14,'#bd8d67');r(384,142,18,16,'#d7a763');r(405,145,20,13,'#735269');
+ r(428,142,16,16,'#b65f69');r(447,144,21,14,'#65856d');r(471,141,28,17,'#8c667a');r(502,146,17,12,'#527b91');
+ r(366,167,24,12,'#deb77d');r(368,169,19,3,'#865a56');r(394,168,29,11,'#c7746c');r(397,170,22,3,'#f0c997');
+ // Cajita decorativa al lado del librero.
+ r(548,109,44,54,'#382531');r(552,105,36,8,'#d3a06f');r(553,113,34,46,'#765044');r(557,117,26,38,'#b17c5e');
+ r(557,130,26,6,'#e1b57d');r(567,117,6,38,'#e1b57d');r(563,127,14,12,'#7c4e50');
 }
 function drawPlaystation5(){
  // Consola blanca junto al televisor.
@@ -6325,7 +6786,7 @@ document.addEventListener('keydown',e=>{
  if(!visible||!playing||e.target.closest('input,textarea'))return;
  const k=e.key.toLowerCase();if(MOVE_KEYS.has(k)){e.preventDefault();if(!gamePaused)keys.add(k);}
  if(k==='e'&&e.pointerType!=='touch'){e.preventDefault();interact();}
- if(k==='escape'){e.preventDefault();if(ps5Overlay&&!ps5Overlay.hidden)closePlayStation();else if(!modal.hidden&&$('house-dialog-x').style.display!=='none')hideModal();else if(tvOverlay&&!tvOverlay.hidden)closeTvScreen();else closeHouse();}
+ if(k==='escape'){e.preventDefault();if(cookOverlay&&!cookOverlay.hidden){if(cookingPrep?.saving)toast('Guardando la receta…');else closeCookingGame(true);}else if(ps5Overlay&&!ps5Overlay.hidden)closePlayStation();else if(!modal.hidden&&$('house-dialog-x').style.display!=='none')hideModal();else if(tvOverlay&&!tvOverlay.hidden)closeTvScreen();else closeHouse();}
 });
 document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{keys.clear();stick={x:0,y:0};knob.style.transform='';});
