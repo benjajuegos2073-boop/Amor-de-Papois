@@ -493,6 +493,18 @@
 .house-recipe-remove,.house-recipe-add{border:1px solid #e6bd91;background:#684659;color:#fff1dc;padding:8px;font-size:11px;font-weight:900}
 .house-recipe-add{width:100%;margin-top:5px;background:#47624b}
 .house-recipe-form select{margin:0}
+.house-dialog-backdrop.speaker-player-open .house-dialog{width:min(690px,96vw)}
+.house-speaker-status{display:flex;align-items:center;gap:9px;margin:10px 0;padding:10px;border:1px solid #816688;background:linear-gradient(110deg,#242033,#33263b);color:#f6e1c6;font-size:12px}
+.house-speaker-lamp{width:13px;height:13px;flex:0 0 auto;border-radius:50%;background:#423746;box-shadow:inset 0 0 0 2px #78627a}
+.house-speaker-lamp.on{background:#62edce;box-shadow:0 0 12px #48e7de}
+.house-speaker-library{display:grid;gap:6px;margin:10px 0;max-height:38vh;overflow:auto}
+.house-speaker-track{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:9px 11px;border:1px solid #765a7e;background:#211a2b;color:#f6e7d0;text-align:left;font-size:11px}
+.house-speaker-track.current{border-color:#77e4d2;background:#28313a}
+.house-speaker-track small{display:block;margin-top:3px;color:#bba9c2;font-size:9px}
+.house-speaker-volume{width:100%;accent-color:#df7fba}
+.house-dialog input.house-speaker-volume{padding:0;border:0;background:transparent}
+.house-speaker-upload{display:block;margin:8px 0;padding:10px;border:2px dashed #9a7f9c;background:#34263c;color:#ffe4c1;text-align:center;font-size:11px;font-weight:900;cursor:pointer}
+.house-speaker-upload-status{min-height:15px;color:#bce5c1;font-size:10px}
 @media(max-width:520px){.house-recipe-ingredient-row{grid-template-columns:minmax(0,1fr) 64px 34px}.house-recipe-step-row{grid-template-columns:1fr}.house-recipe-step-row .wide{grid-column:auto}.house-recipe-book-list{grid-template-columns:1fr;max-height:45vh}}
 .house-clothes-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .house-clothes-preview{display:flex;align-items:center;gap:10px;background:#2d2037;border:2px solid #785d78;padding:9px;margin:8px 0}
@@ -4151,6 +4163,145 @@ async function openFridgeCatalog(){
   catch(error){toast(friendly(error));button.disabled=false;}
  }));
 }
+const SPEAKER_BUCKET='house-speaker-audio';
+const SPEAKER_MAX_BYTES=20*1024*1024;
+const SPEAKER_MIME_TYPES=new Set(['audio/mpeg','audio/mp4','audio/aac','audio/x-m4a','audio/wav','audio/x-wav','audio/ogg','audio/webm','audio/flac']);
+const SPEAKER_MIME_BY_EXT={mp3:'audio/mpeg',m4a:'audio/mp4',mp4:'audio/mp4',aac:'audio/aac',wav:'audio/wav',ogg:'audio/ogg',opus:'audio/ogg',webm:'audio/webm',flac:'audio/flac'};
+const speakerAudio=new Audio();speakerAudio.crossOrigin='anonymous';speakerAudio.preload='auto';speakerAudio.loop=true;speakerAudio.volume=.58;
+let speakerTrackRows=[],speakerSignedUrls=new Map(),speakerLoadedTrackId='',speakerReconcileToken=0;
+let speakerAudioContext=null,speakerAnalyser=null,speakerFrequencyData=null,speakerAudioSource=null,speakerLevel=0;
+let speakerAutoplayNeedsGesture=false,speakerAutoplayMessageShown=false,speakerMutedForTv=false;
+function ensureSpeakerAudioGraph(){
+ if(speakerAnalyser)return;
+ const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;
+ try{
+  speakerAudioContext=new Context();speakerAnalyser=speakerAudioContext.createAnalyser();speakerAnalyser.fftSize=256;speakerFrequencyData=new Uint8Array(speakerAnalyser.frequencyBinCount);
+  speakerAudioSource=speakerAudioContext.createMediaElementSource(speakerAudio);speakerAudioSource.connect(speakerAnalyser);speakerAnalyser.connect(speakerAudioContext.destination);
+ }catch(error){speakerAnalyser=null;speakerFrequencyData=null;console.warn('No se pudo activar el visualizador del parlante:',error);}
+}
+async function loadSpeakerTracks(){
+ const {data,error}=await sb.from('house_speaker_tracks').select('id,title,storage_path,duration_seconds,size_bytes,uploaded_by,created_at').order('created_at',{ascending:false}).limit(100);
+ if(error)throw error;speakerTrackRows=Array.isArray(data)?data:[];return speakerTrackRows;
+}
+async function getSpeakerTrack(trackId){
+ let track=speakerTrackRows.find(item=>item.id===trackId);
+ if(!track){const {data,error}=await sb.from('house_speaker_tracks').select('id,title,storage_path,duration_seconds,size_bytes,uploaded_by,created_at').eq('id',trackId).maybeSingle();if(error)throw error;track=data||null;if(track)speakerTrackRows.unshift(track);}
+ return track;
+}
+async function getSpeakerSignedUrl(track){
+ const cached=speakerSignedUrls.get(track.id);if(cached&&cached.expiresAt>Date.now())return cached.url;
+ const {data,error}=await sb.storage.from(SPEAKER_BUCKET).createSignedUrl(track.storage_path,86400);
+ if(error)throw error;speakerSignedUrls.set(track.id,{url:data.signedUrl,expiresAt:Date.now()+23*60*60*1000});return data.signedUrl;
+}
+function speakerExpectedPosition(state,duration){
+ let position=Math.max(0,Number(state?.speaker_position_seconds)||0);
+ const start=Date.parse(state?.speaker_started_at||'');if(Number.isFinite(start))position+=Math.max(0,(timeNow()-start)/1000);
+ if(duration>0)position%=duration;return position;
+}
+async function reconcileSpeakerPlayback(){
+ const token=++speakerReconcileToken;
+ if(!visible||!playing||speakerMutedForTv){speakerAudio.pause();return;}
+ const state=world||{},trackId=state.speaker_track_id;
+ if(!state.speaker_on||!state.speaker_playing||!trackId){
+  speakerAudio.pause();speakerAutoplayNeedsGesture=false;
+  if(!trackId){speakerLoadedTrackId='';speakerAudio.removeAttribute('src');speakerAudio.load();}
+  else if(speakerAudio.readyState>=1){const position=speakerExpectedPosition(state,speakerAudio.duration);if(Math.abs((speakerAudio.currentTime||0)-position)>1)speakerAudio.currentTime=position;}
+  return;
+ }
+ try{
+  const track=await getSpeakerTrack(trackId);if(token!==speakerReconcileToken)return;if(!track)throw Error('No se encontró la canción compartida.');
+  if(speakerLoadedTrackId!==track.id){
+   const url=await getSpeakerSignedUrl(track);if(token!==speakerReconcileToken)return;
+   speakerAudio.pause();speakerAudio.src=url;speakerAudio.load();speakerLoadedTrackId=track.id;
+   if(speakerAudio.readyState<1)await new Promise(resolve=>{
+    let timer;const done=()=>{clearTimeout(timer);speakerAudio.removeEventListener('loadedmetadata',done);speakerAudio.removeEventListener('error',done);resolve();};
+    speakerAudio.addEventListener('loadedmetadata',done,{once:true});speakerAudio.addEventListener('error',done,{once:true});timer=setTimeout(done,7000);
+   });
+  }
+  if(token!==speakerReconcileToken)return;
+  const duration=Number.isFinite(speakerAudio.duration)?speakerAudio.duration:Number(track.duration_seconds)||0;
+  const expected=speakerExpectedPosition(state,duration);
+  if(speakerAudio.readyState>=1&&Math.abs((speakerAudio.currentTime||0)-expected)>1.35)speakerAudio.currentTime=expected;
+  if(speakerAudio.paused){
+   if(speakerAudioContext?.state==='suspended')await speakerAudioContext.resume().catch(()=>{});
+   await speakerAudio.play();speakerAutoplayNeedsGesture=false;speakerAutoplayMessageShown=false;
+  }
+ }catch(error){
+  if(token!==speakerReconcileToken)return;
+  if(error?.name==='NotAllowedError'){
+   speakerAutoplayNeedsGesture=true;
+   if(!speakerAutoplayMessageShown){toast('El navegador bloqueó el audio automático. Abre el parlante y toca «Habilitar sonido» en este dispositivo.');speakerAutoplayMessageShown=true;}
+  }else console.warn('No se pudo reproducir la canción compartida:',error);
+ }
+}
+function formatSpeakerDuration(value){const seconds=Number(value);if(!Number.isFinite(seconds)||seconds<=0)return 'Duración automática';const total=Math.floor(seconds);return `${Math.floor(total/60)}:${String(total%60).padStart(2,'0')}`;}
+async function setSharedSpeaker(action,trackId=null,position=null){
+ if(me?.sick)throw Error('Estás enfermo y necesitas que tu pareja te cuide');
+ if(pendingMove||positionSavePromise)await persist(true);
+ const {data,error}=await sb.rpc('house_speaker_control',{p_action:action,p_track_id:trackId,p_position_seconds:position});if(error)throw error;
+ await sync(false);channel?.send({type:'broadcast',event:'speaker_changed',payload:{id:user.id}}).catch(()=>{});return data;
+}
+async function syncSpeakerForTv(tvOpen){
+ if(!user||!visible||!playing)return;
+ const {data,error}=await sb.rpc('house_speaker_tv_transition',{p_tv_open:!!tvOpen});if(error)throw error;
+ world={...(world||{}),...(data||{})};channel?.send({type:'broadcast',event:'speaker_changed',payload:{id:user.id}}).catch(()=>{});
+ reconcileSpeakerPlayback().catch(()=>{});
+}
+async function toggleHouseCurtain(windowId){
+ if(pendingMove||positionSavePromise)await persist(true);
+ const {data,error}=await sb.rpc('house_toggle_curtain',{p_window:windowId});if(error)throw error;
+ await sync(false);channel?.send({type:'broadcast',event:'curtains_changed',payload:{id:user.id}}).catch(()=>{});
+ toast(data?.open?'Abriste las cortinas.':'Cerraste las cortinas.');
+}
+function readLocalAudioDuration(file){
+ return new Promise(resolve=>{
+  const url=URL.createObjectURL(file),audio=document.createElement('audio');audio.preload='metadata';let done=false,timer;
+  const finish=()=>{if(done)return;done=true;clearTimeout(timer);const value=Number.isFinite(audio.duration)?audio.duration:null;URL.revokeObjectURL(url);resolve(value);};
+  audio.addEventListener('loadedmetadata',finish,{once:true});audio.addEventListener('error',finish,{once:true});audio.src=url;timer=setTimeout(finish,6500);
+ });
+}
+async function uploadSpeakerTrack(file,statusNode){
+ if(!file)return;if(file.size<1||file.size>SPEAKER_MAX_BYTES)throw Error('Cada canción debe pesar como máximo 20 MB.');
+ const rawExt=String(file.name.split('.').pop()||'').toLowerCase(),ext=/^[a-z0-9]{2,5}$/.test(rawExt)?rawExt:'audio',mime=SPEAKER_MIME_TYPES.has(file.type)?file.type:SPEAKER_MIME_BY_EXT[ext];
+ if(!mime||!SPEAKER_MIME_TYPES.has(mime))throw Error('Usa un archivo MP3, M4A, AAC, WAV, OGG, WEBM o FLAC.');
+ if(statusNode)statusNode.textContent='Leyendo la canción…';const duration=await readLocalAudioDuration(file);
+ const safeName=String(file.name||'audio').replace(/\.[^.]+$/,'').normalize('NFKD').replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,64)||'audio';
+ const unique=window.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+ const storagePath=`${user.id}/${unique}-${safeName}.${ext||'audio'}`;
+ if(statusNode)statusNode.textContent='Subiendo canción para compartir…';
+ const {error:uploadError}=await sb.storage.from(SPEAKER_BUCKET).upload(storagePath,file,{contentType:mime,cacheControl:'3600',upsert:false});if(uploadError)throw uploadError;
+ const title=String(file.name||'Canción').replace(/\.[^.]+$/,'').trim().slice(0,96)||'Canción nueva';
+ const {error:insertError}=await sb.from('house_speaker_tracks').insert({title,storage_path:storagePath,duration_seconds:duration,size_bytes:file.size,uploaded_by:user.id});
+ if(insertError){await sb.storage.from(SPEAKER_BUCKET).remove([storagePath]).catch(()=>{});throw insertError;}
+ await loadSpeakerTracks();channel?.send({type:'broadcast',event:'speaker_tracks_changed',payload:{id:user.id}}).catch(()=>{});
+ toast(`«${title}» quedó en la biblioteca compartida. Elijan la canción para escucharla.`);await openSpeakerPanel();
+}
+async function openSpeakerPanel(){
+ gamePaused=true;ensureSpeakerAudioGraph();if(speakerAudioContext?.state==='suspended')speakerAudioContext.resume().catch(()=>{});
+ try{await loadSpeakerTracks();}catch(error){toast('No se pudo cargar la biblioteca musical: '+friendly(error));}
+ if(visible&&playing&&world?.speaker_playing)await reconcileSpeakerPlayback();
+ const current=speakerTrackRows.find(track=>track.id===world?.speaker_track_id),status=!world?.speaker_on?'APAGADO':world?.speaker_playing?'ENCENDIDO · SONANDO':'ENCENDIDO · EN PAUSA';
+ const songs=speakerTrackRows.length?speakerTrackRows.map(track=>`<button type="button" class="house-speaker-track ${track.id===world?.speaker_track_id?'current':''}" data-speaker-track="${esc(track.id)}"><span>${track.id===world?.speaker_track_id&&world?.speaker_playing?'♪':'▶'} ${esc(track.title)}<small>${formatSpeakerDuration(track.duration_seconds)} · ${(Number(track.size_bytes||0)/1024/1024).toFixed(1)} MB</small></span><span>${track.id===world?.speaker_track_id?'●':''}</span></button>`).join(''):'<p>Aún no hay canciones. Sube un archivo de audio para crear la biblioteca compartida.</p>';
+ const deviceHint=speakerAutoplayNeedsGesture&&world?.speaker_playing?'<button type="button" class="house-action primary" data-speaker-device>🔊 Habilitar sonido en este dispositivo</button>':'';
+ const actions=[
+  {label:world?.speaker_on?'⏻ Apagar parlante':'⏻ Encender parlante',primary:!world?.speaker_on,run:async()=>{await setSharedSpeaker(world?.speaker_on?'power_off':'power_on');await openSpeakerPanel();}},
+  ...(world?.speaker_playing?[{label:'⏸ Pausar música',run:async()=>{await setSharedSpeaker('pause',null,Number(speakerAudio.currentTime)||0);await openSpeakerPanel();}}]:[]),
+  ...(!world?.speaker_playing&&world?.speaker_track_id?[{label:'▶ Reanudar música',run:async()=>{await setSharedSpeaker('resume',null,Number(speakerAudio.currentTime)||Number(world.speaker_position_seconds)||0);await openSpeakerPanel();}}]:[])
+ ];
+ dialog('🔊 Parlante RGB · Biblioteca musical',`<div class="house-speaker-status"><span class="house-speaker-lamp ${world?.speaker_on?'on':''}"></span><span><b>${status}</b><br>${esc(current?.title||'Sin canción seleccionada')} · la música se sincroniza para ambos.</span></div><p>Sube archivos de audio tuyos para escucharlos juntos. El volumen se ajusta por separado en cada dispositivo.</p>${deviceHint}<label for="house-speaker-volume">Volumen de este dispositivo</label><input class="house-speaker-volume" id="house-speaker-volume" type="range" min="0" max="1" step="0.01" value="${speakerAudio.volume}"><div class="house-speaker-library">${songs}</div><label class="house-speaker-upload">＋ Añadir canción compartida<input id="house-speaker-file" type="file" accept=".mp3,.m4a,.mp4,.aac,.wav,.ogg,.opus,.webm,.flac,audio/*" hidden></label><div id="house-speaker-upload-status" class="house-speaker-upload-status" aria-live="polite"></div>`,actions);
+ modal.classList.add('speaker-player-open');modal.dataset.speakerPanel='true';
+ modalContent.querySelector('#house-speaker-volume')?.addEventListener('input',event=>{speakerAudio.volume=Number(event.target.value);});
+ modalContent.querySelectorAll('[data-speaker-track]').forEach(button=>button.addEventListener('click',async()=>{
+  button.disabled=true;try{await setSharedSpeaker('play',button.dataset.speakerTrack,0);await openSpeakerPanel();}catch(error){toast(friendly(error));button.disabled=false;}
+ }));
+ modalContent.querySelector('[data-speaker-device]')?.addEventListener('click',async event=>{
+  event.currentTarget.disabled=true;ensureSpeakerAudioGraph();try{await speakerAudioContext?.resume();await reconcileSpeakerPlayback();if(speakerAudio.paused&&world?.speaker_playing)throw Error('El navegador todavía no permite iniciar este audio.');speakerAutoplayNeedsGesture=false;toast('Sonido habilitado en este dispositivo.');await openSpeakerPanel();}catch(error){toast(friendly(error));event.currentTarget.disabled=false;}
+ });
+ modalContent.querySelector('#house-speaker-file')?.addEventListener('change',async event=>{
+  const input=event.currentTarget,file=input.files?.[0],statusNode=modalContent.querySelector('#house-speaker-upload-status');input.disabled=true;
+  try{await uploadSpeakerTrack(file,statusNode);}catch(error){toast(friendly(error));if(statusNode)statusNode.textContent=friendly(error);}finally{input.disabled=false;input.value='';}
+ });
+}
 async function refreshCustomRecipes(){
  const {data,error}=await sb.from('house_recipes').select('id,name,ingredients,steps,seconds,heal,created_by,created_at').order('created_at',{ascending:true});
  if(error)throw error;
@@ -4608,6 +4759,8 @@ let youtubeAccessToken='',youtubeTokenExpiry=0,youtubeTokenClient=null,youtubeId
 const tvBackgroundMusic=$('bg-audio');
 let tvBackgroundDucked=false,tvMusicResumeAfterTv=false;
 function setTvBackgroundMusic(active){
+ if(active){speakerMutedForTv=true;speakerAudio.pause();}
+ else{speakerMutedForTv=false;if(visible&&playing)reconcileSpeakerPlayback().catch(()=>{});}
  if(!tvBackgroundMusic)return;
  if(active){
   if(!tvBackgroundDucked){
@@ -4664,9 +4817,9 @@ function refreshBoardTools(){
   button.title=inRange?'':'Acerca la silla a la pizarra para usar esta herramienta.';
  });
 }
-function hideModal(){modal.hidden=true;modalActions.innerHTML='';modalContent.innerHTML='';modal.classList.remove('recipe-book-open','fridge-catalog-open');delete modal.dataset.recipeBookView;delete modal.dataset.fridgeCatalog;gamePaused=!!(tvOverlay&&!tvOverlay.hidden);}
+function hideModal(){modal.hidden=true;modalActions.innerHTML='';modalContent.innerHTML='';modal.classList.remove('recipe-book-open','fridge-catalog-open','speaker-player-open');delete modal.dataset.recipeBookView;delete modal.dataset.fridgeCatalog;delete modal.dataset.speakerPanel;gamePaused=!!(tvOverlay&&!tvOverlay.hidden);}
 function dialog(title,html,actions=[],locked=false){
- modalTitle.textContent=title;modalContent.innerHTML=html;modalActions.innerHTML='';modal.hidden=false;gamePaused=true;modal.classList.remove('recipe-book-open','fridge-catalog-open');delete modal.dataset.recipeBookView;delete modal.dataset.fridgeCatalog;
+ modalTitle.textContent=title;modalContent.innerHTML=html;modalActions.innerHTML='';modal.hidden=false;gamePaused=true;modal.classList.remove('recipe-book-open','fridge-catalog-open','speaker-player-open');delete modal.dataset.recipeBookView;delete modal.dataset.fridgeCatalog;delete modal.dataset.speakerPanel;
  $('house-dialog-x').style.display=locked?'none':'';
  for(const a of actions){const b=document.createElement('button');b.className='house-action'+(a.primary?' primary':'');b.textContent=a.label;b.disabled=!!a.disabled;b.onclick=async()=>{if(choiceBusy)return;choiceBusy=true;b.disabled=true;try{await a.run();}catch(e){toast(friendly(e));}finally{choiceBusy=false;b.disabled=false;}};modalActions.appendChild(b);}
 }
@@ -4738,6 +4891,7 @@ function closeTvOverlayLocal(){
  tvRenderSeq++;
  tvIgnoreEventsUntil=Date.now()+1100;
  tvOverlay.hidden=true;setTvBackgroundMusic(false);
+ syncSpeakerForTv(false).catch(error=>console.warn('No se pudo reanudar la música después de la TV:',error));
  if(tvVideo&&!tvVideo.paused)tvVideo.pause();
  if(youtubePlayer&&typeof youtubePlayer.pauseVideo==='function')youtubePlayer.pauseVideo();
  if(tvYouTubeApp)tvYouTubeApp.hidden=true;
@@ -4754,6 +4908,7 @@ async function openTvOverlay(remoteOpen=false){
   await saveTvState({open:true,playing:tvState.mode==='video'?tvState.playing:tvState.channel==='youtube:home'?false:true});
  }
  tvOverlay.hidden=false;gamePaused=true;setTvBackgroundMusic(true);
+ try{await syncSpeakerForTv(true);}catch(error){console.warn('No se pudo pausar el parlante para la TV:',error);}
  await renderTvState(true);
 }
 async function closeTvScreen(){
@@ -5282,7 +5437,7 @@ async function initGame(){
   }
   // Recupera también a quienes ya quedaron atrapados en una sesión anterior.
   await rescueSofaPosition();
-  playing=true;hideModal();lastFrame=performance.now();lastSync=performance.now();lastPersist=performance.now();
+  playing=true;hideModal();lastFrame=performance.now();lastSync=performance.now();lastPersist=performance.now();reconcileSpeakerPlayback().catch(()=>{});
   if(world?.tv_on&&tvState.open)await openTvOverlay(true);
   cancelAnimationFrame(frameId);frameId=requestAnimationFrame(frame);
  }catch(e){playing=false;dialog('Conexión necesaria',`<p>${esc(friendly(e))}</p><p>La casa requiere tablas, permisos RLS y Realtime instalados. No usaremos datos locales falsos.</p>`,[
@@ -5322,6 +5477,7 @@ async function sync(first=false){
  if(!pendingMove&&myPos.room!==me.room){myPos.room=me.room;myPos.x=Number(me.x);myPos.y=Number(me.y);}
  myPos.deskSeat=me.desk_seat||null;
  setBars();setRoomLabel();refreshBoardTools();
+ reconcileSpeakerPlayback().catch(error=>console.warn('No se pudo sincronizar el parlante:',error));
 }
 async function connect(){
  if(channel){try{await sb.removeChannel(channel);}catch(_){}}
@@ -5369,6 +5525,18 @@ async function connect(){
  channel.on('broadcast',{event:'fridge_changed'},({payload})=>{
    if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
    sync(false).then(()=>{if(modal.dataset.fridgeCatalog==='true')openFridgeCatalog();}).catch(e=>console.warn('No se pudo sincronizar el refrigerador:',e));
+  });
+ channel.on('broadcast',{event:'speaker_changed'},({payload})=>{
+   if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+   sync(false).then(()=>{if(modal.dataset.speakerPanel==='true')openSpeakerPanel();}).catch(e=>console.warn('No se pudo sincronizar el parlante:',e));
+  });
+ channel.on('broadcast',{event:'speaker_tracks_changed'},({payload})=>{
+   if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+   loadSpeakerTracks().then(()=>{if(modal.dataset.speakerPanel==='true')openSpeakerPanel();}).catch(e=>console.warn('No se pudo actualizar la biblioteca musical:',e));
+  });
+ channel.on('broadcast',{event:'curtains_changed'},({payload})=>{
+   if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
+   sync(false).catch(e=>console.warn('No se pudieron sincronizar las cortinas:',e));
   });
  channel.on('broadcast',{event:'recipes_changed'},({payload})=>{
    if(!payload||payload.id===user?.id||!people.some(p=>p.user_id===payload.id))return;
@@ -5768,7 +5936,7 @@ async function closeHouse(){
  const shouldRest=playing&&!me?.sick&&myPos.activity!=='sleep';
  const saved=(pendingMove||positionSavePromise)?persist(true).catch(()=>{}):Promise.resolve();
   if(cookOverlay)cookOverlay.hidden=true;if(cookHeatFrame)cancelAnimationFrame(cookHeatFrame);cookHeatFrame=0;cookingPrep=null;
-  visible=false;screen.hidden=true;document.body.classList.remove('house-games-open');if(pcOverlay)pcOverlay.hidden=true;if(ps5Overlay)ps5Overlay.hidden=true;if(pcAppWindow)pcAppWindow.hidden=true;window.houseGameReturnToPlay=false;keys.clear();stick={x:0,y:0};knob.style.transform='';
+ visible=false;screen.hidden=true;speakerAudio.pause();document.body.classList.remove('house-games-open');if(pcOverlay)pcOverlay.hidden=true;if(ps5Overlay)ps5Overlay.hidden=true;if(pcAppWindow)pcAppWindow.hidden=true;window.houseGameReturnToPlay=false;keys.clear();stick={x:0,y:0};knob.style.transform='';
  tvIgnoreEventsUntil=Date.now()+1200;
  if(tvVideo&&!tvVideo.paused)tvVideo.pause();
  if(tvFrame&&tvFrame.getAttribute('src'))tvFrame.src='about:blank';
@@ -5781,6 +5949,10 @@ async function closeHouse(){
 
 const objects={
  main:[
+  {id:'speaker',label:'Parlante RGB',x:620,y:164,range:145,hitRadius:25},
+  {id:'curtain_left',label:'Cortinas de la ventana izquierda',x:517,y:45,range:130,hitRadius:46},
+  {id:'curtain_center',label:'Cortinas de la ventana central',x:827,y:45,range:130,hitRadius:46},
+  {id:'curtain_right',label:'Cortinas de la ventana derecha',x:1197,y:45,range:130,hitRadius:46},
   {id:'fridge',label:'Refrigerador',x:970,y:180,range:160,hitRadius:82},
   {id:'stove',label:'Fogones',x:1100,y:180,range:160,hitRadius:88},
    {id:'dishCounter',label:'Mesón con platos',x:1238,y:180,range:165,hitRadius:82},
@@ -5875,6 +6047,8 @@ function interact(targetId=null){
  if(d(myPos,o)>o.range){bottomNotice(`Debes acercarte a ${o.label.toLowerCase()} para poder interactuar.`);return;}
  let actions=[],text='';
  const invStr=inventoryText();
+ if(o.id==='speaker'){openSpeakerPanel().catch(error=>toast(friendly(error)));return;}
+ if(o.id.startsWith('curtain_')){toggleHouseCurtain(o.id.slice('curtain_'.length)).catch(error=>toast(friendly(error)));return;}
  switch(o.id){
  case 'fridge':text=world.fridge_open?'El refrigerador está abierto. Revisa sus ingredientes por sección y elige lo que llevarás.':'El refrigerador está cerrado. Ábrelo para revisar las existencias.';
   if(world.fridge_open){actions.push({label:'🧺 Ver ingredientes por secciones',primary:true,run:openFridgeCatalog});actions.push(actionBtn('Cerrar refrigerador','fridge'));}
@@ -6042,7 +6216,7 @@ function interact(targetId=null){
  dialog(o.label,`<p>${esc(text).replace(/\n/g,'<br>')}</p>${recipeRequirements}`,actions);
 }
 const rects={
- main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:348,y:90,w:194,h:112},{x:548,y:105,w:44,h:58},{x:550,y:380,w:80,h:70}],
+ main:[{x:941,y:90,w:60,h:80},{x:1020,y:93,w:142,h:85},{x:1190,y:93,w:95,h:82},{x:804,y:323,w:145,h:81},{x:365,y:390,w:177,h:47},{x:368,y:280,w:138,h:45},{x:348,y:90,w:194,h:112},{x:548,y:105,w:44,h:58},{x:598,y:133,w:44,h:60},{x:550,y:380,w:80,h:70}],
  bathroom:[{x:964,y:139,w:142,h:110},{x:596,y:145,w:129,h:100},{x:238,y:158,w:110,h:98}],
  bedroom:[{x:85,y:232,w:292,h:85},{x:432,y:185,w:189,h:156},{x:800,y:105,w:200,h:140},{x:1120,y:166,w:94,h:90}]
 };
@@ -6199,9 +6373,81 @@ function drawSharedDishes(t){
   }
  }
 }
+let cachedSkyMinute='',cachedSkyInfo=null;
+function hexMix(a,b,fraction){
+ const t=clamp(fraction,0,1),parse=value=>[1,3,5].map(i=>parseInt(value.slice(i,i+2),16));
+ const left=parse(a),right=parse(b);return '#'+left.map((value,i)=>Math.round(value+(right[i]-value)*t).toString(16).padStart(2,'0')).join('');
+}
+function santiagoSkyInfo(){
+ const now=new Date(timeNow()),tz='America/Santiago';let parts={};
+ try{parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now).map(part=>[part.type,part.value]));}catch(_){}
+ const year=Number(parts.year)||now.getFullYear(),month=Number(parts.month)||now.getMonth()+1,day=Number(parts.day)||now.getDate();
+ const hour=Number(parts.hour)||0,minute=Number(parts.minute)||0,localMinute=hour*60+minute,key=`${year}-${month}-${day}-${localMinute}`;
+ if(key===cachedSkyMinute&&cachedSkyInfo)return cachedSkyInfo;
+ const dayOfYear=Math.floor((Date.UTC(year,month-1,day)-Date.UTC(year,0,1))/86400000)+1;
+ const gamma=2*Math.PI/365*(dayOfYear-1),cos=Math.cos,sin=Math.sin;
+ const equation=229.18*(.000075+.001868*cos(gamma)-.032077*sin(gamma)-.014615*cos(2*gamma)-.040849*sin(2*gamma));
+ const declination=.006918-.399912*cos(gamma)+.070257*sin(gamma)-.006758*cos(2*gamma)+.000907*sin(2*gamma)-.002697*cos(3*gamma)+.00148*sin(3*gamma);
+ const latitude=-33.45*Math.PI/180,cosHour=clamp(Math.cos(90.833*Math.PI/180)/(Math.cos(latitude)*Math.cos(declination))-Math.tan(latitude)*Math.tan(declination),-1,1);
+ const daylightHours=24*Math.acos(cosHour)/Math.PI;
+ let offsetMinutes=-180;try{const zone=new Intl.DateTimeFormat('en-US',{timeZone:tz,timeZoneName:'shortOffset'}).formatToParts(now).find(part=>part.type==='timeZoneName')?.value||'';const match=zone.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);if(match)offsetMinutes=(match[1]==='-'?-1:1)*(Number(match[2])*60+Number(match[3]||0));}catch(_){}
+ const solarNoon=720-4*(-70.66)-equation+offsetMinutes,sunrise=solarNoon-daylightHours*30,sunset=solarNoon+daylightHours*30;
+ const timeline=localMinute<sunrise-75?localMinute+1440:localMinute;
+ const points=[[sunrise-75,'#111a30'],[sunrise-35,'#74566e'],[sunrise-5,'#e8a36e'],[sunrise+35,'#f0d29a'],[sunrise+85,'#9dc6d2'],[sunset-100,'#9dc6d2'],[sunset-35,'#f0a177'],[sunset+20,'#c8738c'],[sunset+75,'#354564'],[sunset+112,'#111a30'],[sunrise-75+1440,'#111a30']];
+  let color=points[0][1];for(let i=1;i<points.length;i++){if(timeline<=points[i][0]){const fraction=(timeline-points[i-1][0])/Math.max(1,points[i][0]-points[i-1][0]);color=hexMix(points[i-1][1],points[i][1],fraction);break;}color=points[i][1];}
+ const phase=localMinute>=sunrise-75&&localMinute<=sunrise+85?'dawn':localMinute>=sunset-100&&localMinute<=sunset+112?'sunset':localMinute<sunrise-75||localMinute>sunset+112?'night':'day';
+ cachedSkyMinute=key;cachedSkyInfo={color,phase,localMinute,sunrise,sunset};return cachedSkyInfo;
+}
+function drawSkyWindow(x,key,sky){
+ const open=!!world?.curtain_state?.[key];
+ r(x,10,95,68,'#735873');r(x+5,15,85,58,'#e2c3a1');r(x+9,19,77,50,sky.color);
+ if(sky.phase==='night'){
+  r(x+18,26,3,3,'#fff1c1');r(x+68,32,3,3,'#fff1c1');r(x+53,23,2,2,'#d4e3ff');
+  r(x+37,25,11,11,'#f5e4ad');r(x+43,23,9,11,sky.color);r(x+38,29,8,2,'#d1c99d');
+ }else if(sky.phase==='day'){
+  r(x+68,24,11,11,'#f8d879');r(x+68,21,11,2,'#fff0a8');r(x+68,36,11,2,'#eab567');
+  r(x+16,27,17,4,'#d4e6df');r(x+23,24,10,4,'#d4e6df');
+ }else{
+  const evening=sky.phase==='sunset',sunX=evening?x+65:x+31;
+  r(sunX,43,14,8,evening?'#ffd175':'#fff0a3');r(sunX+3,40,8,3,'#ffe9a1');
+  r(x+9,54,77,12,evening?'#8b637f':'#9bafbd');r(x+15,50,23,4,'#d6c6bd');
+ }
+ r(x+7,43,81,4,'#e3c7ad');r(x+45,18,4,48,'#e3c7ad');
+ if(open){
+  r(x+7,16,12,52,'#9e6276');r(x+10,18,4,48,'#d38a96');r(x+76,16,12,52,'#9e6276');r(x+81,18,4,48,'#d38a96');
+  r(x+7,15,19,5,'#784d67');r(x+69,15,19,5,'#784d67');
+ }else{
+  r(x+6,15,31,55,'#985d73');r(x+9,17,24,51,'#c67987');r(x+14,20,4,45,'#e4a0a0');r(x+33,20,4,46,'#804e69');
+  r(x+58,15,31,55,'#985d73');r(x+62,17,24,51,'#c67987');r(x+77,20,4,45,'#e4a0a0');r(x+56,20,4,46,'#804e69');
+  r(x+6,15,89,9,'#7c4f68');r(x+8,18,84,3,'#e0a18f');r(x+6,65,31,5,'#734761');r(x+58,65,31,5,'#734761');
+ }
+ r(x,10,95,4,'#8a6880');r(x,74,95,4,'#8a6880');
+}
+function drawSpeakerRing(cx,cy,radius,color){
+ r(cx-radius+2,cy-radius,radius*2-4,2,color);r(cx-radius+2,cy+radius-2,radius*2-4,2,color);
+ r(cx-radius,cy-radius+2,2,radius*2-4,color);r(cx+radius-2,cy-radius+2,2,radius*2-4,color);
+ r(cx-radius+2,cy-radius+2,3,2,color);r(cx+radius-5,cy-radius+2,3,2,color);r(cx-radius+2,cy+radius-4,3,2,color);r(cx+radius-5,cy+radius-4,3,2,color);
+}
+function drawSpeaker(t){
+ const powered=!!world?.speaker_on,playingMusic=!!world?.speaker_playing;
+ if(speakerAnalyser&&speakerFrequencyData){speakerAnalyser.getByteFrequencyData(speakerFrequencyData);let sum=0;for(let i=2;i<24;i++)sum+=speakerFrequencyData[i]||0;const level=sum/(22*255);speakerLevel=speakerLevel*.72+level*.28;}
+ else speakerLevel=speakerLevel*.82+(playingMusic?0.22+Math.max(0,Math.sin(t/110))*.25:0);
+ const pulse=powered?(playingMusic?0.18+speakerLevel*.78+Math.max(0,Math.sin(t/90))*.10:0.16+Math.max(0,Math.sin(t/400))*.08):0;
+ const x=600,y=133; r(x,y+7,44,54,'#10121a');r(x+3,y+6,38,52,'#282a37');r(x+6,y+10,32,43,'#171a25');
+ r(x+12,y,20,4,'#161824');r(x+15,y-4,14,4,'#292936');r(x+18,y-3,8,2,'#696378');
+ r(x+5,y+11,3,39,'#575064');r(x+36,y+12,3,39,'#0e1019');
+ const rings=powered?['#f04fca','#4cdaf6']:['#51404f','#45445b'];
+ for(let i=0;i<2;i++){
+  const cy=y+23+i*20,cx=x+22,outer=Math.round(8+pulse*2),inner=Math.round(5+pulse*2);
+  drawSpeakerRing(cx,cy,outer,rings[i]);drawSpeakerRing(cx,cy,inner,powered?(i?'#8e69ff':'#ff81d7'):'#343543');
+  r(cx-4,cy-4,8,8,powered?(i?'#6770a0':'#8a557f'):'#262633');r(cx-2,cy-2,4,4,powered?(i?'#7ce9ed':'#ffa3dc'):'#30313b');
+ }
+ r(x+6,y+49,4,4,powered?'#71f1d5':'#4b4654');r(x+13,y+50,18,3,'#41404d');
+ label('♪',x+22,y+7,7,powered?'#8ceee0':'#8d8090');
+}
 function drawMain(t){
  // Ventanas, cuadros y flores en el pasillo central.
- for(let x of [470,780,1150]){r(x,12,95,65,'#785e79');r(x+8,18,80,48,'#7da9ae');r(x+8,43,80,4,'#e3c7ad');r(x+45,18,4,48,'#e3c7ad');}
+ const sky=santiagoSkyInfo();drawSkyWindow(470,'left',sky);drawSkyWindow(780,'center',sky);drawSkyWindow(1150,'right',sky);
  // Cocina arriba a la derecha, frigorífico con puertas que cambian de estado.
  r(885,87,420,8,'#e9b7a2');
  furniture(941,90,60,80,'#e7d4c2','#b5dbe0');
@@ -6217,7 +6463,7 @@ function drawMain(t){
  for(let x of [820,905]){r(x,413,47,23,'#66516e');r(x+5,413,37,6,'#cfa786');}
  r(811,339,130,5,'#e3b29a');label('♡',872,380,30,'#ffddc9');
  // Sillón con dos asientos y TV.
- drawRecipeBookcase();
+ drawRecipeBookcase();drawSpeaker(t);
  r(325,335,285,205,'#8a6372');r(335,346,265,181,'#d0a18e');r(352,361,230,150,'#e3bba1');
  furniture(365,390,177,47,'#704565','#bc7582');r(372,400,161,13,'#eab2ae');r(442,390,7,46,'#8c5266');
  furniture(368,280,138,45,'#413c54',world?.tv_on?'#78b5b7':'#202437');
